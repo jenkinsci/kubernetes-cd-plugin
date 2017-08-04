@@ -1,0 +1,68 @@
+<?jelly escape-by-default='true'?>
+<!--
+  ~ Copyright (c) Microsoft Corporation. All rights reserved.
+  ~ Licensed under the MIT License. See License.txt in the project root for
+  ~ license information.
+  -->
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:f="/lib/form">
+    <f:entry title="${%credentialsType_title}" field="credentialsType">
+        <f:select/>
+    </f:entry>
+
+    <f:entry>
+        <table style="width:100%" data-field="kubeConfig">
+            <f:property field="kubeConfig">
+                <st:include page="config.jelly" class="${descriptor.clazz}"/>
+            </f:property>
+        </table>
+
+        <table style="width:100%" data-field="ssh">
+            <f:property field="ssh">
+                <st:include page="config.jelly" class="${descriptor.clazz}"/>
+            </f:property>
+        </table>
+
+        <table style="width:100%" data-field="textCredentials">
+            <f:property field="textCredentials">
+                <st:include page="config.jelly" class="${descriptor.clazz}"/>
+            </f:property>
+        </table>
+    </f:entry>
+
+    <f:entry title="${%kubernetesNamespace_title}" field="kubernetesNamespace">
+        <f:textbox default="${descriptor.defaultNamespace}"/>
+    </f:entry>
+
+    <f:entry title="${%configs_title}" field="configs">
+        <f:textbox/>
+    </f:entry>
+
+    <f:entry title="${%enableConfigSubstitution_title}" field="enableConfigSubstitution">
+        <f:checkbox/>
+    </f:entry>
+
+    <f:advanced title="${%dockerCredentialsSection_title}">
+        <f:section title="${%dockerCredentialsSection_title}">
+            <f:entry title="${%secretName_title}" field="secretName">
+                <f:textbox/>
+            </f:entry>
+            <f:entry title="${%dockerCredentials_title}" field="dockerCredentials">
+                <f:repeatableProperty field="dockerCredentials">
+                    <f:entry title="">
+                        <div align="right">
+                            <f:repeatableDeleteButton/>
+                        </div>
+                    </f:entry>
+                </f:repeatableProperty>
+            </f:entry>
+        </f:section>
+    </f:advanced>
+
+    <f:validateButton title="${%verifyConfiguration}" progress="${%verifying}"
+                      method="verifyConfiguration" with="credentialsType"/>
+
+    <st:once>
+        <script type="text/javascript"
+                src="${rootURL}/plugin/kubernetes-deploy/scripts/KubenetesDeployContext.js"></script>
+    </st:once>
+</j:jelly>
