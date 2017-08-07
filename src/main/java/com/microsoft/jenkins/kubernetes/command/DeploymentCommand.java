@@ -7,10 +7,13 @@
 package com.microsoft.jenkins.kubernetes.command;
 
 import com.microsoft.jenkins.azurecommons.EnvironmentInjector;
-import com.microsoft.jenkins.kubernetes.JobContext;
+import com.microsoft.jenkins.azurecommons.JobContext;
+import com.microsoft.jenkins.azurecommons.command.CommandState;
+import com.microsoft.jenkins.azurecommons.command.IBaseCommandData;
+import com.microsoft.jenkins.azurecommons.command.ICommand;
+import com.microsoft.jenkins.kubernetes.KubernetesClientWrapper;
 import com.microsoft.jenkins.kubernetes.Messages;
 import com.microsoft.jenkins.kubernetes.util.Constants;
-import com.microsoft.jenkins.kubernetes.KubernetesClientWrapper;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.model.Item;
@@ -22,7 +25,7 @@ import java.util.List;
 public class DeploymentCommand implements ICommand<DeploymentCommand.IDeploymentCommand> {
     @Override
     public void execute(IDeploymentCommand context) {
-        JobContext jobContext = context.jobContext();
+        JobContext jobContext = context.getJobContext();
         FilePath workspace = jobContext.getWorkspace();
         Item jobItem = jobContext.getRun().getParent();
         EnvVars envVars = jobContext.envVars();
@@ -50,7 +53,7 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
 
             wrapper.apply(kubernetesNamespace, configFiles);
 
-            context.setDeploymentState(DeploymentState.Success);
+            context.setCommandState(CommandState.Success);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             context.logError(e);

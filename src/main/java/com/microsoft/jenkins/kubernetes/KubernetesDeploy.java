@@ -6,7 +6,6 @@
 
 package com.microsoft.jenkins.kubernetes;
 
-import com.microsoft.jenkins.kubernetes.service.CommandService;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -36,18 +35,14 @@ public class KubernetesDeploy extends Builder implements SimpleBuildStep {
                         @Nonnull FilePath workspace,
                         @Nonnull Launcher launcher,
                         @Nonnull TaskListener listener) throws InterruptedException, IOException {
+
         listener.getLogger().println(Messages.KubernetesDeploy_starting());
-        this.context.configure(
-                run,
-                workspace,
-                launcher,
-                listener);
+        this.context.configure(run, workspace, launcher, listener);
+        this.context.executeCommands();
 
-        CommandService.executeCommands(context);
-
-        if (context.getHasError()) {
+        if (context.getLastCommandState().isError()) {
             listener.getLogger().println(
-                    Messages.KubernetesDeploy_endWithErrorState(context.getDeploymentState()));
+                    Messages.KubernetesDeploy_endWithErrorState(context.getCommandState()));
             run.setResult(Result.FAILURE);
         } else {
             listener.getLogger().println(Messages.KubernetesDeploy_finished());

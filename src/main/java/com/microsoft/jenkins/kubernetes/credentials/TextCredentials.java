@@ -6,14 +6,19 @@
 
 package com.microsoft.jenkins.kubernetes.credentials;
 
+import com.microsoft.jenkins.kubernetes.Messages;
+import com.microsoft.jenkins.kubernetes.util.Constants;
 import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
+import hudson.util.FormValidation;
+import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.QueryParameter;
 
 public class TextCredentials extends AbstractDescribableImpl<TextCredentials> {
-    private String server;
+    private String serverUrl;
     private String certificateAuthorityData;
     private String clientCertificateData;
     private String clientKeyData;
@@ -23,13 +28,13 @@ public class TextCredentials extends AbstractDescribableImpl<TextCredentials> {
 
     }
 
-    public String getServer() {
-        return server;
+    public String getServerUrl() {
+        return serverUrl;
     }
 
     @DataBoundSetter
-    public void setServer(String server) {
-        this.server = server;
+    public void setServerUrl(String serverUrl) {
+        this.serverUrl = serverUrl;
     }
 
     public String getCertificateAuthorityData() {
@@ -61,5 +66,40 @@ public class TextCredentials extends AbstractDescribableImpl<TextCredentials> {
 
     @Extension
     public static final class DescriptorImpl extends Descriptor<TextCredentials> {
+        public FormValidation doCheckServerUrl(@QueryParameter String value) {
+            value = StringUtils.trimToEmpty(value);
+            if (value.isEmpty()) {
+                return FormValidation.error(Messages.TextCredentials_serverUrlRequired());
+            }
+            if (!value.startsWith(Constants.HTTPS_PREFIX)) {
+                return FormValidation.error(Messages.TextCredentials_serverUrlShouldBeHttps());
+            }
+            return FormValidation.ok();
+        }
+
+        public FormValidation doCheckCertificateAuthorityData(@QueryParameter String value) {
+            if (StringUtils.isBlank(value)) {
+                return FormValidation.error(Messages.TextCredentials_certificateAuthorityDataRequired());
+            }
+            return FormValidation.ok();
+        }
+
+        public FormValidation doCheckClientCertificateData(@QueryParameter String value) {
+            if (StringUtils.isBlank(value)) {
+                return FormValidation.error(Messages.TextCredentials_clientCertificateDataRequired());
+            }
+            return FormValidation.ok();
+        }
+
+        public FormValidation doCheckClientKeyData(@QueryParameter String value) {
+            if (StringUtils.isBlank(value)) {
+                return FormValidation.error(Messages.TextCredentials_clientKeyDataRequired());
+            }
+            return FormValidation.ok();
+        }
+
+        public String getDefaultServerUrl() {
+            return Constants.HTTPS_PREFIX;
+        }
     }
 }

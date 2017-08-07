@@ -7,7 +7,7 @@
 package com.microsoft.jenkins.kubernetes.credentials;
 
 public enum KubernetesCredentialsType {
-    KubeConfig("Authenticate with Kube config file"),
+    KubeConfig("Authenticate with kubeconfig file in workspace"),
     SSH("Fetch cluster details through SSH connection to the master node"),
     Text("Fill credentials details directly");
 

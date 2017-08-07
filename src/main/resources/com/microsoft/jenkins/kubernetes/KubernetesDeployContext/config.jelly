@@ -29,7 +29,7 @@
         </table>
     </f:entry>
 
-    <f:entry title="${%kubernetesNamespace_title}" field="kubernetesNamespace">
+    <f:entry title="${%namespace_title}" field="namespace">
         <f:textbox default="${descriptor.defaultNamespace}"/>
     </f:entry>
 
@@ -38,7 +38,7 @@
     </f:entry>
 
     <f:entry title="${%enableConfigSubstitution_title}" field="enableConfigSubstitution">
-        <f:checkbox/>
+        <f:checkbox default="${descriptor.defaultEnableConfigSubstitution}"/>
     </f:entry>
 
     <f:advanced title="${%dockerCredentialsSection_title}">
@@ -59,10 +59,11 @@
     </f:advanced>
 
     <f:validateButton title="${%verifyConfiguration}" progress="${%verifying}"
-                      method="verifyConfiguration" with="credentialsType"/>
+                      method="verifyConfiguration"
+                      with="credentialsType,path,sshServer,sshCredentialsId,serverUrl,certificateAuthorityData,clientCertificateData,clientKeyData,namespace,configs"/>
 
     <st:once>
         <script type="text/javascript"
-                src="${rootURL}/plugin/kubernetes-deploy/scripts/KubenetesDeployContext.js"></script>
+                src="${rootURL}/plugin/kubernetes-cd/scripts/KubenetesDeployContext.js"></script>
     </st:once>
 </j:jelly>

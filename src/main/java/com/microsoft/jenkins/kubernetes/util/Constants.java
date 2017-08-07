@@ -6,7 +6,6 @@
 
 package com.microsoft.jenkins.kubernetes.util;
 
-
 import java.util.regex.Pattern;
 
 public final class Constants {
@@ -19,6 +18,8 @@ public final class Constants {
     public static final String KUBECONFIG_PREFIX = "kubeconfig-";
 
     public static final String DEFAULT_CHARSET = "UTF-8";
+
+    public static final String HTTPS_PREFIX = "https://";
 
     /**
      * Length limit for the Kubernetes names.

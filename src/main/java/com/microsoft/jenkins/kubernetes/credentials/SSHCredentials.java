@@ -14,6 +14,7 @@ import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.microsoft.jenkins.azurecommons.remote.SSHClient;
+import com.microsoft.jenkins.kubernetes.Messages;
 import com.microsoft.jenkins.kubernetes.util.Constants;
 import hudson.Extension;
 import hudson.FilePath;
@@ -21,40 +22,42 @@ import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Item;
 import hudson.security.ACL;
+import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.QueryParameter;
 
 import java.io.OutputStream;
 import java.util.Collections;
 
 public class SSHCredentials extends AbstractDescribableImpl<SSHCredentials> implements ConfigFileProvider {
-    private String server;
-    private String credentialsId;
+    private String sshServer;
+    private String sshCredentialsId;
 
     @DataBoundConstructor
     public SSHCredentials() {
     }
 
-    public String getServer() {
-        return server;
+    public String getSshServer() {
+        return sshServer;
     }
 
     @DataBoundSetter
-    public void setServer(String server) {
-        this.server = StringUtils.trimToEmpty(server);
+    public void setSshServer(String sshServer) {
+        this.sshServer = StringUtils.trimToEmpty(sshServer);
     }
 
-    public String getCredentialsId() {
-        return credentialsId;
+    public String getSshCredentialsId() {
+        return sshCredentialsId;
     }
 
     @DataBoundSetter
-    public void setCredentialsId(String credentialsId) {
-        this.credentialsId = credentialsId;
+    public void setSshCredentialsId(String sshCredentialsId) {
+        this.sshCredentialsId = sshCredentialsId;
     }
 
     public StandardUsernameCredentials getSshCredentials() {
@@ -64,23 +67,29 @@ public class SSHCredentials extends AbstractDescribableImpl<SSHCredentials> impl
                         Jenkins.getInstance(),
                         ACL.SYSTEM,
                         Collections.<DomainRequirement>emptyList()),
-                CredentialsMatchers.withId(getCredentialsId()));
+                CredentialsMatchers.withId(getSshCredentialsId()));
         return creds;
+    }
+
+    public String getHost() {
+        int colonIndex = sshServer.indexOf(':');
+        if (colonIndex >= 0) {
+            return sshServer.substring(0, colonIndex);
+        }
+        return sshServer;
+    }
+
+    public int getPort() {
+        int colonIndex = sshServer.indexOf(':');
+        if (colonIndex >= 0) {
+            return Integer.parseInt(sshServer.substring(colonIndex));
+        }
+        return Constants.DEFAULT_SSH_PORT;
     }
 
     @Override
     public FilePath getConfigFilePath(FilePath workspace) throws Exception {
-        String host;
-        int port;
-        int colonIndex = server.indexOf(':');
-        if (colonIndex >= 0) {
-            host = server.substring(0, colonIndex);
-            port = Integer.parseInt(server.substring(colonIndex + 1));
-        } else {
-            host = server;
-            port = Constants.DEFAULT_SSH_PORT;
-        }
-        SSHClient sshClient = new SSHClient(host, port, getSshCredentials());
+        SSHClient sshClient = new SSHClient(getHost(), getPort(), getSshCredentials());
         try (SSHClient ignore = sshClient.connect()) {
             FilePath configFile = workspace.createTempFile(Constants.KUBECONFIG_PREFIX, "");
             try (OutputStream out = configFile.write()) {
@@ -92,12 +101,26 @@ public class SSHCredentials extends AbstractDescribableImpl<SSHCredentials> impl
 
     @Extension
     public static final class DescriptorImpl extends Descriptor<SSHCredentials> {
-        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath Item owner) {
+        public ListBoxModel doFillSshCredentialsIdItems(@AncestorInPath Item owner) {
             StandardListBoxModel model = new StandardListBoxModel();
-            model.add("--- Select SSH Credentials ---", Constants.INVALID_OPTION);
+            model.add(Messages.SSHCredentials_selectCredentials(), Constants.INVALID_OPTION);
             model.includeAs(ACL.SYSTEM, owner, SSHUserPrivateKey.class);
             model.includeAs(ACL.SYSTEM, owner, StandardUsernamePasswordCredentials.class);
             return model;
+        }
+
+        public FormValidation doCheckSshServer(@QueryParameter String value) {
+            if (StringUtils.isBlank(value)) {
+                return FormValidation.error(Messages.SSHCredentials_serverRequired());
+            }
+            return FormValidation.ok();
+        }
+
+        public FormValidation doCheckSshCredentialsId(@QueryParameter String value) {
+            if (StringUtils.isBlank(value) || Constants.INVALID_OPTION.equals(value)) {
+                return FormValidation.error(Messages.SSHCredentials_credentialsIdRequired());
+            }
+            return FormValidation.ok();
         }
     }
 }
