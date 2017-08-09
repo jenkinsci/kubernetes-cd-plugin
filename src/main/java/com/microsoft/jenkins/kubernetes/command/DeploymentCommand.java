@@ -6,6 +6,7 @@
 
 package com.microsoft.jenkins.kubernetes.command;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.microsoft.jenkins.azurecommons.EnvironmentInjector;
 import com.microsoft.jenkins.azurecommons.JobContext;
 import com.microsoft.jenkins.azurecommons.command.CommandState;
@@ -71,7 +72,8 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
         }
     }
 
-    private String getMasterHost(KubernetesClientWrapper wrapper) {
+    @VisibleForTesting
+    String getMasterHost(KubernetesClientWrapper wrapper) {
         if (wrapper != null) {
             URL masterURL = wrapper.getClient().getMasterUrl();
             if (masterURL != null) {
