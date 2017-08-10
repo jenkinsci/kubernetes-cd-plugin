@@ -38,7 +38,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class KubernetesClientWrapper {
     private final KubernetesClient client;
-    private PrintStream logger;
+    private PrintStream logger = System.out;
     private VariableResolver<String> variableResolver;
     private ResourceUpdateMonitor resourceUpdateMonitor = ResourceUpdateMonitor.NOOP;
 
@@ -108,11 +108,11 @@ public class KubernetesClientWrapper {
      */
     public void apply(String namespace, FilePath[] configFiles) throws IOException, InterruptedException {
         for (FilePath path : configFiles) {
-            logger.println(Messages.KubernetesClientWrapper_loadingConfiguration(path));
+            log(Messages.KubernetesClientWrapper_loadingConfiguration(path));
 
             List<HasMetadata> resources = client.load(CommonUtils.replaceMacro(path.read(), variableResolver)).get();
             if (resources.isEmpty()) {
-                logger.println(Messages.KubernetesClientWrapper_noResourceLoadedFrom(path));
+                log(Messages.KubernetesClientWrapper_noResourceLoadedFrom(path));
                 continue;
             }
             for (HasMetadata resource : resources) {
@@ -140,7 +140,7 @@ public class KubernetesClientWrapper {
                         resourceUpdateMonitor.onDeploymentUpdate(originalDeployment, deployment);
                     }
 
-                    logger.println(Messages.KubernetesClientWrapper_appliedDeployment(deployment));
+                    log(Messages.KubernetesClientWrapper_appliedDeployment(deployment));
                 } else if (resource instanceof Service) {
                     Service service = (Service) resource;
 
@@ -163,7 +163,7 @@ public class KubernetesClientWrapper {
                         resourceUpdateMonitor.onServiceUpdate(originalService, service);
                     }
 
-                    logger.println(Messages.KubernetesClientWrapper_appliedService(service));
+                    log(Messages.KubernetesClientWrapper_appliedService(service));
                 } else if (resource instanceof Ingress) {
                     Ingress ingress = (Ingress) resource;
 
@@ -188,9 +188,9 @@ public class KubernetesClientWrapper {
                         resourceUpdateMonitor.onIngressUpdate(originalIngress, ingress);
                     }
 
-                    logger.println(Messages.KubernetesClientWrapper_appliedIngress(ingress));
+                    log(Messages.KubernetesClientWrapper_appliedIngress(ingress));
                 } else {
-                    logger.println(Messages.KubernetesClientWrapper_skipped(resource));
+                    log(Messages.KubernetesClientWrapper_skipped(resource));
                 }
             }
         }
@@ -216,7 +216,7 @@ public class KubernetesClientWrapper {
             String kubernetesNamespace,
             String secretName,
             List<DockerRegistryEndpoint> credentials) throws IOException {
-        logger.println(Messages.KubernetesClientWrapper_prepareSecretsWithName(secretName));
+        log(Messages.KubernetesClientWrapper_prepareSecretsWithName(secretName));
 
         DockerConfigBuilder dockerConfigBuilder = new DockerConfigBuilder(credentials);
         String dockercfg = dockerConfigBuilder.buildDockercfgBase64(context);
@@ -253,7 +253,7 @@ public class KubernetesClientWrapper {
      * @param filePath the kubeconfig file path
      * @return the config that can be used to build {@link KubernetesClient}
      */
-    private static synchronized Config kubeConfigFromFile(String filePath) {
+    public static synchronized Config kubeConfigFromFile(String filePath) {
         String originalTryConfig = System.getProperty(Config.KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY);
         String originalFile = System.getProperty(Config.KUBERNETES_KUBECONFIG_FILE);
         try {
@@ -301,5 +301,11 @@ public class KubernetesClientWrapper {
             name = name.substring(0, name.length() - 1) + 'a';
         }
         return name;
+    }
+
+    private void log(String message) {
+        if (logger != null) {
+            logger.println(message);
+        }
     }
 }

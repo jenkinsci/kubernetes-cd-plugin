@@ -6,10 +6,13 @@
 
 package com.microsoft.jenkins.kubernetes;
 
+import com.microsoft.jenkins.azurecommons.JobContext;
+import com.microsoft.jenkins.azurecommons.command.BaseCommandContext;
+import com.microsoft.jenkins.azurecommons.command.CommandService;
+import com.microsoft.jenkins.azurecommons.command.IBaseCommandData;
+import com.microsoft.jenkins.azurecommons.command.ICommand;
+import com.microsoft.jenkins.azurecommons.remote.SSHClient;
 import com.microsoft.jenkins.kubernetes.command.DeploymentCommand;
-import com.microsoft.jenkins.kubernetes.command.IBaseCommandData;
-import com.microsoft.jenkins.kubernetes.command.ICommand;
-import com.microsoft.jenkins.kubernetes.command.TransitionInfo;
 import com.microsoft.jenkins.kubernetes.credentials.ConfigFileCredentials;
 import com.microsoft.jenkins.kubernetes.credentials.KubernetesCredentialsType;
 import com.microsoft.jenkins.kubernetes.credentials.SSHCredentials;
@@ -23,7 +26,7 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.plugins.docker.commons.credentials.DockerRegistryEndpoint;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
 import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
@@ -34,11 +37,10 @@ import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 
-public class KubernetesDeployContext extends AbstractBaseContext implements
+public class KubernetesDeployContext extends BaseCommandContext implements
         DeploymentCommand.IDeploymentCommand {
 
     private String credentialsType;
@@ -63,13 +65,13 @@ public class KubernetesDeployContext extends AbstractBaseContext implements
             @Nonnull Launcher launcher,
             @Nonnull TaskListener listener) throws IOException, InterruptedException {
 
-        Hashtable<Class, TransitionInfo> commands = new Hashtable<>();
-
-        commands.put(DeploymentCommand.class,
-                new TransitionInfo(new DeploymentCommand(), null, null));
+        CommandService commandService = CommandService.builder()
+                .withSingleCommand(DeploymentCommand.class)
+                .withStartCommand(DeploymentCommand.class)
+                .build();
 
         final JobContext jobContext = new JobContext(run, workspace, launcher, listener);
-        super.configure(jobContext, commands, DeploymentCommand.class);
+        super.configure(jobContext, commandService);
     }
 
     public String getCredentialsType() {
@@ -183,12 +185,13 @@ public class KubernetesDeployContext extends AbstractBaseContext implements
             case Text:
                 TextCredentials text = getTextCredentials();
                 return new KubernetesClientWrapper(
-                        text.getServer(),
+                        text.getServerUrl(),
                         text.getCertificateAuthorityData(),
                         text.getClientCertificateData(),
                         text.getClientKeyData());
             default:
-                throw new IllegalStateException("Unknown cluster credentials type: " + getCredentialsTypeEnum());
+                throw new IllegalStateException(
+                        Messages.KubernetesDeployContext_unknownCredentialsType(getCredentialsTypeEnum()));
         }
     }
 
@@ -212,8 +215,95 @@ public class KubernetesDeployContext extends AbstractBaseContext implements
             return model;
         }
 
-        public FormValidation doVerifyConfiguration(@QueryParameter java.lang.String credentialsType) {
+        public FormValidation doCheckNamespace(@QueryParameter String value) {
+            if (StringUtils.isBlank(value)) {
+                return FormValidation.error(Messages.KubernetesDeployContext_namespaceRequired());
+            }
             return FormValidation.ok();
+        }
+
+        public FormValidation doVerifyConfiguration(
+                @QueryParameter String credentialsType,
+                @QueryParameter("path") String kubeconfigPath,
+                @QueryParameter String sshServer,
+                @QueryParameter String sshCredentialsId,
+                @QueryParameter("serverUrl") String txtServerUrl,
+                @QueryParameter("certificateAuthorityData") String txtCertificateAuthorityData,
+                @QueryParameter("clientCertificateData") String txtClientCertificateData,
+                @QueryParameter("clientKeyData") String txtClientKeyData,
+                @QueryParameter String namespace,
+                @QueryParameter String configs) {
+            switch (KubernetesCredentialsType.fromString(credentialsType)) {
+                case KubeConfig:
+                    if (StringUtils.isBlank(kubeconfigPath)) {
+                        return FormValidation.error(Messages.errorMessage(
+                                Messages.KubernetesDeployContext_kubeconfigNotConfigured()));
+                    }
+                    break;
+                case SSH:
+                    if (StringUtils.isBlank(sshServer)) {
+                        return FormValidation.error(Messages.errorMessage(
+                                Messages.KubernetesDeployContext_sshServerNotConfigured()));
+                    }
+                    if (StringUtils.isBlank(sshCredentialsId) || Constants.INVALID_OPTION.equals(sshCredentialsId)) {
+                        return FormValidation.error(Messages.errorMessage(
+                                Messages.KubernetesDeployContext_sshCredentialsNotSelected()));
+                    }
+                    SSHCredentials sshCredentials = new SSHCredentials();
+                    sshCredentials.setSshCredentialsId(StringUtils.trimToEmpty(sshCredentialsId));
+                    sshCredentials.setSshServer(StringUtils.trimToEmpty(sshServer));
+                    try {
+                        SSHClient client = new SSHClient(
+                                sshCredentials.getHost(), sshCredentials.getPort(), sshCredentials.getSshCredentials());
+                        try (SSHClient connected = client.connect()) {
+                            try {
+                                connected.execRemote("test -e " + Constants.KUBECONFIG_FILE, false, false);
+                            } catch (SSHClient.ExitStatusException e) {
+                                return FormValidation.error(Messages.errorMessage(
+                                        Messages.KubernetesDeployContext_cannotFindKubeconfigOnServer(
+                                                Constants.KUBECONFIG_FILE, sshServer)));
+                            }
+                        }
+                    } catch (Exception e) {
+                        return FormValidation.error(Messages.errorMessage(
+                                Messages.KubernetesDeployContext_failedOnSSH(e.getMessage())));
+                    }
+                    break;
+                case Text:
+                    txtServerUrl = StringUtils.trimToEmpty(txtServerUrl);
+                    if (StringUtils.isBlank(txtServerUrl)) {
+                        return FormValidation.error(Messages.errorMessage(
+                                Messages.KubernetesDeployContext_serverUrlNotConfigured()));
+                    }
+                    if (!txtServerUrl.startsWith(Constants.HTTPS_PREFIX)) {
+                        return FormValidation.error(Messages.errorMessage(
+                                Messages.KubernetesDeployContext_serverUrlNotHttps()));
+                    }
+                    if (StringUtils.isBlank(txtCertificateAuthorityData)) {
+                        return FormValidation.error(Messages.errorMessage(
+                                Messages.KubernetesDeployContext_certificateAuthorityNotConfigured()));
+                    }
+                    if (StringUtils.isBlank(txtClientCertificateData)) {
+                        return FormValidation.error(Messages.errorMessage(
+                                Messages.KubernetesDeployContext_clientCertificateDataNotConfigured()));
+                    }
+                    if (StringUtils.isBlank(txtClientKeyData)) {
+                        return FormValidation.error(Messages.errorMessage(
+                                Messages.KubernetesDeployContext_clientKeyDataNotConfigured()));
+                    }
+                    break;
+                default:
+                    break;
+            }
+            if (StringUtils.isBlank(namespace)) {
+                return FormValidation.error(Messages.errorMessage(
+                        Messages.KubernetesDeployContext_namespaceNotConfigured()));
+            }
+            if (StringUtils.isBlank(configs)) {
+                return FormValidation.error(Messages.errorMessage(
+                        Messages.KubernetesDeployContext_configsNotConfigured()));
+            }
+            return FormValidation.ok(Messages.KubernetesDeployContext_validateSuccess());
         }
 
         public String getDefaultNamespace() {
