@@ -45,6 +45,11 @@ public final class Constants {
 
     public static final int DEFAULT_SSH_PORT = 22;
 
+    // AI constants
+    public static final String AI_KUBERNETES = "Kubernetes";
+    public static final String AI_K8S_MASTER = "Master";
+    public static final String AI_MESSAGE = "ErrorMessage";
+
     private Constants() {
         // hide constructor
     }
