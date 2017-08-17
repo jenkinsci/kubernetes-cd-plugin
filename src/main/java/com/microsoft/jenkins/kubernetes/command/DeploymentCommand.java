@@ -21,10 +21,13 @@ import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.model.Item;
 import hudson.util.VariableResolver;
+import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.plugins.docker.commons.credentials.DockerRegistryEndpoint;
 
 import java.net.URL;
 import java.util.List;
+
+import static com.google.common.base.Preconditions.checkState;
 
 public class DeploymentCommand implements ICommand<DeploymentCommand.IDeploymentCommand> {
     @Override
@@ -34,14 +37,23 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
         Item jobItem = jobContext.getRun().getParent();
         EnvVars envVars = jobContext.envVars();
         String kubernetesNamespace = context.getNamespace();
+        String configPaths = context.getConfigs();
 
         KubernetesClientWrapper wrapper = null;
         try {
+            checkState(StringUtils.isNotBlank(kubernetesNamespace), Messages.DeploymentCommand_blankNamespace());
+            checkState(StringUtils.isNotBlank(configPaths), Messages.DeploymentCommand_blankConfigFiles());
+
             wrapper = context.buildKubernetesClientWrapper(workspace).withLogger(jobContext.logger());
+
             if (context.isEnableConfigSubstitution()) {
                 wrapper.withVariableResolver(new VariableResolver.ByMap<>(envVars));
             }
-            FilePath[] configFiles = workspace.list(context.getConfigs());
+            FilePath[] configFiles = workspace.list(configPaths);
+            if (configFiles.length == 0) {
+                context.logError(Messages.DeploymentCommand_noMatchingConfigFiles(configPaths));
+                return;
+            }
 
             List<DockerRegistryEndpoint> dockerCredentials = context.getDockerCredentials();
             if (!dockerCredentials.isEmpty()) {

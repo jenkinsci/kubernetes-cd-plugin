@@ -7,6 +7,7 @@ It provides the following features:
 * Fetch the cluster credentials from the master node via SSH. You may also configure it manually.
 * Variable substitution for the resource configurations, allowing you to do dynamic resource deployment.
 * Docker login credentials management for the private Docker registry.
+* No need to install the `kubectl` tool on the Jenkins slave nodes.
 
 ## Prerequisites
 
@@ -67,6 +68,24 @@ It provides the following features:
 
    You may also prepare the [Kubernetes Secrets](https://kubernetes.io/docs/concepts/configuration/secret/) beforehand.
    and reference the secret from your resource configurations directly.
+   
+## Resource Types
+
+The following resource types are supported by the plugin:
+
+* Deployment
+* Replica Set
+* Replication Controller - No rolling-update support. If that's required, consider using [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-update-deployment).
+* Daemon Set
+* Pod
+* Job
+* Service
+* Ingress
+* Secret - The plugin also provides secrets configuration.
+
+In the context of continuous integration & continuous deployment, only those resources that need to be updated
+regularly should be placed in Jenkins deployment. So most of the time the plugin should mainly deal with resources
+of type **Deployment**.
 
 ## Pipeline Support
 

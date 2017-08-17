@@ -6,6 +6,7 @@
 
 package com.microsoft.jenkins.kubernetes;
 
+import com.google.common.collect.ImmutableList;
 import com.microsoft.jenkins.azurecommons.JobContext;
 import com.microsoft.jenkins.azurecommons.command.BaseCommandContext;
 import com.microsoft.jenkins.azurecommons.command.CommandService;
@@ -163,6 +164,9 @@ public class KubernetesDeployContext extends BaseCommandContext implements
 
     @Override
     public List<DockerRegistryEndpoint> getDockerCredentials() {
+        if (dockerCredentials == null) {
+            return ImmutableList.of();
+        }
         return dockerCredentials;
     }
 

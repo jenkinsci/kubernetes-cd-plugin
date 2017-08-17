@@ -6,10 +6,15 @@
 
 package com.microsoft.jenkins.kubernetes;
 
+import io.fabric8.kubernetes.api.model.Job;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.ReplicationController;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.extensions.DaemonSet;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
+import io.fabric8.kubernetes.api.model.extensions.ReplicaSet;
 
 public interface ResourceUpdateMonitor {
     boolean isInterestedInSecret();
@@ -27,6 +32,26 @@ public interface ResourceUpdateMonitor {
     boolean isInterestedInIngress();
 
     void onIngressUpdate(Ingress original, Ingress current);
+
+    boolean isInterestedInReplicationController();
+
+    void onReplicationControllerUpdate(ReplicationController original, ReplicationController current);
+
+    boolean isInterestedInReplicaSet();
+
+    void onReplicaSetUpdate(ReplicaSet original, ReplicaSet current);
+
+    boolean isInterestedInDaemonSet();
+
+    void onDaemonSetUpdate(DaemonSet original, DaemonSet current);
+
+    boolean isInterestedInJob();
+
+    void onJobUpdate(Job original, Job current);
+
+    boolean isInterestedInPod();
+
+    void onPodUpdate(Pod original, Pod current);
 
     ResourceUpdateMonitor NOOP = new Adapter();
 
@@ -65,6 +90,51 @@ public interface ResourceUpdateMonitor {
 
         @Override
         public void onIngressUpdate(Ingress original, Ingress current) {
+        }
+
+        @Override
+        public boolean isInterestedInReplicationController() {
+            return false;
+        }
+
+        @Override
+        public void onReplicationControllerUpdate(ReplicationController original, ReplicationController current) {
+        }
+
+        @Override
+        public boolean isInterestedInReplicaSet() {
+            return false;
+        }
+
+        @Override
+        public void onReplicaSetUpdate(ReplicaSet original, ReplicaSet current) {
+        }
+
+        @Override
+        public boolean isInterestedInDaemonSet() {
+            return false;
+        }
+
+        @Override
+        public void onDaemonSetUpdate(DaemonSet original, DaemonSet current) {
+        }
+
+        @Override
+        public boolean isInterestedInJob() {
+            return false;
+        }
+
+        @Override
+        public void onJobUpdate(Job original, Job current) {
+        }
+
+        @Override
+        public boolean isInterestedInPod() {
+            return false;
+        }
+
+        @Override
+        public void onPodUpdate(Pod original, Pod current) {
         }
     }
 }

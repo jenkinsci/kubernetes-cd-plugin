@@ -20,7 +20,7 @@
         <java.level>7</java.level>
     </properties>
 
-    <name>Kubernetes Continous Deploy Plugin</name>
+    <name>Kubernetes Continuous Deploy Plugin</name>
     <description>A Jenkins plugin to deploy configurations to Kubernetes cluster.</description>
     <url>https://wiki.jenkins-ci.org/display/JENKINS/Kubernetes+CD+Plugin</url>
 
@@ -122,7 +122,7 @@
         <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-client</artifactId>
-            <version>2.3.1</version>
+            <version>2.6.1</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
