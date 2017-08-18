@@ -16,11 +16,13 @@ import hudson.model.Item;
 import hudson.util.VariableResolver;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Job;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.ReplicationController;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.extensions.DaemonSet;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
@@ -40,6 +42,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 public class KubernetesClientWrapper {
     private final KubernetesClient client;
@@ -106,12 +109,11 @@ public class KubernetesClientWrapper {
     /**
      * Apply Kubernetes configurations through the given Kubernetes client.
      *
-     * @param namespace   The namespace that the components should be created / updated
      * @param configFiles The configuration files to be deployed
      * @throws IOException          exception on IO
      * @throws InterruptedException interruption happened during blocking IO operations
      */
-    public void apply(String namespace, FilePath[] configFiles) throws IOException, InterruptedException {
+    public void apply(FilePath[] configFiles) throws IOException, InterruptedException {
         for (FilePath path : configFiles) {
             log(Messages.KubernetesClientWrapper_loadingConfiguration(path));
 
@@ -123,31 +125,31 @@ public class KubernetesClientWrapper {
             for (HasMetadata resource : resources) {
                 if (resource instanceof Deployment) {
                     Deployment deployment = (Deployment) resource;
-                    new DeploymentUpdater(namespace, deployment).createOrReplace();
+                    new DeploymentUpdater(deployment).createOrApply();
                 } else if (resource instanceof Service) {
                     Service service = (Service) resource;
-                    new ServiceUpdater(namespace, service).createOrReplace();
+                    new ServiceUpdater(service).createOrApply();
                 } else if (resource instanceof Ingress) {
                     Ingress ingress = (Ingress) resource;
-                    new IngressUpdater(namespace, ingress).createOrReplace();
+                    new IngressUpdater(ingress).createOrApply();
                 } else if (resource instanceof ReplicationController) {
                     ReplicationController replicationController = (ReplicationController) resource;
-                    new ReplicationControllerUpdater(namespace, replicationController).createOrReplace();
+                    new ReplicationControllerUpdater(replicationController).createOrApply();
                 } else if (resource instanceof ReplicaSet) {
                     ReplicaSet rs = (ReplicaSet) resource;
-                    new ReplicaSetUpdater(namespace, rs).createOrReplace();
+                    new ReplicaSetUpdater(rs).createOrApply();
                 } else if (resource instanceof DaemonSet) {
                     DaemonSet daemonSet = (DaemonSet) resource;
-                    new DaemonSetUpdater(namespace, daemonSet).createOrReplace();
+                    new DaemonSetUpdater(daemonSet).createOrApply();
                 } else if (resource instanceof Job) {
                     Job job = (Job) resource;
-                    new JobUpdater(namespace, job).createOrReplace();
+                    new JobUpdater(job).createOrApply();
                 } else if (resource instanceof Pod) {
                     Pod pod = (Pod) resource;
-                    new PodUpdator(namespace, pod).createOrReplace();
+                    new PodUpdator(pod).createOrApply();
                 } else if (resource instanceof Secret) {
                     Secret secret = (Secret) resource;
-                    new SecretUpdater(namespace, secret).createOrReplace();
+                    new SecretUpdater(secret).createOrApply();
                 } else {
                     log(Messages.KubernetesClientWrapper_skipped(resource));
                 }
@@ -191,16 +193,7 @@ public class KubernetesClientWrapper {
                 .withType("kubernetes.io/dockercfg")
                 .build();
 
-        Secret originalSecret = null;
-        boolean checkSecret = resourceUpdateMonitor.isInterestedInSecret();
-        if (checkSecret) {
-            originalSecret = client.secrets().inNamespace(kubernetesNamespace).withName(secretName).get();
-        }
-
-        Secret updatedSecret = client.secrets().inNamespace(kubernetesNamespace).createOrReplace(secret);
-        if (checkSecret) {
-            resourceUpdateMonitor.onSecretUpdate(originalSecret, updatedSecret);
-        }
+        new SecretUpdater(secret).createOrApply();
     }
 
     /**
@@ -269,75 +262,124 @@ public class KubernetesClientWrapper {
     }
 
     private abstract class ResourceUpdater<T extends HasMetadata> {
-        private final String namespace;
         private final T resource;
 
-        ResourceUpdater(String namespace, T resource) {
-            this.namespace = namespace;
+        ResourceUpdater(T resource) {
+            checkNotNull(resource);
             this.resource = resource;
+            checkState(StringUtils.isNotBlank(getName()),
+                    Messages.KubernetesClientWrapper_noName(), getKind(), resource);
         }
 
-        String getNamespace() {
-            return namespace;
+        final String getNamespace() {
+            ObjectMeta metadata = resource.getMetadata();
+            String ns = null;
+            if (metadata != null) {
+                ns = resource.getMetadata().getNamespace();
+            }
+            if (ns == null) {
+                ns = Constants.DEFAULT_KUBERNETES_NAMESPACE;
+            }
+            return ns;
         }
 
-        T get() {
+        final T get() {
             return resource;
         }
 
-        final void createOrReplace() {
-            T original = null;
-            boolean monitor = isInterestedInUpdate();
-            if (monitor) {
-                original = getCurrentResource(get().getMetadata().getName());
+        final String getName() {
+            ObjectMeta metadata = resource.getMetadata();
+            String name = null;
+            if (metadata != null) {
+                name = metadata.getName();
             }
-            T updated = applyResource(get());
-            if (monitor) {
-                notifyUpdate(original, updated);
-            }
-            logApplied(updated);
+            return name;
         }
 
-        abstract boolean isInterestedInUpdate();
+        final String getKind() {
+            return resource.getKind();
+        }
 
-        abstract T getCurrentResource(String name);
+        /**
+         * Explicitly apply the configuration if a resource with the same name exists in the namespace in the cluster,
+         * or create one if not.
+         * <p>
+         * If we cannot load resource during application (possibly because the resource gets deleted after we first
+         * checked), or some one created the resource after we checked and before we created, the method fails with
+         * exception.
+         *
+         * @throws IOException if we cannot find the resource in the cluster when we apply the configuration
+         */
+        final void createOrApply() throws IOException {
+            T original = getCurrentResource();
+            T current = get();
+            T updated;
+            if (original != null) {
+                updated = applyResource(original, current);
+                if (updated == null) {
+                    throw new IOException(Messages.KubernetesClientWrapper_resourceNotFound(
+                            getKind(), current.getMetadata().getName()));
+                }
+                logApplied(updated);
+            } else {
+                updated = createResource(get());
+                logCreated(updated);
+            }
+            notifyUpdate(original, updated);
+        }
 
-        abstract T applyResource(T res);
+        abstract T getCurrentResource();
+
+        abstract T applyResource(T original, T current);
+
+        abstract T createResource(T current);
 
         abstract void notifyUpdate(T original, T current);
 
         void logApplied(T res) {
             log(Messages.KubernetesClientWrapper_applied(res.getClass().getSimpleName(), res));
         }
+
+        void logCreated(T res) {
+            log(Messages.KubernetesClientWrapper_created(res.getClass().getSimpleName(), res));
+        }
     }
 
     private class DeploymentUpdater extends ResourceUpdater<Deployment> {
-        DeploymentUpdater(String namespace, Deployment deployment) {
-            super(namespace, deployment);
+        DeploymentUpdater(Deployment deployment) {
+            super(deployment);
         }
 
         @Override
-        boolean isInterestedInUpdate() {
-            return resourceUpdateMonitor.isInterestedInDeployment();
-        }
-
-        @Override
-        Deployment getCurrentResource(String name) {
+        Deployment getCurrentResource() {
             return client
                     .extensions()
                     .deployments()
                     .inNamespace(getNamespace())
-                    .withName(name)
+                    .withName(getName())
                     .get();
         }
 
         @Override
-        Deployment applyResource(Deployment res) {
+        Deployment applyResource(Deployment original, Deployment current) {
             return client
                     .extensions()
                     .deployments()
                     .inNamespace(getNamespace())
-                    .createOrReplace(res);
+                    .withName(current.getMetadata().getName())
+                    .edit()
+                    .withMetadata(current.getMetadata())
+                    .withSpec(current.getSpec())
+                    .done();
+        }
+
+        @Override
+        Deployment createResource(Deployment current) {
+            return client
+                    .extensions()
+                    .deployments()
+                    .inNamespace(getNamespace())
+                    .create(current);
         }
 
         @Override
@@ -347,30 +389,68 @@ public class KubernetesClientWrapper {
     }
 
     private class ServiceUpdater extends ResourceUpdater<Service> {
-        ServiceUpdater(String namespace, Service service) {
-            super(namespace, service);
+        ServiceUpdater(Service service) {
+            super(service);
         }
 
         @Override
-        boolean isInterestedInUpdate() {
-            return resourceUpdateMonitor.isInterestedInService();
-        }
-
-        @Override
-        Service getCurrentResource(String name) {
+        Service getCurrentResource() {
             return client
                     .services()
                     .inNamespace(getNamespace())
-                    .withName(name)
+                    .withName(getName())
                     .get();
         }
 
         @Override
-        Service applyResource(Service res) {
+        Service applyResource(Service original, Service current) {
+            List<ServicePort> originalPorts = original.getSpec().getPorts();
+            List<ServicePort> currentPorts = current.getSpec().getPorts();
+            // Pin the nodePort to the public port
+            // The kubernetes-client library will compare the server config and the current applied config,
+            // and compute the difference, which will be sent to the PATCH API of Kubernetes. The missing nodePort
+            // will be considered as deletion, which will cause the Kubernetes to assign a new nodePort to the
+            // service, which may have problem with the port forwarding as in the load balancer.
+            //
+            // "kubectl apply" handles the service update in the same way.
+            if (originalPorts != null && currentPorts != null) {
+                Map<Integer, Integer> portToNodePort = new HashMap<>();
+                for (ServicePort servicePort : originalPorts) {
+                    Integer port = servicePort.getPort();
+                    Integer nodePort = servicePort.getNodePort();
+                    if (port != null && nodePort != null) {
+                        portToNodePort.put(servicePort.getPort(), servicePort.getNodePort());
+                    }
+                }
+                for (ServicePort servicePort : currentPorts) {
+                    Integer port = servicePort.getPort();
+                    if (port != null) {
+                        Integer nodePort = portToNodePort.get(port);
+                        if (nodePort != null) {
+                            servicePort.setNodePort(nodePort);
+                        }
+                    }
+                }
+            }
+
+            // this should be no-op, keep it in case current.getSpec().getPorts() behavior changes in future
+            current.getSpec().setPorts(currentPorts);
+
+            return client.services()
+                    .inNamespace(getNamespace())
+                    .withName(original.getMetadata().getName())
+                    .edit()
+                    .withMetadata(current.getMetadata())
+                    .withSpec(current.getSpec())
+                    .done();
+        }
+
+        @Override
+        Service createResource(Service current) {
             return client
                     .services()
                     .inNamespace(getNamespace())
-                    .createOrReplace(res);
+                    .create(current);
         }
 
         @Override
@@ -380,32 +460,40 @@ public class KubernetesClientWrapper {
     }
 
     private class IngressUpdater extends ResourceUpdater<Ingress> {
-        IngressUpdater(String namespace, Ingress ingress) {
-            super(namespace, ingress);
+        IngressUpdater(Ingress ingress) {
+            super(ingress);
         }
 
         @Override
-        boolean isInterestedInUpdate() {
-            return resourceUpdateMonitor.isInterestedInIngress();
-        }
-
-        @Override
-        Ingress getCurrentResource(String name) {
+        Ingress getCurrentResource() {
             return client
                     .extensions()
                     .ingresses()
                     .inNamespace(getNamespace())
-                    .withName(name)
+                    .withName(getName())
                     .get();
         }
 
         @Override
-        Ingress applyResource(Ingress res) {
+        Ingress applyResource(Ingress original, Ingress current) {
             return client
                     .extensions()
                     .ingresses()
                     .inNamespace(getNamespace())
-                    .createOrReplace(res);
+                    .withName(current.getMetadata().getName())
+                    .edit()
+                    .withMetadata(current.getMetadata())
+                    .withSpec(current.getSpec())
+                    .done();
+        }
+
+        @Override
+        Ingress createResource(Ingress current) {
+            return client
+                    .extensions()
+                    .ingresses()
+                    .inNamespace(getNamespace())
+                    .create(current);
         }
 
         @Override
@@ -415,30 +503,37 @@ public class KubernetesClientWrapper {
     }
 
     private class ReplicationControllerUpdater extends ResourceUpdater<ReplicationController> {
-        ReplicationControllerUpdater(String namespace, ReplicationController rc) {
-            super(namespace, rc);
+        ReplicationControllerUpdater(ReplicationController rc) {
+            super(rc);
         }
 
         @Override
-        boolean isInterestedInUpdate() {
-            return resourceUpdateMonitor.isInterestedInReplicationController();
-        }
-
-        @Override
-        ReplicationController getCurrentResource(String name) {
+        ReplicationController getCurrentResource() {
             return client
                     .replicationControllers()
                     .inNamespace(getNamespace())
-                    .withName(name)
+                    .withName(getName())
                     .get();
         }
 
         @Override
-        ReplicationController applyResource(ReplicationController res) {
+        ReplicationController applyResource(ReplicationController original, ReplicationController current) {
             return client
                     .replicationControllers()
                     .inNamespace(getNamespace())
-                    .createOrReplace(res);
+                    .withName(current.getMetadata().getName())
+                    .edit()
+                    .withMetadata(current.getMetadata())
+                    .withSpec(current.getSpec())
+                    .done();
+        }
+
+        @Override
+        ReplicationController createResource(ReplicationController current) {
+            return client
+                    .replicationControllers()
+                    .inNamespace(getNamespace())
+                    .create(current);
         }
 
         @Override
@@ -448,32 +543,40 @@ public class KubernetesClientWrapper {
     }
 
     private class ReplicaSetUpdater extends ResourceUpdater<ReplicaSet> {
-        ReplicaSetUpdater(String namespace, ReplicaSet rs) {
-            super(namespace, rs);
+        ReplicaSetUpdater(ReplicaSet rs) {
+            super(rs);
         }
 
         @Override
-        boolean isInterestedInUpdate() {
-            return resourceUpdateMonitor.isInterestedInReplicaSet();
-        }
-
-        @Override
-        ReplicaSet getCurrentResource(String name) {
+        ReplicaSet getCurrentResource() {
             return client
                     .extensions()
                     .replicaSets()
                     .inNamespace(getNamespace())
-                    .withName(name)
+                    .withName(getName())
                     .get();
         }
 
         @Override
-        ReplicaSet applyResource(ReplicaSet res) {
+        ReplicaSet applyResource(ReplicaSet original, ReplicaSet current) {
             return client
                     .extensions()
                     .replicaSets()
                     .inNamespace(getNamespace())
-                    .createOrReplace(res);
+                    .withName(current.getMetadata().getName())
+                    .edit()
+                    .withMetadata(current.getMetadata())
+                    .withSpec(current.getSpec())
+                    .done();
+        }
+
+        @Override
+        ReplicaSet createResource(ReplicaSet current) {
+            return client
+                    .extensions()
+                    .replicaSets()
+                    .inNamespace(getNamespace())
+                    .create(current);
         }
 
         @Override
@@ -483,32 +586,40 @@ public class KubernetesClientWrapper {
     }
 
     private class DaemonSetUpdater extends ResourceUpdater<DaemonSet> {
-        DaemonSetUpdater(String namespace, DaemonSet ds) {
-            super(namespace, ds);
+        DaemonSetUpdater(DaemonSet ds) {
+            super(ds);
         }
 
         @Override
-        boolean isInterestedInUpdate() {
-            return resourceUpdateMonitor.isInterestedInDaemonSet();
-        }
-
-        @Override
-        DaemonSet getCurrentResource(String name) {
+        DaemonSet getCurrentResource() {
             return client
                     .extensions()
                     .daemonSets()
                     .inNamespace(getNamespace())
-                    .withName(name)
+                    .withName(getName())
                     .get();
         }
 
         @Override
-        DaemonSet applyResource(DaemonSet res) {
+        DaemonSet applyResource(DaemonSet original, DaemonSet current) {
             return client
                     .extensions()
                     .daemonSets()
                     .inNamespace(getNamespace())
-                    .createOrReplace(res);
+                    .withName(current.getMetadata().getName())
+                    .edit()
+                    .withMetadata(current.getMetadata())
+                    .withSpec(current.getSpec())
+                    .done();
+        }
+
+        @Override
+        DaemonSet createResource(DaemonSet current) {
+            return client
+                    .extensions()
+                    .daemonSets()
+                    .inNamespace(getNamespace())
+                    .create(current);
         }
 
         @Override
@@ -518,32 +629,40 @@ public class KubernetesClientWrapper {
     }
 
     private class JobUpdater extends ResourceUpdater<Job> {
-        JobUpdater(String namespace, Job job) {
-            super(namespace, job);
+        JobUpdater(Job job) {
+            super(job);
         }
 
         @Override
-        boolean isInterestedInUpdate() {
-            return resourceUpdateMonitor.isInterestedInJob();
-        }
-
-        @Override
-        Job getCurrentResource(String name) {
+        Job getCurrentResource() {
             return client
                     .extensions()
                     .jobs()
                     .inNamespace(getNamespace())
-                    .withName(name)
+                    .withName(getName())
                     .get();
         }
 
         @Override
-        Job applyResource(Job res) {
+        Job applyResource(Job original, Job current) {
             return client
                     .extensions()
                     .jobs()
                     .inNamespace(getNamespace())
-                    .createOrReplace(res);
+                    .withName(current.getMetadata().getName())
+                    .edit()
+                    .withMetadata(current.getMetadata())
+                    .withSpec(current.getSpec())
+                    .done();
+        }
+
+        @Override
+        Job createResource(Job current) {
+            return client
+                    .extensions()
+                    .jobs()
+                    .inNamespace(getNamespace())
+                    .create(current);
         }
 
         @Override
@@ -553,30 +672,37 @@ public class KubernetesClientWrapper {
     }
 
     private class PodUpdator extends ResourceUpdater<Pod> {
-        PodUpdator(String namespace, Pod pod) {
-            super(namespace, pod);
+        PodUpdator(Pod pod) {
+            super(pod);
         }
 
         @Override
-        boolean isInterestedInUpdate() {
-            return resourceUpdateMonitor.isInterestedInPod();
-        }
-
-        @Override
-        Pod getCurrentResource(String name) {
+        Pod getCurrentResource() {
             return client
                     .pods()
                     .inNamespace(getNamespace())
-                    .withName(name)
+                    .withName(getName())
                     .get();
         }
 
         @Override
-        Pod applyResource(Pod res) {
+        Pod applyResource(Pod original, Pod current) {
             return client
                     .pods()
                     .inNamespace(getNamespace())
-                    .createOrReplace(res);
+                    .withName(current.getMetadata().getName())
+                    .edit()
+                    .withMetadata(current.getMetadata())
+                    .withSpec(current.getSpec())
+                    .done();
+        }
+
+        @Override
+        Pod createResource(Pod current) {
+            return client
+                    .pods()
+                    .inNamespace(getNamespace())
+                    .create(current);
         }
 
         @Override
@@ -586,30 +712,39 @@ public class KubernetesClientWrapper {
     }
 
     private class SecretUpdater extends ResourceUpdater<Secret> {
-        SecretUpdater(String namespace, Secret secret) {
-            super(namespace, secret);
+        SecretUpdater(Secret secret) {
+            super(secret);
         }
 
         @Override
-        boolean isInterestedInUpdate() {
-            return resourceUpdateMonitor.isInterestedInSecret();
-        }
-
-        @Override
-        Secret getCurrentResource(String name) {
+        Secret getCurrentResource() {
             return client
                     .secrets()
                     .inNamespace(getNamespace())
-                    .withName(name)
+                    .withName(getName())
                     .get();
         }
 
         @Override
-        Secret applyResource(Secret res) {
+        Secret applyResource(Secret original, Secret current) {
             return client
                     .secrets()
                     .inNamespace(getNamespace())
-                    .createOrReplace(res);
+                    .withName(current.getMetadata().getName())
+                    .edit()
+                    .withMetadata(current.getMetadata())
+                    .withData(current.getData())
+                    .withStringData(current.getStringData())
+                    .withType(current.getType())
+                    .done();
+        }
+
+        @Override
+        Secret createResource(Secret current) {
+            return client
+                    .secrets()
+                    .inNamespace(getNamespace())
+                    .create(current);
         }
 
         @Override
@@ -620,7 +755,12 @@ public class KubernetesClientWrapper {
         @Override
         void logApplied(Secret res) {
             // do not show the secret details
-            log(Messages.KubernetesClientWrapper_applied("Secret", "name: " + res.getMetadata().getName()));
+            log(Messages.KubernetesClientWrapper_applied("Secret", "name: " + getName()));
+        }
+
+        @Override
+        void logCreated(Secret res) {
+            log(Messages.KubernetesClientWrapper_created(getKind(), "name: " + getName()));
         }
     }
 }

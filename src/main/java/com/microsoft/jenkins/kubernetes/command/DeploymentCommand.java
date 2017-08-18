@@ -67,7 +67,7 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
                 EnvironmentInjector.inject(jobContext.getRun(), Constants.KUBERNETES_SECRET_NAME_PROP, secretName);
             }
 
-            wrapper.apply(kubernetesNamespace, configFiles);
+            wrapper.apply(configFiles);
 
             context.setCommandState(CommandState.Success);
 
