@@ -36,12 +36,12 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
         FilePath workspace = jobContext.getWorkspace();
         Item jobItem = jobContext.getRun().getParent();
         EnvVars envVars = jobContext.envVars();
-        String kubernetesNamespace = context.getNamespace();
+        String secretNamespace = context.getSecretNamespace();
         String configPaths = context.getConfigs();
 
         KubernetesClientWrapper wrapper = null;
         try {
-            checkState(StringUtils.isNotBlank(kubernetesNamespace), Messages.DeploymentCommand_blankNamespace());
+            checkState(StringUtils.isNotBlank(secretNamespace), Messages.DeploymentCommand_blankNamespace());
             checkState(StringUtils.isNotBlank(configPaths), Messages.DeploymentCommand_blankConfigFiles());
 
             wrapper = context.buildKubernetesClientWrapper(workspace).withLogger(jobContext.logger());
@@ -60,7 +60,7 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
                 String secretName = KubernetesClientWrapper.prepareSecretName(
                         context.getSecretName(), jobContext.getRun().getDisplayName(), envVars);
 
-                wrapper.createOrReplaceSecrets(jobItem, kubernetesNamespace, secretName, dockerCredentials);
+                wrapper.createOrReplaceSecrets(jobItem, secretNamespace, secretName, dockerCredentials);
 
                 context.logStatus(Messages.DeploymentCommand_injectSecretName(
                         Constants.KUBERNETES_SECRET_NAME_PROP, secretName));
@@ -98,7 +98,7 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
     public interface IDeploymentCommand extends IBaseCommandData {
         KubernetesClientWrapper buildKubernetesClientWrapper(FilePath workspace) throws Exception;
 
-        String getNamespace();
+        String getSecretNamespace();
 
         String getSecretName();
 

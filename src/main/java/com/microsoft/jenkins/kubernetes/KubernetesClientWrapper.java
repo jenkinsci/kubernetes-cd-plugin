@@ -164,7 +164,7 @@ public class KubernetesClientWrapper {
      * This can be used by the Pods later to pull images from the private container registry.
      *
      * @param context             the current job context, generally this should be {@code getRun().getParent()}
-     * @param kubernetesNamespace The namespace that the Secret should be created / updated
+     * @param kubernetesNamespace The namespace in which the Secret should be created / updated
      * @param secretName          The name of the Secret
      * @param credentials         All the configured credentials
      * @throws IOException exception on IO

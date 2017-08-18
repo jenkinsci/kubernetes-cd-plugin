@@ -111,7 +111,7 @@ public class DeploymentCommandTest {
             doReturn(envVars).when(jobContext).envVars();
 
             kubernetesNamespace = "default";
-            doReturn(kubernetesNamespace).when(context).getNamespace();
+            doReturn(kubernetesNamespace).when(context).getSecretNamespace();
 
             PrintStream logger = mock(PrintStream.class);
             doReturn(logger).when(jobContext).logger();

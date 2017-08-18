@@ -49,9 +49,10 @@ public class KubernetesDeployContext extends BaseCommandContext implements
     private ConfigFileCredentials kubeConfig;
     private TextCredentials textCredentials;
 
-    private String namespace;
     private String configs;
     private boolean enableConfigSubstitution;
+
+    private String secretNamespace;
     private String secretName;
     private List<DockerRegistryEndpoint> dockerCredentials;
 
@@ -119,16 +120,16 @@ public class KubernetesDeployContext extends BaseCommandContext implements
     }
 
     @Override
-    public String getNamespace() {
-        return StringUtils.isNotBlank(namespace) ? namespace : Constants.DEFAULT_KUBERNETES_NAMESPACE;
+    public String getSecretNamespace() {
+        return StringUtils.isNotBlank(secretNamespace) ? secretNamespace : Constants.DEFAULT_KUBERNETES_NAMESPACE;
     }
 
     @DataBoundSetter
-    public void setNamespace(String namespace) {
-        if (Constants.DEFAULT_KUBERNETES_NAMESPACE.equals(namespace)) {
-            this.namespace = null;
+    public void setSecretNamespace(String secretNamespace) {
+        if (Constants.DEFAULT_KUBERNETES_NAMESPACE.equals(secretNamespace)) {
+            this.secretNamespace = null;
         } else {
-            this.namespace = namespace;
+            this.secretNamespace = secretNamespace;
         }
     }
 
@@ -219,13 +220,6 @@ public class KubernetesDeployContext extends BaseCommandContext implements
             return model;
         }
 
-        public FormValidation doCheckNamespace(@QueryParameter String value) {
-            if (StringUtils.isBlank(value)) {
-                return FormValidation.error(Messages.KubernetesDeployContext_namespaceRequired());
-            }
-            return FormValidation.ok();
-        }
-
         public FormValidation doVerifyConfiguration(
                 @QueryParameter String credentialsType,
                 @QueryParameter("path") String kubeconfigPath,
@@ -235,7 +229,6 @@ public class KubernetesDeployContext extends BaseCommandContext implements
                 @QueryParameter("certificateAuthorityData") String txtCertificateAuthorityData,
                 @QueryParameter("clientCertificateData") String txtClientCertificateData,
                 @QueryParameter("clientKeyData") String txtClientKeyData,
-                @QueryParameter String namespace,
                 @QueryParameter String configs) {
             switch (KubernetesCredentialsType.fromString(credentialsType)) {
                 case KubeConfig:
@@ -299,10 +292,6 @@ public class KubernetesDeployContext extends BaseCommandContext implements
                 default:
                     break;
             }
-            if (StringUtils.isBlank(namespace)) {
-                return FormValidation.error(Messages.errorMessage(
-                        Messages.KubernetesDeployContext_namespaceNotConfigured()));
-            }
             if (StringUtils.isBlank(configs)) {
                 return FormValidation.error(Messages.errorMessage(
                         Messages.KubernetesDeployContext_configsNotConfigured()));
@@ -310,7 +299,7 @@ public class KubernetesDeployContext extends BaseCommandContext implements
             return FormValidation.ok(Messages.KubernetesDeployContext_validateSuccess());
         }
 
-        public String getDefaultNamespace() {
+        public String getDefaultSecretNamespace() {
             return Constants.DEFAULT_KUBERNETES_NAMESPACE;
         }
 
