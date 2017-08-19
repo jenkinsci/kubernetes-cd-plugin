@@ -35,7 +35,7 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
         JobContext jobContext = context.getJobContext();
         FilePath workspace = jobContext.getWorkspace();
         Item jobItem = jobContext.getRun().getParent();
-        EnvVars envVars = jobContext.envVars();
+        EnvVars envVars = context.getEnvVars();
         String secretNamespace = context.getSecretNamespace();
         String configPaths = context.getConfigs();
 
@@ -46,9 +46,6 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
 
             wrapper = context.buildKubernetesClientWrapper(workspace).withLogger(jobContext.logger());
 
-            if (context.isEnableConfigSubstitution()) {
-                wrapper.withVariableResolver(new VariableResolver.ByMap<>(envVars));
-            }
             FilePath[] configFiles = workspace.list(configPaths);
             if (configFiles.length == 0) {
                 context.logError(Messages.DeploymentCommand_noMatchingConfigFiles(configPaths));
@@ -64,7 +61,12 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
 
                 context.logStatus(Messages.DeploymentCommand_injectSecretName(
                         Constants.KUBERNETES_SECRET_NAME_PROP, secretName));
-                EnvironmentInjector.inject(jobContext.getRun(), Constants.KUBERNETES_SECRET_NAME_PROP, secretName);
+                EnvironmentInjector.inject(
+                        jobContext.getRun(), envVars, Constants.KUBERNETES_SECRET_NAME_PROP, secretName);
+            }
+
+            if (context.isEnableConfigSubstitution()) {
+                wrapper.withVariableResolver(new VariableResolver.ByMap<>(envVars));
             }
 
             wrapper.apply(configFiles);

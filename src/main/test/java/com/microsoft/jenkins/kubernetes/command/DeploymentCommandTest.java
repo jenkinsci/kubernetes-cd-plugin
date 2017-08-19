@@ -108,7 +108,7 @@ public class DeploymentCommandTest {
             Run run = mock(Run.class);
             doReturn(job).when(run).getParent();
             doReturn(run).when(jobContext).getRun();
-            doReturn(envVars).when(jobContext).envVars();
+            doReturn(envVars).when(context).getEnvVars();
 
             kubernetesNamespace = "default";
             doReturn(kubernetesNamespace).when(context).getSecretNamespace();

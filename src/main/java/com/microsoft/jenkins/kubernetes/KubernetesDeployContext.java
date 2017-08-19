@@ -12,6 +12,7 @@ import com.microsoft.jenkins.azurecommons.command.BaseCommandContext;
 import com.microsoft.jenkins.azurecommons.command.CommandService;
 import com.microsoft.jenkins.azurecommons.command.IBaseCommandData;
 import com.microsoft.jenkins.azurecommons.command.ICommand;
+import com.microsoft.jenkins.azurecommons.command.SimpleBuildStepExecution;
 import com.microsoft.jenkins.azurecommons.remote.SSHClient;
 import com.microsoft.jenkins.kubernetes.command.DeploymentCommand;
 import com.microsoft.jenkins.kubernetes.credentials.ConfigFileCredentials;
@@ -19,7 +20,6 @@ import com.microsoft.jenkins.kubernetes.credentials.KubernetesCredentialsType;
 import com.microsoft.jenkins.kubernetes.credentials.SSHCredentials;
 import com.microsoft.jenkins.kubernetes.credentials.TextCredentials;
 import com.microsoft.jenkins.kubernetes.util.Constants;
-import com.microsoft.jenkins.kubernetes.workflow.SimpleBuildStepExecution;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -206,7 +206,7 @@ public class KubernetesDeployContext extends BaseCommandContext implements
     }
 
     @Override
-    public StepExecution start(StepContext context) throws Exception {
+    public StepExecution startImpl(StepContext context) throws Exception {
         return new SimpleBuildStepExecution(new KubernetesDeploy(this), context);
     }
 
