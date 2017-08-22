@@ -38,6 +38,7 @@ import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -173,7 +174,27 @@ public class KubernetesDeployContext extends BaseCommandContext implements
 
     @DataBoundSetter
     public void setDockerCredentials(List<DockerRegistryEndpoint> dockerCredentials) {
-        this.dockerCredentials = dockerCredentials;
+        List<DockerRegistryEndpoint> endpoints = new ArrayList<>();
+        for (DockerRegistryEndpoint endpoint : dockerCredentials) {
+            String credentialsId = org.apache.commons.lang.StringUtils.trimToNull(endpoint.getCredentialsId());
+            if (credentialsId == null) {
+                // no credentials item is selected, skip this endpoint
+                continue;
+            }
+
+            String registryUrl = org.apache.commons.lang.StringUtils.trimToNull(endpoint.getUrl());
+            // null URL results in "https://index.docker.io/v1/" effectively
+            if (registryUrl != null) {
+                // It's common that the user omits the scheme prefix, we add http:// as default.
+                // Otherwise it will cause MalformedURLException when we call endpoint.getEffectiveURL();
+                if (!Constants.URI_SCHEME_PREFIX.matcher(registryUrl).find()) {
+                    registryUrl = "http://" + registryUrl;
+                }
+            }
+            endpoint = new DockerRegistryEndpoint(registryUrl, credentialsId);
+            endpoints.add(endpoint);
+        }
+        this.dockerCredentials = endpoints;
     }
 
     public KubernetesClientWrapper buildKubernetesClientWrapper(FilePath workspace) throws Exception {

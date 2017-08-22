@@ -249,6 +249,14 @@ public class KubernetesClientWrapper {
         if (name.length() > Constants.KUBERNETES_NAME_LENGTH_LIMIT) {
             name = name.substring(0, Constants.KUBERNETES_NAME_LENGTH_LIMIT);
         }
+        int suffixLength = Constants.KUBERNETES_NAME_LENGTH_LIMIT - name.length();
+        final int randomLength = 8;
+        if (suffixLength > randomLength) {
+            suffixLength = randomLength;
+        }
+        String suffix = CommonUtils.randomString(suffixLength, true);
+        name += suffix;
+
         if (name.charAt(name.length() - 1) == '-') {
             name = name.substring(0, name.length() - 1) + 'a';
         }
