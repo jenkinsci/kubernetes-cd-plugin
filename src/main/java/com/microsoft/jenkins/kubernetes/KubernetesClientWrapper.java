@@ -431,6 +431,12 @@ public class KubernetesClientWrapper {
                     }
                 }
                 for (ServicePort servicePort : currentPorts) {
+                    // if the nodePort is defined in the config, use it
+                    Integer currentNodePort = servicePort.getNodePort();
+                    if (currentNodePort != null && currentNodePort != 0) {
+                        continue;
+                    }
+                    // otherwise try to copy the nodePort from the current service status
                     Integer port = servicePort.getPort();
                     if (port != null) {
                         Integer nodePort = portToNodePort.get(port);
