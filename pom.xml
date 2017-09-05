@@ -141,6 +141,7 @@
                     <maskClasses>
                         okhttp3.
                         okio.
+                        com.google.common.base.
                     </maskClasses>
                 </configuration>
             </plugin>

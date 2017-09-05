@@ -28,7 +28,6 @@ It provides the following features:
    * Fetch cluster details through SSH connection to the master node. Fill in the SSH credentials to the master node,
        and the plugin will pull the **kubeconfig** from `~/.kube/config` from the master node.
    * Fill credentials details directly. Manually copy / paste the contents from existing **kubeconfig**.
-1. Fill in the namespace in which you want to deploy the resources. By default this will be `default`.
 1. Fill in the "Config Files" with the configuration file paths. Split multiple entries with comma (`,`). 
    [Ant glob syntax](https://ant.apache.org/manual/dirtasks.html#patterns) is supported for path patterns.
 1. By checking "Enable Variable Substitution in Config", the variables (in the form of `$VARIABLE` or `${VARIABLE})
@@ -38,6 +37,8 @@ It provides the following features:
 1. If your Kubernetes resources being deployed need to pull images from private registry, you can click the
    "Docker Container Registry Credentials / Kubernetes Secrets..." button and configure all the required registry
    credentials.
+   * Kubernetes Namespace for Secret: the namespace in which the secrets will be created with the credentials 
+      configured below. By default this will be `default`.
    * Secret Name: the name of the secret that will be generated or updated if exists. If left blank, a unique name will
       be generated. The name will be exposed as environment variable `KUBERNETES_SECRET_NAME` and you may reference it
       in your configuration with the "Enable Variable Substitution in Config" option turned on.
@@ -100,10 +101,10 @@ kubernetesDeploy(
         credentialsType: 'KubeConfig',
         kubeConfig: [path: '<path-to-the-kubeconfig-in-the-workspace>'],
 
-        namespace: '<kubernetes-namespace>',
         configs: '<ant-glob-pattern-for-resource-config-paths>',
         enableConfigSubstitution: false,
-
+        
+        secretNamespace: '<secret-namespace>',
         secretName: '<secret-name>',
         dockerCredentials: [
                 [credentialsId: '<credentials-id-for-docker-hub>'],
@@ -155,13 +156,11 @@ The parameters can be divided into the following groups, which you may configure
    ```groovy
    kubernetesDeploy(
            ...
-           namespace: '<kubernetes-namespace>',
            configs: '<ant-glob-pattern-for-resource-config-paths>',
            enableConfigSubstitution: true,
            ...
    )
    ```
-   * `namespace` defaults to `default` if omitted
    * `enableConfigSubstitution` defaults to `true`
    
 * Docker Container Registry Credentials / Kubernetes Secrets
@@ -169,6 +168,7 @@ The parameters can be divided into the following groups, which you may configure
    ```groovy
    kubernetesDeploy(
            ...
+           secretNamespace: '<secret-namespace>',
            secretName: '<secret-name>',
            dockerCredentials: [
                [credentialsId: '<credentials-id-for-docker-hub>'],
@@ -176,6 +176,6 @@ The parameters can be divided into the following groups, which you may configure
            ],
    )
    ```
-
+   * `secretNamespace` will be `default` if omitted.
    * A unique `secretName` will be generated if omitted, and you need to reference it with variable 
       `$KUBERNETES_SECRET_NAME` in your resource configurations.

@@ -50,6 +50,15 @@ public final class Constants {
     public static final String AI_K8S_MASTER = "Master";
     public static final String AI_MESSAGE = "ErrorMessage";
 
+    /**
+     * URI scheme prefix (scheme://) pattern.
+     * <p>
+     * The scheme consists of a sequence of characters beginning with a letter and followed by any combination of
+     * letters, digits, plus (+), period (.), or hyphen (-).
+     */
+    public static final Pattern URI_SCHEME_PREFIX =
+            Pattern.compile("^[a-z][a-z0-9+.\\-]*://", Pattern.CASE_INSENSITIVE);
+
     private Constants() {
         // hide constructor
     }

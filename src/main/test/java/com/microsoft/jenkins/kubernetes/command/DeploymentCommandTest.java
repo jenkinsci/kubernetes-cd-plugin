@@ -17,7 +17,14 @@ import java.io.PrintStream;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  * Tests for {@link DeploymentCommand}
@@ -30,7 +37,7 @@ public class DeploymentCommandTest {
 
         verify(context.wrapper, times(1)).withVariableResolver(any(VariableResolver.class));
         verify(context.wrapper, times(1)).createOrReplaceSecrets(context.job, context.kubernetesNamespace, context.secretName, context.dockerCredentials);
-        verify(context.wrapper, times(1)).apply(context.kubernetesNamespace, context.configFiles);
+        verify(context.wrapper, times(1)).apply(context.configFiles);
         verify(context.context, times(1)).setCommandState(CommandState.Success);
     }
 
@@ -101,10 +108,10 @@ public class DeploymentCommandTest {
             Run run = mock(Run.class);
             doReturn(job).when(run).getParent();
             doReturn(run).when(jobContext).getRun();
-            doReturn(envVars).when(jobContext).envVars();
+            doReturn(envVars).when(context).getEnvVars();
 
             kubernetesNamespace = "default";
-            doReturn(kubernetesNamespace).when(context).getNamespace();
+            doReturn(kubernetesNamespace).when(context).getSecretNamespace();
 
             PrintStream logger = mock(PrintStream.class);
             doReturn(logger).when(jobContext).logger();
@@ -149,7 +156,7 @@ public class DeploymentCommandTest {
 
         public ContextBuilder withApplyException() throws Exception {
             exception = new RuntimeException("ApplyException");
-            doThrow(exception).when(wrapper).apply(any(String.class), any(FilePath[].class));
+            doThrow(exception).when(wrapper).apply(any(FilePath[].class));
             return this;
         }
 

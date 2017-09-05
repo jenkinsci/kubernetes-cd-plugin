@@ -14,8 +14,29 @@ import org.apache.commons.io.IOUtils;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Random;
 
 public final class CommonUtils {
+    private static final char[] DIGITS;
+    private static final char[] DIGITS_ASCII_LOWERCASE;
+    private static final char[] DIGITS_ASCII_LETTERS;
+
+    private static final ThreadLocal<Random> THREAD_LOCAL_RANDOM = new ThreadLocal<Random>() {
+        @Override
+        protected Random initialValue() {
+            return new Random();
+        }
+    };
+
+    static {
+        String digits = "0123456789";
+        String asciiLowercase = "abcdefghijklmnopqrstuvwxyz";
+
+        DIGITS = digits.toCharArray();
+        DIGITS_ASCII_LOWERCASE = (digits + asciiLowercase).toCharArray();
+        DIGITS_ASCII_LETTERS = (digits + asciiLowercase + asciiLowercase.toUpperCase()).toCharArray();
+    }
+
     /**
      * Replace the variables in the given {@code InputStream} and produce a new stream.
      * If the {@code variableResolver} is null, the original {@code InputStream} will be returned.
@@ -44,6 +65,40 @@ public final class CommonUtils {
         } finally {
             original.close();
         }
+    }
+
+    public static Random threadLocalRandom() {
+        return THREAD_LOCAL_RANDOM.get();
+    }
+
+    public static String randomString() {
+        final int defaultLength = 16;
+        return randomString(defaultLength, false, false);
+    }
+
+    public static String randomString(final int length) {
+        return randomString(length, false, false);
+    }
+
+    public static String randomString(final int length, final boolean forceLowercase) {
+        return randomString(length, forceLowercase, false);
+    }
+
+    public static String randomString(final int length, final boolean forceLowercase, final boolean digitsOnly) {
+        char[] pool = DIGITS;
+        if (!digitsOnly) {
+            if (forceLowercase) {
+                pool = DIGITS_ASCII_LOWERCASE;
+            } else {
+                pool = DIGITS_ASCII_LETTERS;
+            }
+        }
+        char[] sample = new char[length];
+        Random rand = threadLocalRandom();
+        for (int i = 0; i < sample.length; ++i) {
+            sample[i] = pool[rand.nextInt(pool.length)];
+        }
+        return new String(sample);
     }
 
     private CommonUtils() {

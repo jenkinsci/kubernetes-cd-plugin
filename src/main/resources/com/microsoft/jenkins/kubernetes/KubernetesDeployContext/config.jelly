@@ -29,10 +29,6 @@
         </table>
     </f:entry>
 
-    <f:entry title="${%namespace_title}" field="namespace">
-        <f:textbox default="${descriptor.defaultNamespace}"/>
-    </f:entry>
-
     <f:entry title="${%configs_title}" field="configs">
         <f:textbox/>
     </f:entry>
@@ -43,6 +39,9 @@
 
     <f:advanced title="${%dockerCredentialsSection_title}">
         <f:section title="${%dockerCredentialsSection_title}">
+            <f:entry title="${%secretNamespace_title}" field="secretNamespace">
+                <f:textbox default="${descriptor.defaultSecretNamespace}"/>
+            </f:entry>
             <f:entry title="${%secretName_title}" field="secretName">
                 <f:textbox/>
             </f:entry>
@@ -60,7 +59,7 @@
 
     <f:validateButton title="${%verifyConfiguration}" progress="${%verifying}"
                       method="verifyConfiguration"
-                      with="credentialsType,path,sshServer,sshCredentialsId,serverUrl,certificateAuthorityData,clientCertificateData,clientKeyData,namespace,configs"/>
+                      with="credentialsType,path,sshServer,sshCredentialsId,serverUrl,certificateAuthorityData,clientCertificateData,clientKeyData,configs"/>
 
     <st:once>
         <script type="text/javascript"
