@@ -6,13 +6,14 @@
 
 package com.microsoft.jenkins.kubernetes.util;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.microsoft.jenkins.kubernetes.credentials.ResolvedDockerRegistryEndpoint;
 import hudson.FilePath;
-import hudson.model.Item;
-import net.sf.json.JSONObject;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-import org.jenkinsci.plugins.docker.commons.credentials.DockerRegistryEndpoint;
 import org.jenkinsci.plugins.docker.commons.credentials.DockerRegistryToken;
 
 import java.io.IOException;
@@ -23,20 +24,21 @@ import java.util.zip.GZIPOutputStream;
  * Builds docker configuration for use of private repository authentication.
  */
 public class DockerConfigBuilder {
-    private final List<DockerRegistryEndpoint> endpoints;
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    public DockerConfigBuilder(List<DockerRegistryEndpoint> credentials) {
+    private final List<ResolvedDockerRegistryEndpoint> endpoints;
+
+    public DockerConfigBuilder(List<ResolvedDockerRegistryEndpoint> credentials) {
         this.endpoints = credentials;
     }
 
-    public FilePath buildArchive(FilePath workspace, Item context) throws IOException, InterruptedException {
+    public FilePath buildArchive(FilePath workspace) throws IOException, InterruptedException {
         final FilePath outputFile = workspace.createTempFile("docker", ".tar.gz");
 
         try (TarArchiveOutputStream out = new TarArchiveOutputStream(new GZIPOutputStream(outputFile.write()))) {
-            JSONObject auths = buildAuthsObject(context);
+            ObjectNode auths = buildAuthsObject();
 
-            JSONObject config = new JSONObject();
-            config.put("auths", auths);
+            JsonNode config = MAPPER.createObjectNode().set("auths", auths);
 
             byte[] bytes = config.toString().getBytes(Constants.DEFAULT_CHARSET);
 
@@ -50,30 +52,24 @@ public class DockerConfigBuilder {
         return outputFile;
     }
 
-    public String buildDockercfgBase64(Item context) throws IOException {
-        return Base64.encodeBase64String(buildDockercfgString(context).getBytes(Constants.DEFAULT_CHARSET));
+    public String buildDockercfgBase64() throws IOException {
+        return Base64.encodeBase64String(buildDockercfgString().getBytes(Constants.DEFAULT_CHARSET));
     }
 
-    public String buildDockercfgString(Item context)
+    public String buildDockercfgString()
             throws IOException {
-        JSONObject auths = buildAuthsObject(context);
+        ObjectNode auths = buildAuthsObject();
         return auths.toString();
     }
 
-    public JSONObject buildAuthsObject(Item context) throws IOException {
-        JSONObject auths = new JSONObject();
-        for (DockerRegistryEndpoint endpoint : this.endpoints) {
-            DockerRegistryToken token = endpoint.getToken(context);
-
-            if (token == null) {
-                // no credentials filled for this entry
-                continue;
-            }
-
-            JSONObject entry = new JSONObject()
-                    .element("email", token.getEmail())
-                    .element("auth", token.getToken());
-            auths.put(endpoint.getEffectiveUrl().toString(), entry);
+    public ObjectNode buildAuthsObject() throws IOException {
+        ObjectNode auths = MAPPER.createObjectNode();
+        for (ResolvedDockerRegistryEndpoint endpoint : this.endpoints) {
+            DockerRegistryToken token = endpoint.getToken();
+            ObjectNode entry = MAPPER.createObjectNode()
+                    .put("email", token.getEmail())
+                    .put("auth", token.getToken());
+            auths.set(endpoint.getUrl().toString(), entry);
         }
         return auths;
     }

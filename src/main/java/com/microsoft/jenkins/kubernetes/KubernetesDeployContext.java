@@ -15,20 +15,24 @@ import com.microsoft.jenkins.azurecommons.command.ICommand;
 import com.microsoft.jenkins.azurecommons.command.SimpleBuildStepExecution;
 import com.microsoft.jenkins.azurecommons.remote.SSHClient;
 import com.microsoft.jenkins.kubernetes.command.DeploymentCommand;
+import com.microsoft.jenkins.kubernetes.credentials.ClientWrapperFactory;
 import com.microsoft.jenkins.kubernetes.credentials.ConfigFileCredentials;
 import com.microsoft.jenkins.kubernetes.credentials.KubernetesCredentialsType;
+import com.microsoft.jenkins.kubernetes.credentials.ResolvedDockerRegistryEndpoint;
 import com.microsoft.jenkins.kubernetes.credentials.SSHCredentials;
 import com.microsoft.jenkins.kubernetes.credentials.TextCredentials;
 import com.microsoft.jenkins.kubernetes.util.Constants;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.model.Item;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.plugins.docker.commons.credentials.DockerRegistryEndpoint;
+import org.jenkinsci.plugins.docker.commons.credentials.DockerRegistryToken;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
 import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
 import org.jenkinsci.plugins.workflow.steps.StepExecution;
@@ -164,13 +168,13 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         this.enableConfigSubstitution = enableConfigSubstitution;
     }
 
-    @Override
     public List<DockerRegistryEndpoint> getDockerCredentials() {
         if (dockerCredentials == null) {
             return ImmutableList.of();
         }
-        return dockerCredentials;
+        return ImmutableList.copyOf(dockerCredentials);
     }
+
 
     @DataBoundSetter
     public void setDockerCredentials(List<DockerRegistryEndpoint> dockerCredentials) {
@@ -191,30 +195,34 @@ public class KubernetesDeployContext extends BaseCommandContext implements
                     registryUrl = "http://" + registryUrl;
                 }
             }
-            endpoint = new DockerRegistryEndpoint(registryUrl, credentialsId);
-            endpoints.add(endpoint);
+            endpoints.add(new DockerRegistryEndpoint(registryUrl, credentialsId));
         }
         this.dockerCredentials = endpoints;
     }
 
-    public KubernetesClientWrapper buildKubernetesClientWrapper(FilePath workspace) throws Exception {
+    @Override
+    public List<ResolvedDockerRegistryEndpoint> resolveEndpoints(Item context) throws IOException {
+        List<ResolvedDockerRegistryEndpoint> endpoints = new ArrayList<>();
+        List<DockerRegistryEndpoint> configured = getDockerCredentials();
+        for (DockerRegistryEndpoint endpoint : configured) {
+            DockerRegistryToken token = endpoint.getToken(context);
+            if (token == null) {
+                throw new IllegalArgumentException("No credentials found for " + endpoint);
+            }
+            endpoints.add(new ResolvedDockerRegistryEndpoint(endpoint.getEffectiveUrl(), token));
+        }
+        return endpoints;
+    }
+
+    @Override
+    public ClientWrapperFactory clientFactory() {
         switch (getCredentialsTypeEnum()) {
             case SSH:
-                FilePath tempConfig = getSsh().getConfigFilePath(workspace);
-                try {
-                    return new KubernetesClientWrapper(tempConfig.getRemote());
-                } finally {
-                    tempConfig.delete();
-                }
+                return getSsh().buildClientWrapperFactory();
             case KubeConfig:
-                return new KubernetesClientWrapper(getKubeConfig().getConfigFilePath(workspace).getRemote());
+                return getKubeConfig().buildClientWrapperFactory();
             case Text:
-                TextCredentials text = getTextCredentials();
-                return new KubernetesClientWrapper(
-                        text.getServerUrl(),
-                        text.getCertificateAuthorityData(),
-                        text.getClientCertificateData(),
-                        text.getClientKeyData());
+                return getTextCredentials().buildClientWrapperFactory();
             default:
                 throw new IllegalStateException(
                         Messages.KubernetesDeployContext_unknownCredentialsType(getCredentialsTypeEnum()));

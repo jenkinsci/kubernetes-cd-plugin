@@ -6,9 +6,11 @@
 
 package com.microsoft.jenkins.kubernetes.credentials;
 
+import com.microsoft.jenkins.kubernetes.KubernetesClientWrapper;
 import com.microsoft.jenkins.kubernetes.Messages;
 import com.microsoft.jenkins.kubernetes.util.Constants;
 import hudson.Extension;
+import hudson.FilePath;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.util.FormValidation;
@@ -17,7 +19,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
-public class TextCredentials extends AbstractDescribableImpl<TextCredentials> {
+public class TextCredentials extends AbstractDescribableImpl<TextCredentials> implements ClientWrapperFactory.Builder {
     private String serverUrl;
     private String certificateAuthorityData;
     private String clientCertificateData;
@@ -64,6 +66,12 @@ public class TextCredentials extends AbstractDescribableImpl<TextCredentials> {
         this.clientKeyData = clientKeyData;
     }
 
+    @Override
+    public ClientWrapperFactory buildClientWrapperFactory() {
+        return new ClientWrapperFactoryImpl(
+                getServerUrl(), getCertificateAuthorityData(), getClientCertificateData(), getClientKeyData());
+    }
+
     @Extension
     public static final class DescriptorImpl extends Descriptor<TextCredentials> {
         public FormValidation doCheckServerUrl(@QueryParameter String value) {
@@ -100,6 +108,31 @@ public class TextCredentials extends AbstractDescribableImpl<TextCredentials> {
 
         public String getDefaultServerUrl() {
             return Constants.HTTPS_PREFIX;
+        }
+    }
+
+    private static class ClientWrapperFactoryImpl implements ClientWrapperFactory {
+        private static final long serialVersionUID = 1L;
+
+        private final String serverUrl;
+        private final String certificateAuthorityData;
+        private final String clientCertificateData;
+        private final String clientKeyData;
+
+        ClientWrapperFactoryImpl(String serverUrl,
+                                 String certificateAuthorityData,
+                                 String clientCertificateData,
+                                 String clientKeyData) {
+            this.serverUrl = serverUrl;
+            this.certificateAuthorityData = certificateAuthorityData;
+            this.clientCertificateData = clientCertificateData;
+            this.clientKeyData = clientKeyData;
+        }
+
+        @Override
+        public KubernetesClientWrapper buildClient(FilePath workspace) throws Exception {
+            return new KubernetesClientWrapper(
+                    serverUrl, certificateAuthorityData, clientCertificateData, clientKeyData);
         }
     }
 }

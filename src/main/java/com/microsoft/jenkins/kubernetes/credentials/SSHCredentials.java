@@ -14,6 +14,7 @@ import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.microsoft.jenkins.azurecommons.remote.SSHClient;
+import com.microsoft.jenkins.kubernetes.KubernetesClientWrapper;
 import com.microsoft.jenkins.kubernetes.Messages;
 import com.microsoft.jenkins.kubernetes.util.Constants;
 import hudson.Extension;
@@ -34,7 +35,10 @@ import org.kohsuke.stapler.QueryParameter;
 import java.io.OutputStream;
 import java.util.Collections;
 
-public class SSHCredentials extends AbstractDescribableImpl<SSHCredentials> implements ConfigFileProvider {
+public class SSHCredentials
+        extends AbstractDescribableImpl<SSHCredentials>
+        implements ClientWrapperFactory.Builder {
+
     private String sshServer;
     private String sshCredentialsId;
 
@@ -72,7 +76,7 @@ public class SSHCredentials extends AbstractDescribableImpl<SSHCredentials> impl
     }
 
     public String getHost() {
-        int colonIndex = sshServer.indexOf(':');
+        int colonIndex = sshServer.lastIndexOf(':');
         if (colonIndex >= 0) {
             return sshServer.substring(0, colonIndex);
         }
@@ -82,21 +86,14 @@ public class SSHCredentials extends AbstractDescribableImpl<SSHCredentials> impl
     public int getPort() {
         int colonIndex = sshServer.indexOf(':');
         if (colonIndex >= 0) {
-            return Integer.parseInt(sshServer.substring(colonIndex));
+            return Integer.parseInt(sshServer.substring(colonIndex + 1));
         }
         return Constants.DEFAULT_SSH_PORT;
     }
 
     @Override
-    public FilePath getConfigFilePath(FilePath workspace) throws Exception {
-        SSHClient sshClient = new SSHClient(getHost(), getPort(), getSshCredentials());
-        try (SSHClient ignore = sshClient.connect()) {
-            FilePath configFile = workspace.createTempFile(Constants.KUBECONFIG_PREFIX, "");
-            try (OutputStream out = configFile.write()) {
-                sshClient.copyFrom(Constants.KUBECONFIG_FILE, out);
-            }
-            return configFile;
-        }
+    public ClientWrapperFactory buildClientWrapperFactory() {
+        return new ClientWrapperFactoryImpl(getHost(), getPort(), getSshCredentials());
     }
 
     @Extension
@@ -121,6 +118,41 @@ public class SSHCredentials extends AbstractDescribableImpl<SSHCredentials> impl
                 return FormValidation.error(Messages.SSHCredentials_credentialsIdRequired());
             }
             return FormValidation.ok();
+        }
+    }
+
+    private static class ClientWrapperFactoryImpl implements ClientWrapperFactory {
+        private static final long serialVersionUID = 1L;
+
+        private final String host;
+        private final int port;
+        private final StandardUsernameCredentials credentials;
+
+        ClientWrapperFactoryImpl(String host, int port, StandardUsernameCredentials credentials) {
+            this.host = host;
+            this.port = port;
+            this.credentials = credentials;
+        }
+
+        @Override
+        public KubernetesClientWrapper buildClient(FilePath workspace) throws Exception {
+            FilePath kubeconfig = fetchConfig(workspace);
+            try {
+                return new KubernetesClientWrapper(kubeconfig.getRemote());
+            } finally {
+                kubeconfig.delete();
+            }
+        }
+
+        private FilePath fetchConfig(FilePath workspace) throws Exception {
+            SSHClient sshClient = new SSHClient(host, port, credentials);
+            try (SSHClient ignore = sshClient.connect()) {
+                FilePath configFile = workspace.createTempFile(Constants.KUBECONFIG_PREFIX, "");
+                try (OutputStream out = configFile.write()) {
+                    sshClient.copyFrom(Constants.KUBECONFIG_FILE, out);
+                }
+                return configFile;
+            }
         }
     }
 }

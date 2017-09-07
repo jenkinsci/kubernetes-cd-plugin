@@ -7,12 +7,12 @@
 package com.microsoft.jenkins.kubernetes;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.microsoft.jenkins.kubernetes.credentials.ResolvedDockerRegistryEndpoint;
 import com.microsoft.jenkins.kubernetes.util.CommonUtils;
 import com.microsoft.jenkins.kubernetes.util.Constants;
 import com.microsoft.jenkins.kubernetes.util.DockerConfigBuilder;
 import hudson.EnvVars;
 import hudson.FilePath;
-import hudson.model.Item;
 import hudson.util.VariableResolver;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Job;
@@ -32,7 +32,6 @@ import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.apache.commons.lang.StringUtils;
-import org.jenkinsci.plugins.docker.commons.credentials.DockerRegistryEndpoint;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -163,7 +162,6 @@ public class KubernetesClientWrapper {
      * <p>
      * This can be used by the Pods later to pull images from the private container registry.
      *
-     * @param context             the current job context, generally this should be {@code getRun().getParent()}
      * @param kubernetesNamespace The namespace in which the Secret should be created / updated
      * @param secretName          The name of the Secret
      * @param credentials         All the configured credentials
@@ -173,14 +171,13 @@ public class KubernetesClientWrapper {
      * </a>
      */
     public void createOrReplaceSecrets(
-            Item context,
             String kubernetesNamespace,
             String secretName,
-            List<DockerRegistryEndpoint> credentials) throws IOException {
+            List<ResolvedDockerRegistryEndpoint> credentials) throws IOException {
         log(Messages.KubernetesClientWrapper_prepareSecretsWithName(secretName));
 
         DockerConfigBuilder dockerConfigBuilder = new DockerConfigBuilder(credentials);
-        String dockercfg = dockerConfigBuilder.buildDockercfgBase64(context);
+        String dockercfg = dockerConfigBuilder.buildDockercfgBase64();
 
         Map<String, String> data = new HashMap<>();
         data.put(".dockercfg", dockercfg);

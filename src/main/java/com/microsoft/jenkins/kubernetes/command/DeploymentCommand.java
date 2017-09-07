@@ -16,72 +16,115 @@ import com.microsoft.jenkins.azurecommons.telemetry.AppInsightsUtils;
 import com.microsoft.jenkins.kubernetes.KubernetesCDPlugin;
 import com.microsoft.jenkins.kubernetes.KubernetesClientWrapper;
 import com.microsoft.jenkins.kubernetes.Messages;
+import com.microsoft.jenkins.kubernetes.credentials.ClientWrapperFactory;
+import com.microsoft.jenkins.kubernetes.credentials.ResolvedDockerRegistryEndpoint;
 import com.microsoft.jenkins.kubernetes.util.Constants;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.model.Item;
+import hudson.model.TaskListener;
 import hudson.util.VariableResolver;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import jenkins.security.MasterToSlaveCallable;
 import org.apache.commons.lang3.StringUtils;
-import org.jenkinsci.plugins.docker.commons.credentials.DockerRegistryEndpoint;
 
+import java.io.IOException;
+import java.io.Serializable;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkState;
 
-public class DeploymentCommand implements ICommand<DeploymentCommand.IDeploymentCommand> {
+/**
+ * Command to deploy Kubernetes configurations.
+ * <p>
+ * Mark it as serializable so that the inner Callable can be serialized correctly.
+ */
+public class DeploymentCommand implements ICommand<DeploymentCommand.IDeploymentCommand>, Serializable {
     @Override
     public void execute(IDeploymentCommand context) {
         JobContext jobContext = context.getJobContext();
-        FilePath workspace = jobContext.getWorkspace();
-        Item jobItem = jobContext.getRun().getParent();
-        EnvVars envVars = context.getEnvVars();
-        String secretNamespace = context.getSecretNamespace();
-        String configPaths = context.getConfigs();
 
-        KubernetesClientWrapper wrapper = null;
+        // all the final variables below are serializable, which will be captured in the below MasterToSlaveCallable
+        // and execute on the slave if the job is scheduled on slave.
+        final TaskListener taskListener = jobContext.getTaskListener();
+        final String secretNameCfg = context.getSecretName();
+        final String secretNamespace = context.getSecretNamespace();
+        final String configPaths = context.getConfigs();
+        final FilePath workspace = jobContext.getWorkspace();
+        final String defaultSecretName = jobContext.getRun().getDisplayName();
+        final EnvVars envVars = context.getEnvVars();
+        final boolean enableSubstitution = context.isEnableConfigSubstitution();
+        final ClientWrapperFactory clientFactory = context.clientFactory();
+
+        TaskResult taskResult = null;
         try {
-            checkState(StringUtils.isNotBlank(secretNamespace), Messages.DeploymentCommand_blankNamespace());
-            checkState(StringUtils.isNotBlank(configPaths), Messages.DeploymentCommand_blankConfigFiles());
+            final List<ResolvedDockerRegistryEndpoint> dockerRegistryEndpoints =
+                    context.resolveEndpoints(jobContext.getRun().getParent());
+            taskResult = workspace.act(new MasterToSlaveCallable<TaskResult, Exception>() {
+                @Override
+                public TaskResult call() throws Exception {
+                    TaskResult result = new TaskResult();
 
-            wrapper = context.buildKubernetesClientWrapper(workspace).withLogger(jobContext.logger());
+                    checkState(StringUtils.isNotBlank(secretNamespace), Messages.DeploymentCommand_blankNamespace());
+                    checkState(StringUtils.isNotBlank(configPaths), Messages.DeploymentCommand_blankConfigFiles());
 
-            FilePath[] configFiles = workspace.list(configPaths);
-            if (configFiles.length == 0) {
-                context.logError(Messages.DeploymentCommand_noMatchingConfigFiles(configPaths));
-                return;
+                    KubernetesClientWrapper wrapper =
+                            clientFactory.buildClient(workspace).withLogger(taskListener.getLogger());
+                    result.masterHost = getMasterHost(wrapper);
+
+                    FilePath[] configFiles = workspace.list(configPaths);
+                    if (configFiles.length == 0) {
+                        String message = Messages.DeploymentCommand_noMatchingConfigFiles(configPaths);
+                        taskListener.error(message);
+                        result.commandState = CommandState.HasError;
+                        throw new IllegalStateException(message);
+                    }
+
+                    if (!dockerRegistryEndpoints.isEmpty()) {
+                        String secretName =
+                                KubernetesClientWrapper.prepareSecretName(secretNameCfg, defaultSecretName, envVars);
+
+                        wrapper.createOrReplaceSecrets(secretNamespace, secretName, dockerRegistryEndpoints);
+
+                        taskListener.getLogger().println(Messages.DeploymentCommand_injectSecretName(
+                                Constants.KUBERNETES_SECRET_NAME_PROP, secretName));
+                        envVars.put(Constants.KUBERNETES_SECRET_NAME_PROP, secretName);
+                        result.extraEnvVars.put(Constants.KUBERNETES_SECRET_NAME_PROP, secretName);
+                    }
+
+                    if (enableSubstitution) {
+                        wrapper.withVariableResolver(new VariableResolver.ByMap<>(envVars));
+                    }
+
+                    wrapper.apply(configFiles);
+
+                    result.commandState = CommandState.Success;
+
+                    return result;
+                }
+            });
+            for (Map.Entry<String, String> entry : taskResult.extraEnvVars.entrySet()) {
+                EnvironmentInjector.inject(jobContext.getRun(), envVars, entry.getKey(), entry.getValue());
             }
 
-            List<DockerRegistryEndpoint> dockerCredentials = context.getDockerCredentials();
-            if (!dockerCredentials.isEmpty()) {
-                String secretName = KubernetesClientWrapper.prepareSecretName(
-                        context.getSecretName(), jobContext.getRun().getDisplayName(), envVars);
-
-                wrapper.createOrReplaceSecrets(jobItem, secretNamespace, secretName, dockerCredentials);
-
-                context.logStatus(Messages.DeploymentCommand_injectSecretName(
-                        Constants.KUBERNETES_SECRET_NAME_PROP, secretName));
-                EnvironmentInjector.inject(
-                        jobContext.getRun(), envVars, Constants.KUBERNETES_SECRET_NAME_PROP, secretName);
+            context.setCommandState(taskResult.commandState);
+            if (taskResult.commandState.isError()) {
+                KubernetesCDPlugin.sendEvent(Constants.AI_KUBERNETES, "DeployFailed",
+                        Constants.AI_K8S_MASTER, AppInsightsUtils.hash(taskResult.masterHost));
+            } else {
+                KubernetesCDPlugin.sendEvent(Constants.AI_KUBERNETES, "Deployed",
+                        Constants.AI_K8S_MASTER, AppInsightsUtils.hash(taskResult.masterHost));
             }
-
-            if (context.isEnableConfigSubstitution()) {
-                wrapper.withVariableResolver(new VariableResolver.ByMap<>(envVars));
-            }
-
-            wrapper.apply(configFiles);
-
-            context.setCommandState(CommandState.Success);
-
-            KubernetesCDPlugin.sendEvent(Constants.AI_KUBERNETES, "Deployed",
-                    Constants.AI_K8S_MASTER, AppInsightsUtils.hash(getMasterHost(wrapper)));
         } catch (Exception e) {
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
             context.logError(e);
             KubernetesCDPlugin.sendEvent(Constants.AI_KUBERNETES, "DeployFailed",
-                    Constants.AI_K8S_MASTER, AppInsightsUtils.hash(getMasterHost(wrapper)),
+                    Constants.AI_K8S_MASTER, AppInsightsUtils.hash(taskResult == null ? null : taskResult.masterHost),
                     Constants.AI_MESSAGE, e.getMessage());
         }
     }
@@ -89,22 +132,33 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
     @VisibleForTesting
     String getMasterHost(KubernetesClientWrapper wrapper) {
         if (wrapper != null) {
-            URL masterURL = wrapper.getClient().getMasterUrl();
-            if (masterURL != null) {
-                return masterURL.getHost();
+            KubernetesClient client = wrapper.getClient();
+            if (client != null) {
+                URL masterURL = client.getMasterUrl();
+                if (masterURL != null) {
+                    return masterURL.getHost();
+                }
             }
         }
         return "Unknown";
     }
 
+    public static class TaskResult implements Serializable {
+        private static final long serialVersionUID = 1L;
+
+        private CommandState commandState = CommandState.Unknown;
+        private String masterHost;
+        private final Map<String, String> extraEnvVars = new HashMap<>();
+    }
+
     public interface IDeploymentCommand extends IBaseCommandData {
-        KubernetesClientWrapper buildKubernetesClientWrapper(FilePath workspace) throws Exception;
+        ClientWrapperFactory clientFactory();
 
         String getSecretNamespace();
 
         String getSecretName();
 
-        List<DockerRegistryEndpoint> getDockerCredentials();
+        List<ResolvedDockerRegistryEndpoint> resolveEndpoints(Item context) throws IOException;
 
         String getConfigs();
 

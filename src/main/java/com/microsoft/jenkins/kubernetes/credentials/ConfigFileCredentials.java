@@ -6,6 +6,7 @@
 
 package com.microsoft.jenkins.kubernetes.credentials;
 
+import com.microsoft.jenkins.kubernetes.KubernetesClientWrapper;
 import com.microsoft.jenkins.kubernetes.Messages;
 import hudson.Extension;
 import hudson.FilePath;
@@ -19,7 +20,8 @@ import org.kohsuke.stapler.QueryParameter;
 
 public class ConfigFileCredentials
         extends AbstractDescribableImpl<ConfigFileCredentials>
-        implements ConfigFileProvider {
+        implements ClientWrapperFactory.Builder {
+
     private String path;
 
     @DataBoundConstructor
@@ -36,8 +38,8 @@ public class ConfigFileCredentials
     }
 
     @Override
-    public FilePath getConfigFilePath(FilePath workspace) {
-        return workspace.child(path);
+    public ClientWrapperFactory buildClientWrapperFactory() {
+        return new ClientWrapperFactoryImpl(getPath());
     }
 
     @Extension
@@ -47,6 +49,26 @@ public class ConfigFileCredentials
                 return FormValidation.error(Messages.ConfigFileCredentials_pathRequired());
             }
             return FormValidation.ok();
+        }
+    }
+
+    private static class ClientWrapperFactoryImpl implements ClientWrapperFactory {
+        private static final long serialVersionUID = 1L;
+
+        private final String configFilePath;
+
+        ClientWrapperFactoryImpl(String configFilePath) {
+            this.configFilePath = configFilePath;
+        }
+
+        @Override
+        public KubernetesClientWrapper buildClient(FilePath workspace) throws Exception {
+            FilePath configFile = workspace.child(configFilePath);
+            if (!configFile.exists()) {
+                throw new IllegalArgumentException(
+                        Messages.ConfigFileCredentials_configFileNotFound(configFilePath, workspace));
+            }
+            return new KubernetesClientWrapper(configFile.getRemote());
         }
     }
 }
