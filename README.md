@@ -1,4 +1,4 @@
-# Kubernetes Continuous Deployment Plugin
+# Kubernetes Continuous Deploy Plugin
 
 A Jenkins plugin to deploy resource configurations to a Kubernetes cluster.
 
@@ -179,3 +179,9 @@ The parameters can be divided into the following groups, which you may configure
    * `secretNamespace` will be `default` if omitted.
    * A unique `secretName` will be generated if omitted, and you need to reference it with variable 
       `$KUBERNETES_SECRET_NAME` in your resource configurations.
+
+## Data/Telemetry
+
+Kubernetes Continuous Deploy Plugin collects usage data and sends it to Microsoft to help improve our products and services. Read our [privacy statement](http://go.microsoft.com/fwlink/?LinkId=521839) to learn more.
+
+You can turn off usage data collection in Manage Jenkins -> Configure System -> Azure -> Help make Azure Jenkins plugins better by sending anonymous usage statistics to Azure Application Insights.
