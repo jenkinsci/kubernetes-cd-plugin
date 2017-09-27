@@ -155,6 +155,7 @@
                         okhttp3.
                         okio.
                         com.google.common.base.
+                        com.fasterxml.jackson.
                     </maskClasses>
                 </configuration>
             </plugin>
