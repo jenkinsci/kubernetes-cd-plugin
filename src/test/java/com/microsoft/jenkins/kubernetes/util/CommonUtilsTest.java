@@ -12,6 +12,7 @@ import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Random;
@@ -26,6 +27,7 @@ import static org.junit.Assert.fail;
 public class CommonUtilsTest {
     @Test
     public void testReplaceMacro() throws Exception {
+        testReplaceMacro("abcd", "abcd", null);
         testReplaceMacro("", "", ImmutableMap.<String, String>of());
         testReplaceMacro("$a", "$a", ImmutableMap.<String, String>of());
         testReplaceMacro("", "", ImmutableMap.of("a", "b"));
@@ -36,8 +38,28 @@ public class CommonUtilsTest {
 
     private void testReplaceMacro(String expected, String original, Map<String, String> variables) throws Exception {
         ByteArrayInputStream in = new ByteArrayInputStream(original.getBytes(Constants.DEFAULT_CHARSET));
-        InputStream result = CommonUtils.replaceMacro(in, new VariableResolver.ByMap<>(variables));
+        InputStream result = CommonUtils.replaceMacro(in, variables == null ? null : new VariableResolver.ByMap<>(variables));
         assertEquals(expected, IOUtils.toString(result, Constants.DEFAULT_CHARSET));
+    }
+
+    @Test
+    public void testFilestream() throws Exception {
+        InputStream in = CommonUtilsTest.class.getResourceAsStream("CommonUtilsTest.data");
+        try {
+            assertEquals("${name}", IOUtils.toString(CommonUtils.replaceMacro(in, null)));
+        } finally {
+            if (in != null) {
+                in.close();
+            }
+        }
+        in = CommonUtils.class.getResourceAsStream("CommonUtilsTest.data");
+        try {
+            assertEquals("Common", IOUtils.toString(CommonUtils.replaceMacro(in, new VariableResolver.ByMap<String>(ImmutableMap.of("name", "Common")))));
+        } finally {
+            if (in != null) {
+                in.close();
+            }
+        }
     }
 
     @Test

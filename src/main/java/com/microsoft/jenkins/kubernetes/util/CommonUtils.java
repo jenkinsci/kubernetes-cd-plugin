@@ -51,10 +51,10 @@ public final class CommonUtils {
      */
     public static InputStream replaceMacro(InputStream original,
                                            VariableResolver<String> variableResolver) throws IOException {
+        if (variableResolver == null) {
+            return original;
+        }
         try {
-            if (variableResolver == null) {
-                return original;
-            }
             String content = IOUtils.toString(original, Constants.DEFAULT_CHARSET);
             content = Util.replaceMacro(content, variableResolver);
             if (content != null) {
