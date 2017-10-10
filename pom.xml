@@ -133,19 +133,6 @@
     </dependencies>
 
     <build>
-        <resources>
-            <resource>
-                <directory>${project.basedir}</directory>
-                <includes>
-                    <include>RuntimeLicenses/License.txt</include>
-                    <include>RuntimeLicenses/ThirdPartyNotices.txt</include>
-                    <include>LICENSE</include>
-                </includes>
-            </resource>
-            <resource>
-                <directory>src/main/resources</directory>
-            </resource>
-        </resources>
         <plugins>
             <plugin>
                 <groupId>org.jenkins-ci.tools</groupId>
