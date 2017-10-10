@@ -1,5 +1,8 @@
 # Kubernetes Continuous Deploy Plugin Changelog
 
+## Version 0.1.3, 2017-10-10
+* Remove EULA
+
 ## Version 0.1.2, 2017-09-29
 * Fixed a stream closed issue when variable substitution is disabled
 
