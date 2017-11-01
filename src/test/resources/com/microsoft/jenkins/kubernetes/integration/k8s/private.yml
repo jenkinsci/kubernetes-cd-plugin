@@ -1,0 +1,18 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: private-test
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: private-test
+    spec:
+      containers:
+      - name: private-test-container
+        image: $KUBERNETES_CD_DOCKER_REPOSITORY/$IMAGE_NAME
+        ports:
+        - containerPort: 80
+      imagePullSecrets:
+      - name: $KUBERNETES_SECRET_NAME
