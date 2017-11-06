@@ -7,13 +7,15 @@ In the project root directory, run the following command and pass in the service
     bash src/test/java/com/microsoft/jenkins/kubernetes/integration/integration-test.sh
 
     Prerequisites:
-        * Logged in Azure CLI
         * kubectl in PATH
+        * Logged in Azure CLI, if either Kubernetes cluster or docker repository information is not provided
 
-It will create a resource group, create ACS with Kubernetes as orchestrator, together with an ACR
-instance in the resource group, and then start the tests. When the tests finishes, it will clean up the resource group created.
+If either Kubernetes cluster or docker repository is not provided, the script will create a resource group,
+and then provision ACS with Kubernetes orchestrator and ACR on demand. When the tests finishes, 
+it will clean up the resource group created.
 
 To simply the clean up process, all the resources will be created in the same resource group.
+
 You can also pass in the existing Kubernetes master host and docker registry information and the script will reuse existing one.
 If the resource group isn't created by the script, it will not be deleted after the tests.
 EOF
@@ -26,11 +28,6 @@ fi
 
 if ! which kubectl; then
     echo "kubectl is not present in \$PATH" >&2
-    exit -1
-fi
-
-if ! az account show; then
-    echo "Azure CLI is not logged in" >&2
     exit -1
 fi
 
@@ -99,24 +96,31 @@ post_clean_up() {
     done
     set -x
 
+    # clean up temporary directory
     if [[ -d "$temp_config_dir" ]]; then
         echo "Clean up temporary directory $temp_config_dir"
         rm -rf -- "$temp_config_dir"
     fi
 
-    if [[ -n "$resource_group" ]]; then
-        echo "Clean up resource group $resource_group"
-        az group delete --yes --no-wait --name "$resource_group"
+    # clean up Azure resources if not explicitly skipped
+    if [[ "$SKIP_CLEAN" != "true" ]]; then
+        if [[ -n "$resource_group" ]]; then
+            echo "Clean up resource group $resource_group"
+            az group delete --yes --no-wait --name "$resource_group"
+        fi
     fi
 }
 
-if [[ -n "$resource_group" ]]; then
-    az group create --name "$resource_group" --location SoutheastAsia
+echo "Registering the clean up process..."
+post_clean_up & disown
 
-    if [[ "$SKIP_CLEAN" != "true" ]]; then
-        echo "Registering the clean up process..."
-        post_clean_up & disown
+if [[ -n "$resource_group" ]]; then
+    if ! az account show; then
+        echo "Azure CLI is not logged in" >&2
+        exit -1
     fi
+
+    az group create --name "$resource_group" --location SoutheastAsia
 
     if [[ -z "$KUBERNETES_CD_MASTER_HOST" ]]; then
         k8s_name="k8s-$suffix"
