@@ -48,7 +48,13 @@ while [[ $# -gt 0 ]]; do
             shift; shift
             ;;
         -k|--ssh-key-file)
+            # private key to login to the Kubernetes master node
             export KUBERNETES_CD_KEY_PATH="$2"
+            shift; shift
+            ;;
+        --ssh-pubkey-file)
+            # public key to provision ACS Kubernetes on demand
+            export KUBERNETES_CD_PUBLIC_KEY_PATH="$2"
             shift; shift
             ;;
         --docker-registry)
@@ -76,6 +82,18 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+if [[ -z "$KUBERNETES_CD_KEY_PATH" ]]; then
+    export KUBERNETES_CD_KEY_PATH="$(readlink -f ~/.ssh/id_rsa)"
+fi
+if [[ ! -f "$KUBERNETES_CD_KEY_PATH" ]]; then
+    echo "Private key was not specified to authenticate with Kubernetes master node" >&2
+    exit 1
+fi
+
+if [[ -z "$KUBERNETES_CD_ADMIN_USER" ]]; then
+    export KUBERNETES_CD_ADMIN_USER=azureuser
+fi
 
 # common suffix for the names
 suffix=$(xxd -p -l 4 /dev/urandom)
@@ -120,11 +138,15 @@ if [[ -n "$resource_group" ]]; then
         exit -1
     fi
 
+
     az group create --name "$resource_group" --location SoutheastAsia
 
     if [[ -z "$KUBERNETES_CD_MASTER_HOST" ]]; then
+        if [[ -z "$KUBERNETES_CD_PUBLIC_KEY_PATH" ]]; then
+            export KUBERNETES_CD_PUBLIC_KEY_PATH="$(readlink -f ~/.ssh/id_rsa.pub)"
+        fi
         k8s_name="k8s-$suffix"
-        az acs create --orchestrator-type kubernetes --resource-group "$resource_group" --name "$k8s_name" --agent-count 2 &
+        az acs create --orchestrator-type kubernetes --resource-group "$resource_group" --name "$k8s_name" --agent-count 2 --ssh-key-value "$KUBERNETES_CD_PUBLIC_KEY_PATH" &
         k8s_pid=$!
     fi
 
@@ -157,7 +179,7 @@ if [[ -n "$resource_group" ]]; then
         echo -n "Fetch the ACS Kubernetes credentials to $tmpfile "
         k8s_ready=0
         for i in $(seq 60); do
-            if az acs kubernetes get-credentials --resource-group "$resource_group" --name "$k8s_name" --file "$tmpfile" >/dev/null 2>&1; then
+            if az acs kubernetes get-credentials --resource-group "$resource_group" --name "$k8s_name" --file "$tmpfile" --ssh-key-file="$KUBERNETES_CD_KEY_PATH" >/dev/null 2>&1; then
                 if [[ -s $tmpfile ]]; then
                     k8s_ready=1
                     break
