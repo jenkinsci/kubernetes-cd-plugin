@@ -208,7 +208,7 @@ public class KubernetesClientWrapper {
         try {
             System.setProperty(Config.KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY, "true");
             System.setProperty(Config.KUBERNETES_KUBECONFIG_FILE, filePath);
-            return Config.autoConfigure();
+            return Config.autoConfigure(null);
         } finally {
             if (originalFile == null) {
                 System.clearProperty(Config.KUBERNETES_KUBECONFIG_FILE);
