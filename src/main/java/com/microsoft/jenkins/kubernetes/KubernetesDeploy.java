@@ -6,6 +6,7 @@
 
 package com.microsoft.jenkins.kubernetes;
 
+import hudson.AbortException;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -41,9 +42,8 @@ public class KubernetesDeploy extends Builder implements SimpleBuildStep {
         this.context.executeCommands();
 
         if (context.getLastCommandState().isError()) {
-            listener.getLogger().println(
-                    Messages.KubernetesDeploy_endWithErrorState(context.getCommandState()));
             run.setResult(Result.FAILURE);
+            throw new AbortException(Messages.KubernetesDeploy_endWithErrorState(context.getCommandState()));
         } else {
             listener.getLogger().println(Messages.KubernetesDeploy_finished());
         }
