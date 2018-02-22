@@ -1,5 +1,9 @@
 # Kubernetes Continuous Deploy Plugin Changelog
 
+## Version 0.1.5, 2018-02-22
+* Abort build on error (JENKINS-48662 / #12)
+* Update Kubernetes Client to 3.1.7
+
 ## Version 0.1.4, 2017-11-07
 * Fix master node SSH password login on Jenkins slave
 * Add Third Party Notice
