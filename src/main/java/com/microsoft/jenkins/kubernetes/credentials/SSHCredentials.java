@@ -35,6 +35,10 @@ import org.kohsuke.stapler.QueryParameter;
 import java.io.OutputStream;
 import java.util.Collections;
 
+/**
+ * @deprecated Use {@link KubeconfigCredentials}.
+ */
+@Deprecated
 public class SSHCredentials
         extends AbstractDescribableImpl<SSHCredentials>
         implements ClientWrapperFactory.Builder {

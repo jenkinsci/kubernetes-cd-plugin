@@ -4,30 +4,42 @@
   ~ Licensed under the MIT License. See License.txt in the project root for
   ~ license information.
   -->
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:f="/lib/form">
-    <f:entry title="${%credentialsType_title}" field="credentialsType">
-        <f:select/>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
+    <f:entry title="${%kubeconfig_title}" field="kubeconfig">
+        <c:select expressionAllowed="false" />
     </f:entry>
 
-    <f:entry>
-        <table style="width:100%" data-field="kubeConfig">
-            <f:property field="kubeConfig">
-                <st:include page="config.jelly" class="${descriptor.clazz}"/>
-            </f:property>
-        </table>
+    <f:advanced title="Deprecated Kubeconfig Settings">
+        <f:entry>
+            The following <b>${%credentialsType_title}</b> is left only for backward compatibility with
+            the legacy version, and will be removed completely in future versions. <br />
+            Please use the above Kubeconfig stored in Jenkins system instead.
+        </f:entry>
 
-        <table style="width:100%" data-field="ssh">
-            <f:property field="ssh">
-                <st:include page="config.jelly" class="${descriptor.clazz}"/>
-            </f:property>
-        </table>
+        <f:entry title="${%credentialsType_title}" field="credentialsType">
+            <f:select/>
+        </f:entry>
 
-        <table style="width:100%" data-field="textCredentials">
-            <f:property field="textCredentials">
-                <st:include page="config.jelly" class="${descriptor.clazz}"/>
-            </f:property>
-        </table>
-    </f:entry>
+        <f:entry>
+            <table style="width:100%" data-field="kubeConfig">
+                <f:property field="kubeConfig">
+                    <st:include page="config.jelly" class="${descriptor.clazz}"/>
+                </f:property>
+            </table>
+
+            <table style="width:100%" data-field="ssh">
+                <f:property field="ssh">
+                    <st:include page="config.jelly" class="${descriptor.clazz}"/>
+                </f:property>
+            </table>
+
+            <table style="width:100%" data-field="textCredentials">
+                <f:property field="textCredentials">
+                    <st:include page="config.jelly" class="${descriptor.clazz}"/>
+                </f:property>
+            </table>
+        </f:entry>
+    </f:advanced>
 
     <f:entry title="${%configs_title}" field="configs">
         <f:textbox/>

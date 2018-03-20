@@ -6,10 +6,14 @@
 
 package com.microsoft.jenkins.kubernetes.credentials;
 
+/**
+ * @deprecated Use {@link KubeconfigCredentials}.
+ */
+@Deprecated
 public enum KubernetesCredentialsType {
-    KubeConfig("Authenticate with kubeconfig file in workspace"),
-    SSH("Fetch cluster details through SSH connection to the master node"),
-    Text("Fill credentials details directly");
+    KubeConfig("DEPRECATED - Authenticate with kubeconfig file in workspace"),
+    SSH("DEPRECATED - Fetch cluster details through SSH connection to the master node"),
+    Text("DEPRECATED - Fill credentials details directly");
 
     public static final KubernetesCredentialsType DEFAULT = KubeConfig;
 

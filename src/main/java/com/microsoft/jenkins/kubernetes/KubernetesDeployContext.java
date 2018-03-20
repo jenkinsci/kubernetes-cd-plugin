@@ -6,6 +6,10 @@
 
 package com.microsoft.jenkins.kubernetes;
 
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.google.common.collect.ImmutableList;
 import com.microsoft.jenkins.azurecommons.JobContext;
 import com.microsoft.jenkins.azurecommons.command.BaseCommandContext;
@@ -17,6 +21,7 @@ import com.microsoft.jenkins.azurecommons.remote.SSHClient;
 import com.microsoft.jenkins.kubernetes.command.DeploymentCommand;
 import com.microsoft.jenkins.kubernetes.credentials.ClientWrapperFactory;
 import com.microsoft.jenkins.kubernetes.credentials.ConfigFileCredentials;
+import com.microsoft.jenkins.kubernetes.credentials.KubeconfigCredentials;
 import com.microsoft.jenkins.kubernetes.credentials.KubernetesCredentialsType;
 import com.microsoft.jenkins.kubernetes.credentials.ResolvedDockerRegistryEndpoint;
 import com.microsoft.jenkins.kubernetes.credentials.SSHCredentials;
@@ -28,14 +33,17 @@ import hudson.Launcher;
 import hudson.model.Item;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import hudson.security.ACL;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import jenkins.model.Jenkins;
 import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.plugins.docker.commons.credentials.DockerRegistryEndpoint;
 import org.jenkinsci.plugins.docker.commons.credentials.DockerRegistryToken;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
 import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
 import org.jenkinsci.plugins.workflow.steps.StepExecution;
+import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
@@ -43,11 +51,14 @@ import org.kohsuke.stapler.QueryParameter;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 public class KubernetesDeployContext extends BaseCommandContext implements
         DeploymentCommand.IDeploymentCommand {
+
+    private String kubeconfig;
 
     private String credentialsType;
     private SSHCredentials ssh;
@@ -81,6 +92,16 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         super.configure(jobContext, commandService);
     }
 
+    public String getKubeconfig() {
+        return kubeconfig;
+    }
+
+    @DataBoundSetter
+    public void setKubeconfig(String kubeconfig) {
+        this.kubeconfig = kubeconfig;
+    }
+
+    @Deprecated
     public String getCredentialsType() {
         if (StringUtils.isEmpty(credentialsType)) {
             return KubernetesCredentialsType.DEFAULT.name();
@@ -88,37 +109,45 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         return credentialsType;
     }
 
+    @Deprecated
     public KubernetesCredentialsType getCredentialsTypeEnum() {
         return KubernetesCredentialsType.fromString(getCredentialsType());
     }
 
     @DataBoundSetter
+    @Deprecated
     public void setCredentialsType(String credentialsType) {
         this.credentialsType = StringUtils.trimToEmpty(credentialsType);
     }
 
+    @Deprecated
     public SSHCredentials getSsh() {
         return ssh;
     }
 
+    @Deprecated
     @DataBoundSetter
     public void setSsh(SSHCredentials ssh) {
         this.ssh = ssh;
     }
 
+    @Deprecated
     public ConfigFileCredentials getKubeConfig() {
         return kubeConfig;
     }
 
+    @Deprecated
     @DataBoundSetter
     public void setKubeConfig(ConfigFileCredentials kubeConfig) {
         this.kubeConfig = kubeConfig;
     }
 
+    @Deprecated
     public TextCredentials getTextCredentials() {
         return textCredentials;
     }
 
+    @Deprecated
     @DataBoundSetter
     public void setTextCredentials(TextCredentials textCredentials) {
         this.textCredentials = textCredentials;
@@ -216,6 +245,22 @@ public class KubernetesDeployContext extends BaseCommandContext implements
 
     @Override
     public ClientWrapperFactory clientFactory() {
+        final String config = getKubeconfig();
+        if (StringUtils.isNotBlank(config)) {
+            final KubeconfigCredentials credentials = CredentialsMatchers.firstOrNull(
+                    CredentialsProvider.lookupCredentials(
+                            KubeconfigCredentials.class,
+                            Jenkins.getInstance(),
+                            ACL.SYSTEM,
+                            Collections.<DomainRequirement>emptyList()),
+                    CredentialsMatchers.withId(config));
+            if (credentials == null) {
+                throw new IllegalArgumentException("Cannot find kubeconfig credentials with id " + config);
+            }
+            return new ClientWrapperFactoryImpl(credentials);
+        }
+
+        // Fallback to the legacy handling
         switch (getCredentialsTypeEnum()) {
             case SSH:
                 return getSsh().buildClientWrapperFactory();
@@ -246,6 +291,13 @@ public class KubernetesDeployContext extends BaseCommandContext implements
             for (KubernetesCredentialsType type : KubernetesCredentialsType.values()) {
                 model.add(type.title(), type.name());
             }
+            return model;
+        }
+
+        public ListBoxModel doFillKubeconfigItems(@AncestorInPath Item owner) {
+            StandardListBoxModel model = new StandardListBoxModel();
+            model.includeEmptyValue();
+            model.includeAs(ACL.SYSTEM, owner, KubeconfigCredentials.class);
             return model;
         }
 
@@ -350,6 +402,19 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         @Override
         public java.lang.String getDisplayName() {
             return Messages.pluginDisplayName();
+        }
+    }
+
+    private static class ClientWrapperFactoryImpl implements ClientWrapperFactory {
+        private final KubeconfigCredentials kubeconfig;
+
+        ClientWrapperFactoryImpl(KubeconfigCredentials kubeconfig) {
+            this.kubeconfig = kubeconfig;
+        }
+
+        @Override
+        public KubernetesClientWrapper buildClient(FilePath workspace) {
+            return new KubernetesClientWrapper(kubeconfig.getContent());
         }
     }
 }
