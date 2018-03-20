@@ -44,36 +44,6 @@ public class TextCredentialsTest {
     }
 
     @Test
-    public void testDescriptorCheckCertificateAuthorityData() {
-        TextCredentials.DescriptorImpl descriptor = new TextCredentials.DescriptorImpl();
-
-        assertEquals(FormValidation.ok(), descriptor.doCheckCertificateAuthorityData("ABCD"));
-        assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckCertificateAuthorityData(null).kind);
-        assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckCertificateAuthorityData("").kind);
-        assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckCertificateAuthorityData("  ").kind);
-    }
-
-    @Test
-    public void testDescriptorClientCertificateData() {
-        TextCredentials.DescriptorImpl descriptor = new TextCredentials.DescriptorImpl();
-
-        assertEquals(FormValidation.ok(), descriptor.doCheckClientCertificateData("ABCD"));
-        assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckClientCertificateData(null).kind);
-        assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckClientCertificateData("").kind);
-        assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckClientCertificateData("  ").kind);
-    }
-
-    @Test
-    public void testDescriptorCheckClientKeyData() {
-        TextCredentials.DescriptorImpl descriptor = new TextCredentials.DescriptorImpl();
-
-        assertEquals(FormValidation.ok(), descriptor.doCheckClientKeyData("ABCD"));
-        assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckClientKeyData(null).kind);
-        assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckClientKeyData("").kind);
-        assertEquals(FormValidation.Kind.ERROR, descriptor.doCheckClientKeyData("  ").kind);
-    }
-
-    @Test
     public void testDescriptorDefaultServerUrl() {
         TextCredentials.DescriptorImpl descriptor = new TextCredentials.DescriptorImpl();
 

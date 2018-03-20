@@ -16,6 +16,7 @@ import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
 import com.microsoft.jenkins.azurecommons.remote.SSHClient;
 import com.microsoft.jenkins.kubernetes.util.Constants;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
@@ -102,6 +103,7 @@ public class KubeconfigCredentials extends BaseStandardCredentials implements St
             return "Kubernetes configuration (kubeconfig)";
         }
 
+        @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
         public DescriptorExtensionList<KubeconfigSource, Descriptor<KubeconfigSource>> getKubeconfigSources() {
             return Jenkins.getInstance().getDescriptorList(KubeconfigSource.class);
         }
@@ -279,7 +281,7 @@ public class KubeconfigCredentials extends BaseStandardCredentials implements St
                 try (SSHClient connected = sshClient.connect()) {
                     try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
                         connected.copyFrom(Constants.KUBECONFIG_FILE, out);
-                        return out.toString();
+                        return out.toString(Constants.DEFAULT_CHARSET);
                     }
                 }
             } catch (Exception ex) {

@@ -26,26 +26,6 @@ import static org.junit.Assert.fail;
  */
 public class KubernetesClientWrapperTest {
     @Test
-    public void testKubeconfigFromFile() throws Exception {
-        File file = File.createTempFile("kubeconfig-", ".tmp");
-        try {
-            try (OutputStream out = new FileOutputStream(file);
-                 InputStream in = KubernetesClientWrapperTest.class.getResourceAsStream("kubeconfig.yml")) {
-                IOUtils.copy(in, out);
-            }
-
-            Config config = KubernetesClientWrapper.kubeConfigFromFile(file.getAbsolutePath());
-            assertEquals("v1", config.getApiVersion());
-            assertEquals("https://example.com/", config.getMasterUrl());
-            assertEquals("test-certificate-authority-data", config.getCaCertData());
-            assertEquals("test-client-certificate-data", config.getClientCertData());
-            assertEquals("test-client-key-data", config.getClientKeyData());
-        } finally {
-            assertTrue(file.delete());
-        }
-    }
-
-    @Test
     public void testPrepareSecretName() throws Exception {
         final int lengthLimit = Constants.KUBERNETES_NAME_LENGTH_LIMIT;
         assertEquals("ab", KubernetesClientWrapper.prepareSecretName("$var", "abc", new EnvVars("var", "ab")));
