@@ -5,7 +5,7 @@
   ~ license information.
   -->
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
-    <f:entry title="${%kubeconfig_title}" field="kubeconfig">
+    <f:entry title="${%kubeconfigId_title}" field="kubeconfigId">
         <c:select expressionAllowed="false" />
     </f:entry>
 

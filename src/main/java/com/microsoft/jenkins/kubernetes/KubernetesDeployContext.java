@@ -58,7 +58,7 @@ import java.util.Set;
 public class KubernetesDeployContext extends BaseCommandContext implements
         DeploymentCommand.IDeploymentCommand {
 
-    private String kubeconfig;
+    private String kubeconfigId;
 
     private String credentialsType;
     private SSHCredentials ssh;
@@ -92,13 +92,13 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         super.configure(jobContext, commandService);
     }
 
-    public String getKubeconfig() {
-        return kubeconfig;
+    public String getKubeconfigId() {
+        return kubeconfigId;
     }
 
     @DataBoundSetter
-    public void setKubeconfig(String kubeconfig) {
-        this.kubeconfig = kubeconfig;
+    public void setKubeconfigId(String kubeconfigId) {
+        this.kubeconfigId = kubeconfigId;
     }
 
     @Deprecated
@@ -245,17 +245,17 @@ public class KubernetesDeployContext extends BaseCommandContext implements
 
     @Override
     public ClientWrapperFactory clientFactory() {
-        final String config = getKubeconfig();
-        if (StringUtils.isNotBlank(config)) {
+        final String configId = getKubeconfigId();
+        if (StringUtils.isNotBlank(configId)) {
             final KubeconfigCredentials credentials = CredentialsMatchers.firstOrNull(
                     CredentialsProvider.lookupCredentials(
                             KubeconfigCredentials.class,
                             Jenkins.getInstance(),
                             ACL.SYSTEM,
                             Collections.<DomainRequirement>emptyList()),
-                    CredentialsMatchers.withId(config));
+                    CredentialsMatchers.withId(configId));
             if (credentials == null) {
-                throw new IllegalArgumentException("Cannot find kubeconfig credentials with id " + config);
+                throw new IllegalArgumentException("Cannot find kubeconfig credentials with id " + configId);
             }
             return new ClientWrapperFactoryImpl(credentials);
         }
@@ -294,7 +294,7 @@ public class KubernetesDeployContext extends BaseCommandContext implements
             return model;
         }
 
-        public ListBoxModel doFillKubeconfigItems(@AncestorInPath Item owner) {
+        public ListBoxModel doFillKubeconfigIdItems(@AncestorInPath Item owner) {
             StandardListBoxModel model = new StandardListBoxModel();
             model.includeEmptyValue();
             model.includeAs(ACL.SYSTEM, owner, KubeconfigCredentials.class);

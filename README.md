@@ -98,7 +98,7 @@ interface for the plugin. After filling the entries and click "Generate Pipeline
 sample scripts which can be used in your Pipeline definition.
 
 ```groovy
-kubernetesDeploy(kubeconfig: 'kubeconfig-credentials-id',                 // REQUIRED
+kubernetesDeploy(kubeconfigId: 'kubeconfig-credentials-id',               // REQUIRED
 
                  configs: '<ant-glob-pattern-for-resource-config-paths>', // REQUIRED
                  enableConfigSubstitution: false,
