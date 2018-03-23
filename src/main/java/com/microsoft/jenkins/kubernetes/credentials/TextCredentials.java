@@ -19,6 +19,10 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
+/**
+ * @deprecated Use {@link KubeconfigCredentials}.
+ */
+@Deprecated
 public class TextCredentials extends AbstractDescribableImpl<TextCredentials> implements ClientWrapperFactory.Builder {
     private String serverUrl;
     private String certificateAuthorityData;
@@ -81,27 +85,6 @@ public class TextCredentials extends AbstractDescribableImpl<TextCredentials> im
             }
             if (!value.startsWith(Constants.HTTPS_PREFIX)) {
                 return FormValidation.error(Messages.TextCredentials_serverUrlShouldBeHttps());
-            }
-            return FormValidation.ok();
-        }
-
-        public FormValidation doCheckCertificateAuthorityData(@QueryParameter String value) {
-            if (StringUtils.isBlank(value)) {
-                return FormValidation.error(Messages.TextCredentials_certificateAuthorityDataRequired());
-            }
-            return FormValidation.ok();
-        }
-
-        public FormValidation doCheckClientCertificateData(@QueryParameter String value) {
-            if (StringUtils.isBlank(value)) {
-                return FormValidation.error(Messages.TextCredentials_clientCertificateDataRequired());
-            }
-            return FormValidation.ok();
-        }
-
-        public FormValidation doCheckClientKeyData(@QueryParameter String value) {
-            if (StringUtils.isBlank(value)) {
-                return FormValidation.error(Messages.TextCredentials_clientKeyDataRequired());
             }
             return FormValidation.ok();
         }

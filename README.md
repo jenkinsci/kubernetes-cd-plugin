@@ -21,13 +21,14 @@ It provides the following features:
 1. Within the Jenkins dashboard, select a Job and then select Configure
 1. Scroll down and click the "Add build step" dropdown
 1. Select "Deploy to Kubernetes"
-1. Select how you would provide the "Kubernetes Cluster Credentials", i.e., [**kubeconfig**](https://kubernetes.io/docs/tasks/access-application-cluster/authenticate-across-clusters-kubeconfig/).
-   This may be either one of
-   * Authenticate with kubeconfig file in workspace. Fill in the path to the `kubeconfig` file available in 
-      the Jenkins workspace.
-   * Fetch cluster details through SSH connection to the master node. Fill in the SSH credentials to the master node,
-       and the plugin will pull the **kubeconfig** from `~/.kube/config` from the master node.
-   * Fill credentials details directly. Manually copy / paste the contents from existing **kubeconfig**.
+1. In the "Kubeconfig" dropdown, select the [**kubeconfig**](https://kubernetes.io/docs/tasks/access-application-cluster/authenticate-across-clusters-kubeconfig/)
+   stored in Jenkins. You can click the "Add" button on the right to add new kubeconfig (Kind: `Kubernetes configuration (kubeconfig)`).
+   
+   You can choose one of the following methods to provide the kubeconfig details:
+   
+   * Enter the kubeconfig content directly
+   * Set the path to the kubeconfig on the Jenkins master
+   * Fetch the kubeconfig from a remote SSH server
 1. Fill in the "Config Files" with the configuration file paths. Split multiple entries with comma (`,`). 
    [Ant glob syntax](https://ant.apache.org/manual/dirtasks.html#patterns) is supported for path patterns.
 1. By checking "Enable Variable Substitution in Config", the variables (in the form of `$VARIABLE` or `${VARIABLE})
@@ -97,60 +98,26 @@ interface for the plugin. After filling the entries and click "Generate Pipeline
 sample scripts which can be used in your Pipeline definition.
 
 ```groovy
-kubernetesDeploy(
-        credentialsType: 'KubeConfig',
-        kubeConfig: [path: '<path-to-the-kubeconfig-in-the-workspace>'],
+kubernetesDeploy(kubeconfigId: 'kubeconfig-credentials-id',               // REQUIRED
 
-        configs: '<ant-glob-pattern-for-resource-config-paths>',
-        enableConfigSubstitution: false,
+                 configs: '<ant-glob-pattern-for-resource-config-paths>', // REQUIRED
+                 enableConfigSubstitution: false,
         
-        secretNamespace: '<secret-namespace>',
-        secretName: '<secret-name>',
-        dockerCredentials: [
-                [credentialsId: '<credentials-id-for-docker-hub>'],
-                [credentialsId: '<credentials-id-for-other-private-registry>', server: '<registry-url>'],
-        ],
+                 secretNamespace: '<secret-namespace>',
+                 secretName: '<secret-name>',
+                 dockerCredentials: [
+                        [credentialsId: '<credentials-id-for-docker-hub>'],
+                        [credentialsId: '<credentials-id-for-other-private-registry>', server: '<registry-url>'],
+                 ]
 )
 ```
 
 The parameters can be divided into the following groups, which you may configure as required.
 
-* Kuberntes Cluster Credentials
+* Kubeconfig
 
-   The `credentialsType` identifies the source you selected. You may choose one of the following types:
-   
-   * Authenticate with kubeconfig file in workspace
-   
-      ```groovy
-      kubernetesDeploy(
-              credentialsType: 'KubeConfig',
-              kubeConfig: [path: '<path-to-the-kubeconfig-in-the-workspace>'],
-              ...
-      )
-      ```
-   * Fetch cluster details through SSH connection to the master node
-   
-      ```groovy
-      kubernetesDeploy(
-              credentialsType: 'SSH',
-              ssh: [sshCredentialsId: '<credential-id>', sshServer: '<server-address>'],
-              ...
-      )
-      ```
-   * Fill credentials details directly
-   
-      ```groovy
-      kubernetesDeploy(
-              credentialsType: 'Text',
-              textCredentials: [
-                  serverUrl: '<server-url>',
-                  certificateAuthorityData: '<certificate-authority-data>',
-                  clientCertificateData: '<client-certificate-data>',
-                  clientKeyData: '<client-key-data>',
-              ],
-              ...
-      )
-      ```
+   The credentials ID for the kubeconfig stored in Jenkins credentials store.
+
 * Basic config for the deployments.
 
    ```groovy

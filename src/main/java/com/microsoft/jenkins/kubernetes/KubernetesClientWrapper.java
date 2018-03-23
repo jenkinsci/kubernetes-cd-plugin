@@ -31,8 +31,12 @@ import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.utils.Utils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.HashMap;
@@ -54,8 +58,18 @@ public class KubernetesClientWrapper {
         this.client = client;
     }
 
-    public KubernetesClientWrapper(String kubeConfigFilePath) {
-        client = new DefaultKubernetesClient(kubeConfigFromFile(kubeConfigFilePath));
+    public KubernetesClientWrapper(String kubeconfig) {
+        File file = new File(kubeconfig);
+        if (file.exists()) {
+            try {
+                kubeconfig = IOUtils.toString(new FileInputStream(file));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        Config config = configFromKubeconfig(kubeconfig);
+        client = new DefaultKubernetesClient(config);
     }
 
     public KubernetesClientWrapper(String server,
@@ -194,32 +208,38 @@ public class KubernetesClientWrapper {
     }
 
     /**
-     * Build config from the kubeconfig file.
+     * Build config from the kubeconfig contents.
      * <p>
      * This requires to update the system property. In order to avoid changing the system property at the same time
      * from multiple running jobs, the method is marked as synchronized.
      *
-     * @param filePath the kubeconfig file path
+     * @param kubeconfig the kubeconfig contents
      * @return the config that can be used to build {@link KubernetesClient}
      */
-    public static synchronized Config kubeConfigFromFile(String filePath) {
-        String originalTryConfig = System.getProperty(Config.KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY);
-        String originalFile = System.getProperty(Config.KUBERNETES_KUBECONFIG_FILE);
+    public static synchronized Config configFromKubeconfig(String kubeconfig) {
+        String originalTryKubeconfig =
+                Utils.getSystemPropertyOrEnvVar(Config.KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY);
+        String originalTryServiceAccount =
+                Utils.getSystemPropertyOrEnvVar(Config.KUBERNETES_AUTH_TRYSERVICEACCOUNT_SYSTEM_PROPERTY);
+        String originalTryNamespacePath =
+                Utils.getSystemPropertyOrEnvVar(Config.KUBERNETES_TRYNAMESPACE_PATH_SYSTEM_PROPERTY);
         try {
-            System.setProperty(Config.KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY, "true");
-            System.setProperty(Config.KUBERNETES_KUBECONFIG_FILE, filePath);
-            return Config.autoConfigure(null);
+            System.setProperty(Config.KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY, "false");
+            System.setProperty(Config.KUBERNETES_AUTH_TRYSERVICEACCOUNT_SYSTEM_PROPERTY, "false");
+            System.setProperty(Config.KUBERNETES_TRYNAMESPACE_PATH_SYSTEM_PROPERTY, "false");
+            return Config.fromKubeconfig(kubeconfig);
         } finally {
-            if (originalFile == null) {
-                System.clearProperty(Config.KUBERNETES_KUBECONFIG_FILE);
-            } else {
-                System.setProperty(Config.KUBERNETES_KUBECONFIG_FILE, originalFile);
-            }
-            if (originalTryConfig == null) {
-                System.clearProperty(Config.KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY);
-            } else {
-                System.setProperty(Config.KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY, originalTryConfig);
-            }
+            restoreProperty(Config.KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY, originalTryKubeconfig);
+            restoreProperty(Config.KUBERNETES_AUTH_TRYSERVICEACCOUNT_SYSTEM_PROPERTY, originalTryServiceAccount);
+            restoreProperty(Config.KUBERNETES_TRYNAMESPACE_PATH_SYSTEM_PROPERTY, originalTryNamespacePath);
+        }
+    }
+
+    private static void restoreProperty(String name, String value) {
+        if (value == null) {
+            System.clearProperty(name);
+        } else {
+            System.setProperty(name, value);
         }
     }
 

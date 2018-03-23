@@ -18,6 +18,10 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
+/**
+ * @deprecated Use {@link KubeconfigCredentials}.
+ */
+@Deprecated
 public class ConfigFileCredentials
         extends AbstractDescribableImpl<ConfigFileCredentials>
         implements ClientWrapperFactory.Builder {
