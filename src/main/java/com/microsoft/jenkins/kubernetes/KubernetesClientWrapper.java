@@ -38,6 +38,7 @@ import org.apache.commons.lang.StringUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.List;
@@ -61,8 +62,8 @@ public class KubernetesClientWrapper {
     public KubernetesClientWrapper(String kubeconfig) {
         File file = new File(kubeconfig);
         if (file.exists()) {
-            try {
-                kubeconfig = IOUtils.toString(new FileInputStream(file));
+            try (InputStream in = new FileInputStream(file)) {
+                kubeconfig = IOUtils.toString(in);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
