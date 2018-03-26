@@ -8,6 +8,7 @@ package com.microsoft.jenkins.kubernetes.credentials;
 
 import com.microsoft.jenkins.kubernetes.KubernetesClientWrapper;
 import hudson.FilePath;
+import hudson.model.Item;
 
 import java.io.Serializable;
 
@@ -24,6 +25,6 @@ public interface ClientWrapperFactory extends Serializable {
      * The builder that builds {@link ClientWrapperFactory}.
      */
     interface Builder {
-        ClientWrapperFactory buildClientWrapperFactory();
+        ClientWrapperFactory buildClientWrapperFactory(Item owner);
     }
 }

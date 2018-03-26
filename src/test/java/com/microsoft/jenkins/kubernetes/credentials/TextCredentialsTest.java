@@ -7,12 +7,14 @@
 package com.microsoft.jenkins.kubernetes.credentials;
 
 import com.microsoft.jenkins.kubernetes.util.Constants;
+import hudson.model.Item;
 import hudson.util.FormValidation;
 import org.apache.commons.lang.SerializationUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 /**
  * Tests for {@link TextCredentials}.
@@ -26,7 +28,7 @@ public class TextCredentialsTest {
         credentials.setClientCertificateData("GHIJK");
         credentials.setClientKeyData("LMN");
 
-        ClientWrapperFactory factory = credentials.buildClientWrapperFactory();
+        ClientWrapperFactory factory = credentials.buildClientWrapperFactory(mock(Item.class));
         byte[] bytes = SerializationUtils.serialize(factory);
         Object deserialized = SerializationUtils.deserialize(bytes);
         assertTrue(deserialized instanceof ClientWrapperFactory);

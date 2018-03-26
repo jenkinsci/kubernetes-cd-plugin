@@ -36,7 +36,6 @@ import hudson.model.TaskListener;
 import hudson.security.ACL;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-import jenkins.model.Jenkins;
 import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.plugins.docker.commons.credentials.DockerRegistryEndpoint;
 import org.jenkinsci.plugins.docker.commons.credentials.DockerRegistryToken;
@@ -244,13 +243,13 @@ public class KubernetesDeployContext extends BaseCommandContext implements
     }
 
     @Override
-    public ClientWrapperFactory clientFactory() {
+    public ClientWrapperFactory clientFactory(Item owner) {
         final String configId = getKubeconfigId();
         if (StringUtils.isNotBlank(configId)) {
             final KubeconfigCredentials credentials = CredentialsMatchers.firstOrNull(
                     CredentialsProvider.lookupCredentials(
                             KubeconfigCredentials.class,
-                            Jenkins.getInstance(),
+                            owner,
                             ACL.SYSTEM,
                             Collections.<DomainRequirement>emptyList()),
                     CredentialsMatchers.withId(configId));
@@ -263,11 +262,11 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         // Fallback to the legacy handling
         switch (getCredentialsTypeEnum()) {
             case SSH:
-                return getSsh().buildClientWrapperFactory();
+                return getSsh().buildClientWrapperFactory(owner);
             case KubeConfig:
-                return getKubeConfig().buildClientWrapperFactory();
+                return getKubeConfig().buildClientWrapperFactory(owner);
             case Text:
-                return getTextCredentials().buildClientWrapperFactory();
+                return getTextCredentials().buildClientWrapperFactory(owner);
             default:
                 throw new IllegalStateException(
                         Messages.KubernetesDeployContext_unknownCredentialsType(getCredentialsTypeEnum()));
@@ -302,6 +301,7 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         }
 
         public FormValidation doVerifyConfiguration(
+                @AncestorInPath Item owner,
                 @QueryParameter String credentialsType,
                 @QueryParameter("path") String kubeconfigPath,
                 @QueryParameter String sshServer,
@@ -332,7 +332,9 @@ public class KubernetesDeployContext extends BaseCommandContext implements
                     sshCredentials.setSshServer(StringUtils.trimToEmpty(sshServer));
                     try {
                         SSHClient client = new SSHClient(
-                                sshCredentials.getHost(), sshCredentials.getPort(), sshCredentials.getSshCredentials());
+                                sshCredentials.getHost(),
+                                sshCredentials.getPort(),
+                                sshCredentials.getSshCredentials(owner));
                         try (SSHClient connected = client.connect()) {
                             try {
                                 connected.execRemote("test -e " + Constants.KUBECONFIG_FILE, false, false);

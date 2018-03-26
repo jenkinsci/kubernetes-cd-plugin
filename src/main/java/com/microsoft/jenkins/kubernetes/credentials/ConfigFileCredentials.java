@@ -12,6 +12,7 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
+import hudson.model.Item;
 import hudson.util.FormValidation;
 import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -42,7 +43,7 @@ public class ConfigFileCredentials
     }
 
     @Override
-    public ClientWrapperFactory buildClientWrapperFactory() {
+    public ClientWrapperFactory buildClientWrapperFactory(Item owner) {
         return new ClientWrapperFactoryImpl(getPath());
     }
 

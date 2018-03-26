@@ -8,12 +8,14 @@ package com.microsoft.jenkins.kubernetes.credentials;
 
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.microsoft.jenkins.kubernetes.util.Constants;
+import hudson.model.Item;
 import hudson.util.FormValidation;
 import org.apache.commons.lang.SerializationUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -37,9 +39,9 @@ public class SSHCredentialsTest {
     @Test
     public void testClientFactorySerialization() {
         SSHCredentials credentials = spy(new SSHCredentials());
-        doReturn(mock(StandardUsernameCredentials.class)).when(credentials).getSshCredentials();
+        doReturn(mock(StandardUsernameCredentials.class)).when(credentials).getSshCredentials(any(Item.class));
         credentials.setSshServer("example.com:1234");
-        ClientWrapperFactory factory = credentials.buildClientWrapperFactory();
+        ClientWrapperFactory factory = credentials.buildClientWrapperFactory(mock(Item.class));
 
         byte[] bytes = SerializationUtils.serialize(factory);
         Object deserialized = SerializationUtils.deserialize(bytes);
