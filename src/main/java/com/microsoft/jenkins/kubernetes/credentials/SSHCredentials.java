@@ -25,13 +25,13 @@ import hudson.model.Item;
 import hudson.security.ACL;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-import jenkins.model.Jenkins;
 import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
+import javax.annotation.Nonnull;
 import java.io.OutputStream;
 import java.util.Collections;
 
@@ -68,14 +68,18 @@ public class SSHCredentials
         this.sshCredentialsId = sshCredentialsId;
     }
 
-    public StandardUsernameCredentials getSshCredentials() {
+    @Nonnull
+    public StandardUsernameCredentials getSshCredentials(Item owner) {
         StandardUsernameCredentials creds = CredentialsMatchers.firstOrNull(
                 CredentialsProvider.lookupCredentials(
                         StandardUsernameCredentials.class,
-                        Jenkins.getInstance(),
+                        owner,
                         ACL.SYSTEM,
                         Collections.<DomainRequirement>emptyList()),
                 CredentialsMatchers.withId(getSshCredentialsId()));
+        if (creds == null) {
+            throw new IllegalStateException("Cannot find SSH credentials with ID " + getSshCredentialsId());
+        }
         return creds;
     }
 
@@ -96,8 +100,8 @@ public class SSHCredentials
     }
 
     @Override
-    public ClientWrapperFactory buildClientWrapperFactory() {
-        return new ClientWrapperFactoryImpl(getHost(), getPort(), getSshCredentials());
+    public ClientWrapperFactory buildClientWrapperFactory(Item owner) {
+        return new ClientWrapperFactoryImpl(getHost(), getPort(), getSshCredentials(owner));
     }
 
     @Extension

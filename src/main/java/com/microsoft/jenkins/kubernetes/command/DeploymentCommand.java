@@ -57,7 +57,7 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
         final String defaultSecretName = jobContext.getRun().getDisplayName();
         final EnvVars envVars = context.getEnvVars();
         final boolean enableSubstitution = context.isEnableConfigSubstitution();
-        final ClientWrapperFactory clientFactory = context.clientFactory();
+        final ClientWrapperFactory clientFactory = context.clientFactory(context.getJobContext().getRun().getParent());
 
         TaskResult taskResult = null;
         try {
@@ -152,7 +152,7 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
     }
 
     public interface IDeploymentCommand extends IBaseCommandData {
-        ClientWrapperFactory clientFactory();
+        ClientWrapperFactory clientFactory(Item owner);
 
         String getSecretNamespace();
 
