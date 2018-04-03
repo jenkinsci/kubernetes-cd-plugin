@@ -1,10 +1,11 @@
 # Kubernetes Continuous Deploy Plugin Changelog
 
-## Version 0.2.0, TBD
+## Version 0.2.0, 2018-04-03
 * Configure kubeconfig in the Jenkins credentials store instead of the job configuration (JENKINS-49781)
 
    The original "Kubernetes Cluster Credentials" configuration is deprecated.
 * Upgrade Kubernetes Client to 3.1.10
+* Use scoped credentials lookup (#19)
 
 ## Version 0.1.5, 2018-02-22
 * Abort build on error (JENKINS-48662 / #12)
