@@ -42,10 +42,12 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.logging.Logger;
 
-public class KubeconfigCredentials extends BaseStandardCredentials implements StringCredentials {
+public class KubeconfigCredentials extends BaseStandardCredentials implements StringCredentials, AncestorAware {
     private static final long serialVersionUID = 1L;
 
     private final KubeconfigSource kubeconfigSource;
+
+    private transient Item owner;
 
     @DataBoundConstructor
     public KubeconfigCredentials(CredentialsScope scope,
@@ -62,6 +64,9 @@ public class KubeconfigCredentials extends BaseStandardCredentials implements St
 
     public String getContent() {
         if (kubeconfigSource != null) {
+            if (kubeconfigSource instanceof AncestorAware) {
+                ((AncestorAware) kubeconfigSource).bindToAncestor(owner);
+            }
             return kubeconfigSource.getContent();
         }
         return "";
@@ -74,6 +79,11 @@ public class KubeconfigCredentials extends BaseStandardCredentials implements St
     @Override
     public Secret getSecret() {
         return Secret.fromString(getContent());
+    }
+
+    @Override
+    public void bindToAncestor(Item o) {
+        this.owner = o;
     }
 
     /**
@@ -197,10 +207,12 @@ public class KubeconfigCredentials extends BaseStandardCredentials implements St
         }
     }
 
-    public static class FileOnKubernetesMasterKubeconfigSource extends KubeconfigSource {
+    public static class FileOnKubernetesMasterKubeconfigSource extends KubeconfigSource implements AncestorAware {
         private final String server;
         private final String sshCredentialId;
         private String file;
+
+        private transient Item owner;
 
         @DataBoundConstructor
         public FileOnKubernetesMasterKubeconfigSource(String server, String sshCredentialId) {
@@ -261,13 +273,18 @@ public class KubeconfigCredentials extends BaseStandardCredentials implements St
             }
         }
 
+        @Override
+        public void bindToAncestor(Item o) {
+            this.owner = o;
+        }
+
         @Nonnull
         @Override
         public String getContent() {
             StandardUsernameCredentials creds = CredentialsMatchers.firstOrNull(
                     CredentialsProvider.lookupCredentials(
                             StandardUsernameCredentials.class,
-                            Jenkins.getInstance(),
+                            owner,
                             ACL.SYSTEM,
                             Collections.<DomainRequirement>emptyList()),
                     CredentialsMatchers.withId(getSshCredentialId()));
