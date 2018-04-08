@@ -29,7 +29,6 @@ import hudson.util.Secret;
 import jenkins.model.Jenkins;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -42,7 +41,7 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.logging.Logger;
 
-public class KubeconfigCredentials extends BaseStandardCredentials implements StringCredentials, AncestorAware {
+public class KubeconfigCredentials extends BaseStandardCredentials implements AncestorAware {
     private static final long serialVersionUID = 1L;
 
     private final KubeconfigSource kubeconfigSource;
@@ -70,15 +69,6 @@ public class KubeconfigCredentials extends BaseStandardCredentials implements St
             return kubeconfigSource.getContent();
         }
         return "";
-    }
-
-    /**
-     * This allows us to use credentials-binding for the kubeconfig, without extra coding logic.
-     */
-    @Nonnull
-    @Override
-    public Secret getSecret() {
-        return Secret.fromString(getContent());
     }
 
     @Override

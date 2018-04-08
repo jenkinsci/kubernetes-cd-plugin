@@ -147,6 +147,22 @@ The parameters can be divided into the following groups, which you may configure
    * A unique `secretName` will be generated if omitted, and you need to reference it with variable 
       `$KUBERNETES_SECRET_NAME` in your resource configurations.
 
+## Kubeconfig Binding
+
+When the kubeconfig is prepared in the Jenkins credentials store, you can utilize the [Credentials Binding](https://plugins.jenkins.io/credentials-binding)
+plugin to bind the kubeconfig contents to a variable. You can save the contents in the variable to a local file,
+which can be used to invoke the `kubectl` command (with the `--kubeconfig` argument).
+
+![Kubeconfig Contents Binding](img/binding.png)
+
+With pipeline:
+
+```groovy
+withCredentials([kubeconfigContent(credentialsId: 'acs-ssh-folder', variable: 'KUBECONFIG_CONTENT')]) {
+    sh '''cat "$KUBECONFIG_CONTENT" >kubeconfig && cat kubeconfig && rm kubeconfig'''
+}
+```
+
 ## Data/Telemetry
 
 Kubernetes Continuous Deploy Plugin collects usage data and sends it to Microsoft to help improve our products and services. Read our [privacy statement](http://go.microsoft.com/fwlink/?LinkId=521839) to learn more.
