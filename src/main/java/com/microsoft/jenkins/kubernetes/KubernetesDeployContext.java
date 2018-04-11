@@ -256,6 +256,7 @@ public class KubernetesDeployContext extends BaseCommandContext implements
             if (credentials == null) {
                 throw new IllegalArgumentException("Cannot find kubeconfig credentials with id " + configId);
             }
+            credentials.bindToAncestor(owner);
             return new ClientWrapperFactoryImpl(credentials);
         }
 
