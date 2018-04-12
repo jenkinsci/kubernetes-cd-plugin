@@ -6,6 +6,7 @@
 
 package com.microsoft.jenkins.kubernetes;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Job;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.ReplicationController;
@@ -34,6 +35,8 @@ public interface ResourceUpdateMonitor {
     void onJobUpdate(Job original, Job current);
 
     void onPodUpdate(Pod original, Pod current);
+
+    void onConfigMapUpdate(ConfigMap original, ConfigMap current);
 
     ResourceUpdateMonitor NOOP = new Adapter();
 
@@ -73,6 +76,10 @@ public interface ResourceUpdateMonitor {
 
         @Override
         public void onPodUpdate(Pod original, Pod current) {
+        }
+
+        @Override
+        public void onConfigMapUpdate(ConfigMap original, ConfigMap current) {
         }
     }
 }

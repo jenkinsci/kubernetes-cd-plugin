@@ -75,6 +75,7 @@ It provides the following features:
 
 The following resource types are supported by the plugin:
 
+* ConfigMap
 * Deployment
 * Replica Set
 * Replication Controller - No rolling-update support. If that's required, consider using [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-update-deployment).
