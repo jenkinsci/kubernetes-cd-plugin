@@ -19,11 +19,11 @@ import com.microsoft.jenkins.kubernetes.Messages;
 import com.microsoft.jenkins.kubernetes.credentials.ClientWrapperFactory;
 import com.microsoft.jenkins.kubernetes.credentials.ResolvedDockerRegistryEndpoint;
 import com.microsoft.jenkins.kubernetes.util.Constants;
-import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.model.Item;
 import hudson.model.TaskListener;
+import hudson.remoting.ProxyException;
 import hudson.util.VariableResolver;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import jenkins.security.MasterToSlaveCallable;
@@ -103,7 +103,7 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
         return "Unknown";
     }
 
-    static class DeploymentTask extends MasterToSlaveCallable<TaskResult, AbortException> {
+    static class DeploymentTask extends MasterToSlaveCallable<TaskResult, ProxyException> {
         private FilePath workspace;
         private TaskListener taskListener;
         private ClientWrapperFactory clientFactory;
@@ -118,7 +118,7 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
         private List<ResolvedDockerRegistryEndpoint> dockerRegistryEndpoints;
 
         @Override
-        public TaskResult call() throws AbortException {
+        public TaskResult call() throws ProxyException {
             try {
                 return doCall();
             } catch (Exception ex) {
@@ -126,10 +126,9 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
                 // JEP-200 restricts the classes allowed to be serialized with XStream to a whitelist.
                 // The task being executed in doCall may throw some exceptions from the third party libraries,
                 // which will cause SecurityException when it's transferred from the slave back to the master.
-                // We catch the exception and print the stacktrace here (slave), and throw an exception which can
+                // We catch the exception and wrap the stack trace in a ProxyException which can
                 // be serialized properly.
-                ex.printStackTrace(taskListener.error(ex.getMessage()));
-                throw new AbortException(ex.getMessage());
+                throw new ProxyException(ex);
             }
         }
 
