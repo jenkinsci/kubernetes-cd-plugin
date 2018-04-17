@@ -14,6 +14,7 @@ import com.microsoft.jenkins.kubernetes.util.DockerConfigBuilder;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.util.VariableResolver;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Job;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
@@ -160,10 +161,13 @@ public class KubernetesClientWrapper {
                     new JobUpdater(job).createOrApply();
                 } else if (resource instanceof Pod) {
                     Pod pod = (Pod) resource;
-                    new PodUpdator(pod).createOrApply();
+                    new PodUpdater(pod).createOrApply();
                 } else if (resource instanceof Secret) {
                     Secret secret = (Secret) resource;
                     new SecretUpdater(secret).createOrApply();
+                } else if (resource instanceof ConfigMap) {
+                    ConfigMap configMap = (ConfigMap) resource;
+                    new ConfigMapUpdater(configMap).createOrApply();
                 } else {
                     log(Messages.KubernetesClientWrapper_skipped(resource));
                 }
@@ -703,8 +707,8 @@ public class KubernetesClientWrapper {
         }
     }
 
-    private class PodUpdator extends ResourceUpdater<Pod> {
-        PodUpdator(Pod pod) {
+    private class PodUpdater extends ResourceUpdater<Pod> {
+        PodUpdater(Pod pod) {
             super(pod);
         }
 
@@ -740,6 +744,46 @@ public class KubernetesClientWrapper {
         @Override
         void notifyUpdate(Pod original, Pod current) {
             resourceUpdateMonitor.onPodUpdate(original, current);
+        }
+    }
+
+    private class ConfigMapUpdater extends ResourceUpdater<ConfigMap> {
+        ConfigMapUpdater(ConfigMap configMap) {
+            super(configMap);
+        }
+
+        @Override
+        ConfigMap getCurrentResource() {
+            return client
+                    .configMaps()
+                    .inNamespace(getNamespace())
+                    .withName(getName())
+                    .get();
+        }
+
+        @Override
+        ConfigMap applyResource(ConfigMap original, ConfigMap current) {
+            return client
+                    .configMaps()
+                    .inNamespace(getNamespace())
+                    .withName(current.getMetadata().getName())
+                    .edit()
+                    .withMetadata(current.getMetadata())
+                    .withData(current.getData())
+                    .done();
+        }
+
+        @Override
+        ConfigMap createResource(ConfigMap current) {
+            return client
+                    .configMaps()
+                    .inNamespace(getNamespace())
+                    .create(current);
+        }
+
+        @Override
+        void notifyUpdate(ConfigMap original, ConfigMap current) {
+            resourceUpdateMonitor.onConfigMapUpdate(original, current);
         }
     }
 
