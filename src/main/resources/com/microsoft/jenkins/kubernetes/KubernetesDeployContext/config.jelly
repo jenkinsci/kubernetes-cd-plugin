@@ -71,7 +71,7 @@
 
     <f:validateButton title="${%verifyConfiguration}" progress="${%verifying}"
                       method="verifyConfiguration"
-                      with="credentialsType,path,sshServer,sshCredentialsId,serverUrl,certificateAuthorityData,clientCertificateData,clientKeyData,configs"/>
+                      with="kubeconfigId,credentialsType,path,sshServer,sshCredentialsId,serverUrl,certificateAuthorityData,clientCertificateData,clientKeyData,configs"/>
 
     <st:once>
         <script type="text/javascript"
