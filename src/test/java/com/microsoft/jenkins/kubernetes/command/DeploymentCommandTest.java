@@ -18,20 +18,19 @@ public class DeploymentCommandTest {
 
     @Test
     public void testGetMasterHost() {
-        DeploymentCommand command = new DeploymentCommand();
-        assertEquals(FALLBACK_MASTER, command.getMasterHost(null));
+        assertEquals(FALLBACK_MASTER, DeploymentCommand.getMasterHost(null));
 
         KubernetesClientWrapper wrapper = mock(KubernetesClientWrapper.class);
-        assertEquals(FALLBACK_MASTER, command.getMasterHost(wrapper));
+        assertEquals(FALLBACK_MASTER, DeploymentCommand.getMasterHost(wrapper));
 
         KubernetesClient client = mock(KubernetesClient.class);
         when(wrapper.getClient()).thenReturn(client);
-        assertEquals(FALLBACK_MASTER, command.getMasterHost(wrapper));
+        assertEquals(FALLBACK_MASTER, DeploymentCommand.getMasterHost(wrapper));
 
         URL url = mock(URL.class);
         final String host = "some.host";
         when(url.getHost()).thenReturn(host);
         when(client.getMasterUrl()).thenReturn(url);
-        assertEquals(host, command.getMasterHost(wrapper));
+        assertEquals(host, DeploymentCommand.getMasterHost(wrapper));
     }
 }
