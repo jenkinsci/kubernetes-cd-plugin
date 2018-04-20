@@ -1,5 +1,11 @@
 # Kubernetes Continuous Deploy Plugin Changelog
 
+## Version 0.2.1, 2018-04-20
+* Fix scoped SSH credentials lookup in kubeconfig credentials (#26)
+* Fix Kubernetes deploy configuration verification (#29)
+* Add support for ConfigMap (#30)
+* Fix serialization of 3rd party exceptions thrown from slave (JENKINS-50760)
+
 ## Version 0.2.0, 2018-04-03
 * Configure kubeconfig in the Jenkins credentials store instead of the job configuration (JENKINS-49781)
 
