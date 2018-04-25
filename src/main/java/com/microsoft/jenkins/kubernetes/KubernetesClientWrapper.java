@@ -17,6 +17,7 @@ import hudson.util.VariableResolver;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Job;
+import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.ReplicationController;
@@ -42,6 +43,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -137,6 +139,18 @@ public class KubernetesClientWrapper {
                 log(Messages.KubernetesClientWrapper_noResourceLoadedFrom(path));
                 continue;
             }
+
+            // Process the Namespace in the list first, as it may be a dependency of other resources.
+            Iterator<HasMetadata> iter = resources.iterator();
+            while (iter.hasNext()) {
+                HasMetadata resource = iter.next();
+                if (resource instanceof Namespace) {
+                    Namespace namespace = (Namespace) resource;
+                    new NamespaceUpdater(namespace).createOrApply();
+                    iter.remove();
+                }
+            }
+
             for (HasMetadata resource : resources) {
                 if (resource instanceof Deployment) {
                     Deployment deployment = (Deployment) resource;
@@ -837,6 +851,43 @@ public class KubernetesClientWrapper {
         @Override
         void logCreated(Secret res) {
             log(Messages.KubernetesClientWrapper_created(getKind(), "name: " + getName()));
+        }
+    }
+
+    private class NamespaceUpdater extends ResourceUpdater<Namespace> {
+        NamespaceUpdater(Namespace namespace) {
+            super(namespace);
+        }
+
+        @Override
+        Namespace getCurrentResource() {
+            return client
+                    .namespaces()
+                    .withName(getName())
+                    .get();
+        }
+
+        @Override
+        Namespace applyResource(Namespace original, Namespace current) {
+            return client
+                    .namespaces()
+                    .withName(getName())
+                    .edit()
+                    .withMetadata(current.getMetadata())
+                    .withSpec(current.getSpec())
+                    .done();
+        }
+
+        @Override
+        Namespace createResource(Namespace current) {
+            return client
+                    .namespaces()
+                    .create(current);
+        }
+
+        @Override
+        void notifyUpdate(Namespace original, Namespace current) {
+            resourceUpdateMonitor.onNamespaceUpdate(original, current);
         }
     }
 }
