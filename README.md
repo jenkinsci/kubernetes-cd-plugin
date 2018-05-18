@@ -109,7 +109,7 @@ kubernetesDeploy(kubeconfigId: 'kubeconfig-credentials-id',               // REQ
                  secretName: '<secret-name>',
                  dockerCredentials: [
                         [credentialsId: '<credentials-id-for-docker-hub>'],
-                        [credentialsId: '<credentials-id-for-other-private-registry>', server: '<registry-url>'],
+                        [credentialsId: '<credentials-id-for-other-private-registry>', url: '<registry-url>'],
                  ]
 )
 ```
@@ -141,7 +141,7 @@ The parameters can be divided into the following groups, which you may configure
            secretName: '<secret-name>',
            dockerCredentials: [
                [credentialsId: '<credentials-id-for-docker-hub>'],
-               [credentialsId: '<credentials-id-for-other-private-registry>', server: '<registry-url>'],
+               [credentialsId: '<credentials-id-for-other-private-registry>', url: '<registry-url>'],
            ],
    )
    ```
