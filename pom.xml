@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -17,7 +18,7 @@
         <jenkins.version>1.651.3</jenkins.version>
         <java.level>7</java.level>
 
-        <azure-commons-version>0.2.4</azure-commons-version>
+        <azure-commons-version>0.2.6</azure-commons-version>
         <credentials.version>2.1.14</credentials.version>
         <docker-commons.version>1.10</docker-commons.version>
         <ssh-credentials.version>1.13</ssh-credentials.version>
@@ -102,6 +103,11 @@
             <version>${azure-commons-version}</version>
         </dependency>
         <dependency>
+            <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>azure-commons-core</artifactId>
+            <version>${azure-commons-version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-client</artifactId>
             <version>${kubernetes-client.version}</version>
@@ -145,6 +151,7 @@
                         okio.
                         com.google.common.base.
                         com.fasterxml.jackson.
+                        com.microsoft.jenkins.azurecommons.core.
                     </maskClasses>
                 </configuration>
             </plugin>
