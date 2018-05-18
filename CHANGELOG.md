@@ -1,5 +1,9 @@
 # Kubernetes Continuous Deploy Plugin Changelog
 
+## Version 0.2.2, 2018-05-18
+* Support for namespace creation and update
+* Fix EnvironmentInjector serialization (JENKINS-51147)
+
 ## Version 0.2.1, 2018-04-20
 * Fix scoped SSH credentials lookup in kubeconfig credentials (#26)
 * Fix Kubernetes deploy configuration verification (#29)
