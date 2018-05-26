@@ -161,7 +161,7 @@ With pipeline:
 
 ```groovy
 withCredentials([kubeconfigContent(credentialsId: 'acs-ssh-folder', variable: 'KUBECONFIG_CONTENT')]) {
-    sh '''cat "$KUBECONFIG_CONTENT" >kubeconfig && cat kubeconfig && rm kubeconfig'''
+    sh '''echo "$KUBECONFIG_CONTENT" > kubeconfig && cat kubeconfig && rm kubeconfig'''
 }
 ```
 
