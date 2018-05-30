@@ -47,8 +47,7 @@ public final class Constants {
 
     // AI constants
     public static final String AI_KUBERNETES = "Kubernetes";
-    public static final String AI_K8S_MASTER = "Master";
-    public static final String AI_MESSAGE = "ErrorMessage";
+    public static final String AI_K8S_MASTER = "K8sMaster";
 
     /**
      * URI scheme prefix (scheme://) pattern.
