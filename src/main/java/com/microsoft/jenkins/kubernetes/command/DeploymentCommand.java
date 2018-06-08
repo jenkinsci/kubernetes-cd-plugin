@@ -84,8 +84,7 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
             }
             context.logError(e);
             KubernetesCDPlugin.sendEvent(Constants.AI_KUBERNETES, "DeployFailed",
-                    Constants.AI_K8S_MASTER, AppInsightsUtils.hash(taskResult == null ? null : taskResult.masterHost),
-                    Constants.AI_MESSAGE, e.getMessage());
+                    Constants.AI_K8S_MASTER, AppInsightsUtils.hash(taskResult == null ? null : taskResult.masterHost));
         }
     }
 
