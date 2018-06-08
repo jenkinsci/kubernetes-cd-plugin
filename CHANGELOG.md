@@ -1,5 +1,8 @@
 # Kubernetes Continuous Deploy Plugin Changelog
 
+## Version 0.2.3, 2018-06-08
+* Documentation and AI fix
+
 ## Version 0.2.2, 2018-05-18
 * Support for namespace creation and update
 * Fix EnvironmentInjector serialization (JENKINS-51147)
