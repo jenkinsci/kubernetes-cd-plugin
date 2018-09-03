@@ -18,6 +18,7 @@ import io.fabric8.kubernetes.api.model.apps.DaemonSet;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
 import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
+import io.fabric8.kubernetes.api.model.HorizontalPodAutoscaler;
 
 public interface ResourceUpdateMonitor {
     void onSecretUpdate(Secret original, Secret current);
@@ -41,6 +42,8 @@ public interface ResourceUpdateMonitor {
     void onPodUpdate(Pod original, Pod current);
 
     void onConfigMapUpdate(ConfigMap original, ConfigMap current);
+
+    void onHoriziontalPodAutoscalerUpdate(HorizontalPodAutoscaler original, HorizontalPodAutoscaler current);
 
     void onNamespaceUpdate(Namespace original, Namespace current);
 
@@ -86,6 +89,10 @@ public interface ResourceUpdateMonitor {
 
         @Override
         public void onPodUpdate(Pod original, Pod current) {
+        }
+
+        @Override
+        public void onHoriziontalPodAutoscalerUpdate(HorizontalPodAutoscaler original, HorizontalPodAutoscaler current) {
         }
 
         @Override

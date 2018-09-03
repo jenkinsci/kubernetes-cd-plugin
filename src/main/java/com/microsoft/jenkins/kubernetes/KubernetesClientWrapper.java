@@ -14,6 +14,7 @@ import com.microsoft.jenkins.kubernetes.util.DockerConfigBuilder;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.util.VariableResolver;
+import io.fabric8.kubernetes.api.model.HorizontalPodAutoscaler;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.batch.CronJob;
@@ -183,6 +184,9 @@ public class KubernetesClientWrapper {
                 } else if (resource instanceof Secret) {
                     Secret secret = (Secret) resource;
                     new SecretUpdater(secret).createOrApply();
+                } else if (resource instanceof HorizontalPodAutoscaler) {
+                    HorizontalPodAutoscaler hpa = (HorizontalPodAutoscaler) resource;
+                    new HorizontalPodAutoscalerUpdater(hpa).createOrApply();
                 } else if (resource instanceof ConfigMap) {
                     ConfigMap configMap = (ConfigMap) resource;
                     new ConfigMapUpdater(configMap).createOrApply();
@@ -805,6 +809,49 @@ public class KubernetesClientWrapper {
         @Override
         void notifyUpdate(Pod original, Pod current) {
             resourceUpdateMonitor.onPodUpdate(original, current);
+        }
+    }
+
+    private class HorizontalPodAutoscalerUpdater extends ResourceUpdater<HorizontalPodAutoscaler> {
+        HorizontalPodAutoscalerUpdater(HorizontalPodAutoscaler hpa) {
+            super(hpa);
+        }
+
+        @Override
+        HorizontalPodAutoscaler getCurrentResource() {
+            return client
+                    .autoscaling()
+                    .horizontalPodAutoscalers()
+                    .inNamespace(getNamespace())
+                    .withName(getName())
+                    .get();
+        }
+
+        @Override
+        HorizontalPodAutoscaler applyResource(HorizontalPodAutoscaler original, HorizontalPodAutoscaler current) {
+            return client
+                    .autoscaling()
+                    .horizontalPodAutoscalers()
+                    .inNamespace(getNamespace())
+                    .withName(current.getMetadata().getName())
+                    .edit()
+                    .withMetadata(current.getMetadata())
+                    .withSpec(current.getSpec())
+                    .done();
+        }
+
+        @Override
+        HorizontalPodAutoscaler createResource(HorizontalPodAutoscaler current) {
+            return client
+                    .autoscaling()
+                    .horizontalPodAutoscalers()
+                    .inNamespace(getNamespace())
+                    .create(current);
+        }
+
+        @Override
+        void notifyUpdate(HorizontalPodAutoscaler original, HorizontalPodAutoscaler current) {
+            resourceUpdateMonitor.onHoriziontalPodAutoscalerUpdate(original, current);
         }
     }
 
