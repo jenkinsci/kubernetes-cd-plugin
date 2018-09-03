@@ -7,6 +7,7 @@
 package com.microsoft.jenkins.kubernetes;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.batch.CronJob;
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -34,6 +35,8 @@ public interface ResourceUpdateMonitor {
     void onDaemonSetUpdate(DaemonSet original, DaemonSet current);
 
     void onJobUpdate(Job original, Job current);
+
+    void onCronJobUpdate(CronJob original, CronJob current);
 
     void onPodUpdate(Pod original, Pod current);
 
@@ -75,6 +78,10 @@ public interface ResourceUpdateMonitor {
 
         @Override
         public void onJobUpdate(Job original, Job current) {
+        }
+
+        @Override
+        public void onCronJobUpdate(CronJob original, CronJob current) {
         }
 
         @Override

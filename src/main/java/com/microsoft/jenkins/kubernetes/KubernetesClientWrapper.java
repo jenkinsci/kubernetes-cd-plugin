@@ -16,6 +16,7 @@ import hudson.FilePath;
 import hudson.util.VariableResolver;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.batch.CronJob;
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
@@ -173,6 +174,9 @@ public class KubernetesClientWrapper {
                 } else if (resource instanceof Job) {
                     Job job = (Job) resource;
                     new JobUpdater(job).createOrApply();
+                } else if (resource instanceof CronJob) {
+                    CronJob cronJob = (CronJob) resource;
+                    new CronJobUpdater(cronJob).createOrApply();
                 } else if (resource instanceof Pod) {
                     Pod pod = (Pod) resource;
                     new PodUpdater(pod).createOrApply();
@@ -718,6 +722,49 @@ public class KubernetesClientWrapper {
         @Override
         void notifyUpdate(Job original, Job current) {
             resourceUpdateMonitor.onJobUpdate(original, current);
+        }
+    }
+
+    private class CronJobUpdater extends ResourceUpdater<CronJob> {
+        CronJobUpdater(CronJob cronJob) {
+            super(cronJob);
+        }
+
+        @Override
+        CronJob getCurrentResource() {
+            return client
+                    .batch()
+                    .cronjobs()
+                    .inNamespace(getNamespace())
+                    .withName(getName())
+                    .get();
+        }
+
+        @Override
+        CronJob applyResource(CronJob original, CronJob current) {
+            return client
+                    .batch()
+                    .cronjobs()
+                    .inNamespace(getNamespace())
+                    .withName(current.getMetadata().getName())
+                    .edit()
+                    .withMetadata(current.getMetadata())
+                    .withSpec(current.getSpec())
+                    .done();
+        }
+
+        @Override
+        CronJob createResource(CronJob current) {
+            return client
+                    .batch()
+                    .cronjobs()
+                    .inNamespace(getNamespace())
+                    .create(current);
+        }
+
+        @Override
+        void notifyUpdate(CronJob original, CronJob current) {
+            resourceUpdateMonitor.onCronJobUpdate(original, current);
         }
     }
 
