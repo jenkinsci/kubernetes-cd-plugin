@@ -401,7 +401,7 @@ public class KubernetesClientWrapper {
         @Override
         Deployment getCurrentResource() {
             return client
-                    .extensions()
+                    .apps()
                     .deployments()
                     .inNamespace(getNamespace())
                     .withName(getName())
@@ -411,7 +411,7 @@ public class KubernetesClientWrapper {
         @Override
         Deployment applyResource(Deployment original, Deployment current) {
             return client
-                    .extensions()
+                    .apps()
                     .deployments()
                     .inNamespace(getNamespace())
                     .withName(current.getMetadata().getName())
@@ -424,7 +424,7 @@ public class KubernetesClientWrapper {
         @Override
         Deployment createResource(Deployment current) {
             return client
-                    .extensions()
+                    .apps()
                     .deployments()
                     .inNamespace(getNamespace())
                     .create(current);
@@ -604,7 +604,7 @@ public class KubernetesClientWrapper {
         @Override
         ReplicaSet getCurrentResource() {
             return client
-                    .extensions()
+                    .apps()
                     .replicaSets()
                     .inNamespace(getNamespace())
                     .withName(getName())
@@ -614,7 +614,7 @@ public class KubernetesClientWrapper {
         @Override
         ReplicaSet applyResource(ReplicaSet original, ReplicaSet current) {
             return client
-                    .extensions()
+                    .apps()
                     .replicaSets()
                     .inNamespace(getNamespace())
                     .withName(current.getMetadata().getName())
@@ -627,7 +627,7 @@ public class KubernetesClientWrapper {
         @Override
         ReplicaSet createResource(ReplicaSet current) {
             return client
-                    .extensions()
+                    .apps()
                     .replicaSets()
                     .inNamespace(getNamespace())
                     .create(current);
@@ -647,7 +647,7 @@ public class KubernetesClientWrapper {
         @Override
         DaemonSet getCurrentResource() {
             return client
-                    .extensions()
+                    .apps()
                     .daemonSets()
                     .inNamespace(getNamespace())
                     .withName(getName())
@@ -657,7 +657,7 @@ public class KubernetesClientWrapper {
         @Override
         DaemonSet applyResource(DaemonSet original, DaemonSet current) {
             return client
-                    .extensions()
+                    .apps()
                     .daemonSets()
                     .inNamespace(getNamespace())
                     .withName(current.getMetadata().getName())
@@ -670,7 +670,7 @@ public class KubernetesClientWrapper {
         @Override
         DaemonSet createResource(DaemonSet current) {
             return client
-                    .extensions()
+                    .apps()
                     .daemonSets()
                     .inNamespace(getNamespace())
                     .create(current);
@@ -690,7 +690,7 @@ public class KubernetesClientWrapper {
         @Override
         Job getCurrentResource() {
             return client
-                    .extensions()
+                    .batch()
                     .jobs()
                     .inNamespace(getNamespace())
                     .withName(getName())
@@ -700,7 +700,7 @@ public class KubernetesClientWrapper {
         @Override
         Job applyResource(Job original, Job current) {
             return client
-                    .extensions()
+                    .batch()
                     .jobs()
                     .inNamespace(getNamespace())
                     .withName(current.getMetadata().getName())
@@ -713,7 +713,7 @@ public class KubernetesClientWrapper {
         @Override
         Job createResource(Job current) {
             return client
-                    .extensions()
+                    .batch()
                     .jobs()
                     .inNamespace(getNamespace())
                     .create(current);
