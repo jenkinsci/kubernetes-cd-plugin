@@ -80,6 +80,7 @@ The following resource types are supported by the plugin:
 * Deployment
 * Ingress
 * Job
+* CronJob
 * Namespace
 * Pod
 * Replica Set
