@@ -92,7 +92,8 @@ public interface ResourceUpdateMonitor {
         }
 
         @Override
-        public void onHoriziontalPodAutoscalerUpdate(HorizontalPodAutoscaler original, HorizontalPodAutoscaler current) {
+        public void onHoriziontalPodAutoscalerUpdate(HorizontalPodAutoscaler original,
+                                                     HorizontalPodAutoscaler current) {
         }
 
         @Override
