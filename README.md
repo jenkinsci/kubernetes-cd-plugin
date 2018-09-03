@@ -83,6 +83,7 @@ The following resource types are supported by the plugin:
 * CronJob
 * Namespace
 * Pod
+* HorizontalPodAutoscaler
 * Replica Set
 * Replication Controller - No rolling-update support. If that's required, consider using [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-update-deployment).
 * Secret - The plugin also provides secrets configuration.
