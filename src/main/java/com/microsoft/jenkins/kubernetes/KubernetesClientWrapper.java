@@ -14,26 +14,18 @@ import com.microsoft.jenkins.kubernetes.util.DockerConfigBuilder;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.util.VariableResolver;
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.Job;
-import io.fabric8.kubernetes.api.model.Namespace;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.ReplicationController;
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServicePort;
-import io.fabric8.kubernetes.api.model.extensions.DaemonSet;
-import io.fabric8.kubernetes.api.model.extensions.Deployment;
-import io.fabric8.kubernetes.api.model.extensions.Ingress;
-import io.fabric8.kubernetes.api.model.extensions.ReplicaSet;
-import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.ConfigBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.utils.Utils;
+import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.Configuration;
+import io.kubernetes.client.apis.AppsV1beta1Api;
+import io.kubernetes.client.apis.CoreV1Api;
+import io.kubernetes.client.apis.ExtensionsV1beta1Api;
+import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1Secret;
+import io.kubernetes.client.models.V1SecretBuilder;
+import io.kubernetes.client.util.ClientBuilder;
+import io.kubernetes.client.util.Config;
+import io.kubernetes.client.util.Yaml;
+import io.kubernetes.client.util.credentials.ClientCertificateAuthentication;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 
@@ -41,56 +33,77 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
-
 public class KubernetesClientWrapper {
-    private final KubernetesClient client;
+    private final ApiClient client;
+    private final CoreV1Api coreV1ApiInstance;
+    private final AppsV1beta1Api appsV1beta1ApiInstance;
+    private final ExtensionsV1beta1Api extensionsV1beta1ApiInstance;
+    //    private final KubernetesClient client;
     private PrintStream logger = System.out;
     private VariableResolver<String> variableResolver;
-    private ResourceUpdateMonitor resourceUpdateMonitor = ResourceUpdateMonitor.NOOP;
 
     @VisibleForTesting
-    KubernetesClientWrapper(KubernetesClient client) {
+    KubernetesClientWrapper(ApiClient client) {
         this.client = client;
+        Configuration.setDefaultApiClient(client);
+
+        coreV1ApiInstance = new CoreV1Api();
+        appsV1beta1ApiInstance = new AppsV1beta1Api();
+        extensionsV1beta1ApiInstance = new ExtensionsV1beta1Api();
     }
 
-    public KubernetesClientWrapper(String kubeconfig) {
-        File file = new File(kubeconfig);
+    public KubernetesClientWrapper(String kubeConfig) {
+        File file = new File(kubeConfig);
         if (file.exists()) {
             try (InputStream in = new FileInputStream(file)) {
-                kubeconfig = IOUtils.toString(in);
+                kubeConfig = IOUtils.toString(in);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
 
-        Config config = configFromKubeconfig(kubeconfig);
-        client = new DefaultKubernetesClient(config);
+        StringReader reader = new StringReader(kubeConfig);
+        try {
+            client = Config.fromConfig(reader);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Configuration.setDefaultApiClient(client);
+
+        coreV1ApiInstance = new CoreV1Api();
+        appsV1beta1ApiInstance = new AppsV1beta1Api();
+        extensionsV1beta1ApiInstance = new ExtensionsV1beta1Api();
     }
+
 
     public KubernetesClientWrapper(String server,
                                    String certificateAuthorityData,
                                    String clientCertificateData,
                                    String clientKeyData) {
-        Config config = new ConfigBuilder()
-                .withMasterUrl(server)
-                .withCaCertData(certificateAuthorityData)
-                .withClientCertData(clientCertificateData)
-                .withClientKeyData(clientKeyData)
-                .withWebsocketPingInterval(0)
+        ClientCertificateAuthentication authentication = new ClientCertificateAuthentication(
+                clientCertificateData.getBytes(), clientKeyData.getBytes());
+        client = (new ClientBuilder())
+                .setBasePath(server)
+                .setAuthentication(authentication)
+                .setCertificateAuthority(certificateAuthorityData.getBytes())
                 .build();
-        client = new DefaultKubernetesClient(config);
+        Configuration.setDefaultApiClient(client);
+
+        coreV1ApiInstance = new CoreV1Api();
+        appsV1beta1ApiInstance = new AppsV1beta1Api();
+        extensionsV1beta1ApiInstance = new ExtensionsV1beta1Api();
     }
 
-    public KubernetesClient getClient() {
+    public ApiClient getClient() {
         return client;
     }
 
@@ -112,16 +125,6 @@ public class KubernetesClientWrapper {
         return this;
     }
 
-    public ResourceUpdateMonitor getResourceUpdateMonitor() {
-        return resourceUpdateMonitor;
-    }
-
-    public KubernetesClientWrapper withResourceUpdateMonitor(ResourceUpdateMonitor monitor) {
-        checkNotNull(monitor);
-        this.resourceUpdateMonitor = monitor;
-        return this;
-    }
-
 
     /**
      * Apply Kubernetes configurations through the given Kubernetes client.
@@ -134,57 +137,35 @@ public class KubernetesClientWrapper {
         for (FilePath path : configFiles) {
             log(Messages.KubernetesClientWrapper_loadingConfiguration(path));
 
-            List<HasMetadata> resources = client.load(CommonUtils.replaceMacro(path.read(), variableResolver)).get();
+            InputStream inputStream = CommonUtils.replaceMacro(path.read(), variableResolver);
+            List<Object> resources = Yaml.loadAll(new InputStreamReader(inputStream));
             if (resources.isEmpty()) {
                 log(Messages.KubernetesClientWrapper_noResourceLoadedFrom(path));
                 continue;
             }
 
+            ResourceManager v1ResourceManager = new V1ResourceManager();
+            ResourceManager v1beta1ResourceManager = new V1beta1ResourceManager();
+
             // Process the Namespace in the list first, as it may be a dependency of other resources.
-            Iterator<HasMetadata> iter = resources.iterator();
-            while (iter.hasNext()) {
-                HasMetadata resource = iter.next();
-                if (resource instanceof Namespace) {
-                    Namespace namespace = (Namespace) resource;
-                    new NamespaceUpdater(namespace).createOrApply();
-                    iter.remove();
+            Iterator<Object> iterator = resources.iterator();
+            while (iterator.hasNext()) {
+                Object resource = iterator.next();
+                if (resource instanceof V1Namespace) {
+                    v1ResourceManager.apply(resource);
+                    iterator.remove();
                 }
             }
 
-            for (HasMetadata resource : resources) {
-                if (resource instanceof Deployment) {
-                    Deployment deployment = (Deployment) resource;
-                    new DeploymentUpdater(deployment).createOrApply();
-                } else if (resource instanceof Service) {
-                    Service service = (Service) resource;
-                    new ServiceUpdater(service).createOrApply();
-                } else if (resource instanceof Ingress) {
-                    Ingress ingress = (Ingress) resource;
-                    new IngressUpdater(ingress).createOrApply();
-                } else if (resource instanceof ReplicationController) {
-                    ReplicationController replicationController = (ReplicationController) resource;
-                    new ReplicationControllerUpdater(replicationController).createOrApply();
-                } else if (resource instanceof ReplicaSet) {
-                    ReplicaSet rs = (ReplicaSet) resource;
-                    new ReplicaSetUpdater(rs).createOrApply();
-                } else if (resource instanceof DaemonSet) {
-                    DaemonSet daemonSet = (DaemonSet) resource;
-                    new DaemonSetUpdater(daemonSet).createOrApply();
-                } else if (resource instanceof Job) {
-                    Job job = (Job) resource;
-                    new JobUpdater(job).createOrApply();
-                } else if (resource instanceof Pod) {
-                    Pod pod = (Pod) resource;
-                    new PodUpdater(pod).createOrApply();
-                } else if (resource instanceof Secret) {
-                    Secret secret = (Secret) resource;
-                    new SecretUpdater(secret).createOrApply();
-                } else if (resource instanceof ConfigMap) {
-                    ConfigMap configMap = (ConfigMap) resource;
-                    new ConfigMapUpdater(configMap).createOrApply();
-                } else {
-                    log(Messages.KubernetesClientWrapper_skipped(resource));
+            for (Object resource : resources) {
+                boolean isVersion1 = v1ResourceManager.apply(resource);
+                if (isVersion1) {
+                    continue;
                 }
+                boolean isVersion1beta1 = v1beta1ResourceManager.apply(resource);
+//                if (isVersion1beta1) {
+//                    continue;
+//                }
             }
         }
     }
@@ -212,9 +193,9 @@ public class KubernetesClientWrapper {
         DockerConfigBuilder dockerConfigBuilder = new DockerConfigBuilder(credentials);
         String dockercfg = dockerConfigBuilder.buildDockercfgBase64();
 
-        Map<String, String> data = new HashMap<>();
-        data.put(".dockercfg", dockercfg);
-        Secret secret = new SecretBuilder()
+        Map<String, byte[]> data = new HashMap<>();
+        data.put(".dockercfg", dockercfg.getBytes());
+        V1Secret secret = new V1SecretBuilder()
                 .withNewMetadata()
                 .withName(secretName)
                 .withNamespace(kubernetesNamespace)
@@ -222,36 +203,8 @@ public class KubernetesClientWrapper {
                 .withData(data)
                 .withType("kubernetes.io/dockercfg")
                 .build();
-
-        new SecretUpdater(secret).createOrApply();
-    }
-
-    /**
-     * Build config from the kubeconfig contents.
-     * <p>
-     * This requires to update the system property. In order to avoid changing the system property at the same time
-     * from multiple running jobs, the method is marked as synchronized.
-     *
-     * @param kubeconfig the kubeconfig contents
-     * @return the config that can be used to build {@link KubernetesClient}
-     */
-    public static synchronized Config configFromKubeconfig(String kubeconfig) {
-        String originalTryKubeconfig =
-                Utils.getSystemPropertyOrEnvVar(Config.KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY);
-        String originalTryServiceAccount =
-                Utils.getSystemPropertyOrEnvVar(Config.KUBERNETES_AUTH_TRYSERVICEACCOUNT_SYSTEM_PROPERTY);
-        String originalTryNamespacePath =
-                Utils.getSystemPropertyOrEnvVar(Config.KUBERNETES_TRYNAMESPACE_PATH_SYSTEM_PROPERTY);
-        try {
-            System.setProperty(Config.KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY, "false");
-            System.setProperty(Config.KUBERNETES_AUTH_TRYSERVICEACCOUNT_SYSTEM_PROPERTY, "false");
-            System.setProperty(Config.KUBERNETES_TRYNAMESPACE_PATH_SYSTEM_PROPERTY, "false");
-            return Config.fromKubeconfig(kubeconfig);
-        } finally {
-            restoreProperty(Config.KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY, originalTryKubeconfig);
-            restoreProperty(Config.KUBERNETES_AUTH_TRYSERVICEACCOUNT_SYSTEM_PROPERTY, originalTryServiceAccount);
-            restoreProperty(Config.KUBERNETES_TRYNAMESPACE_PATH_SYSTEM_PROPERTY, originalTryNamespacePath);
-        }
+        ResourceManager v1ResourceManager = new V1beta1ResourceManager();
+        v1ResourceManager.apply(secret);
     }
 
     private static void restoreProperty(String name, String value) {
@@ -302,592 +255,6 @@ public class KubernetesClientWrapper {
     private void log(String message) {
         if (logger != null) {
             logger.println(message);
-        }
-    }
-
-    private abstract class ResourceUpdater<T extends HasMetadata> {
-        private final T resource;
-
-        ResourceUpdater(T resource) {
-            checkNotNull(resource);
-            this.resource = resource;
-            checkState(StringUtils.isNotBlank(getName()),
-                    Messages.KubernetesClientWrapper_noName(), getKind(), resource);
-        }
-
-        final String getNamespace() {
-            ObjectMeta metadata = resource.getMetadata();
-            String ns = null;
-            if (metadata != null) {
-                ns = resource.getMetadata().getNamespace();
-            }
-            if (ns == null) {
-                ns = Constants.DEFAULT_KUBERNETES_NAMESPACE;
-            }
-            return ns;
-        }
-
-        final T get() {
-            return resource;
-        }
-
-        final String getName() {
-            ObjectMeta metadata = resource.getMetadata();
-            String name = null;
-            if (metadata != null) {
-                name = metadata.getName();
-            }
-            return name;
-        }
-
-        final String getKind() {
-            return resource.getKind();
-        }
-
-        /**
-         * Explicitly apply the configuration if a resource with the same name exists in the namespace in the cluster,
-         * or create one if not.
-         * <p>
-         * If we cannot load resource during application (possibly because the resource gets deleted after we first
-         * checked), or some one created the resource after we checked and before we created, the method fails with
-         * exception.
-         *
-         * @throws IOException if we cannot find the resource in the cluster when we apply the configuration
-         */
-        final void createOrApply() throws IOException {
-            T original = getCurrentResource();
-            T current = get();
-            T updated;
-            if (original != null) {
-                updated = applyResource(original, current);
-                if (updated == null) {
-                    throw new IOException(Messages.KubernetesClientWrapper_resourceNotFound(
-                            getKind(), current.getMetadata().getName()));
-                }
-                logApplied(updated);
-            } else {
-                updated = createResource(get());
-                logCreated(updated);
-            }
-            notifyUpdate(original, updated);
-        }
-
-        abstract T getCurrentResource();
-
-        abstract T applyResource(T original, T current);
-
-        abstract T createResource(T current);
-
-        abstract void notifyUpdate(T original, T current);
-
-        void logApplied(T res) {
-            log(Messages.KubernetesClientWrapper_applied(res.getClass().getSimpleName(), res));
-        }
-
-        void logCreated(T res) {
-            log(Messages.KubernetesClientWrapper_created(res.getClass().getSimpleName(), res));
-        }
-    }
-
-    private class DeploymentUpdater extends ResourceUpdater<Deployment> {
-        DeploymentUpdater(Deployment deployment) {
-            super(deployment);
-        }
-
-        @Override
-        Deployment getCurrentResource() {
-            return client
-                    .extensions()
-                    .deployments()
-                    .inNamespace(getNamespace())
-                    .withName(getName())
-                    .get();
-        }
-
-        @Override
-        Deployment applyResource(Deployment original, Deployment current) {
-            return client
-                    .extensions()
-                    .deployments()
-                    .inNamespace(getNamespace())
-                    .withName(current.getMetadata().getName())
-                    .edit()
-                    .withMetadata(current.getMetadata())
-                    .withSpec(current.getSpec())
-                    .done();
-        }
-
-        @Override
-        Deployment createResource(Deployment current) {
-            return client
-                    .extensions()
-                    .deployments()
-                    .inNamespace(getNamespace())
-                    .create(current);
-        }
-
-        @Override
-        void notifyUpdate(Deployment original, Deployment current) {
-            resourceUpdateMonitor.onDeploymentUpdate(original, current);
-        }
-    }
-
-    private class ServiceUpdater extends ResourceUpdater<Service> {
-        ServiceUpdater(Service service) {
-            super(service);
-        }
-
-        @Override
-        Service getCurrentResource() {
-            return client
-                    .services()
-                    .inNamespace(getNamespace())
-                    .withName(getName())
-                    .get();
-        }
-
-        @Override
-        Service applyResource(Service original, Service current) {
-            List<ServicePort> originalPorts = original.getSpec().getPorts();
-            List<ServicePort> currentPorts = current.getSpec().getPorts();
-            // Pin the nodePort to the public port
-            // The kubernetes-client library will compare the server config and the current applied config,
-            // and compute the difference, which will be sent to the PATCH API of Kubernetes. The missing nodePort
-            // will be considered as deletion, which will cause the Kubernetes to assign a new nodePort to the
-            // service, which may have problem with the port forwarding as in the load balancer.
-            //
-            // "kubectl apply" handles the service update in the same way.
-            if (originalPorts != null && currentPorts != null) {
-                Map<Integer, Integer> portToNodePort = new HashMap<>();
-                for (ServicePort servicePort : originalPorts) {
-                    Integer port = servicePort.getPort();
-                    Integer nodePort = servicePort.getNodePort();
-                    if (port != null && nodePort != null) {
-                        portToNodePort.put(servicePort.getPort(), servicePort.getNodePort());
-                    }
-                }
-                for (ServicePort servicePort : currentPorts) {
-                    // if the nodePort is defined in the config, use it
-                    Integer currentNodePort = servicePort.getNodePort();
-                    if (currentNodePort != null && currentNodePort != 0) {
-                        continue;
-                    }
-                    // otherwise try to copy the nodePort from the current service status
-                    Integer port = servicePort.getPort();
-                    if (port != null) {
-                        Integer nodePort = portToNodePort.get(port);
-                        if (nodePort != null) {
-                            servicePort.setNodePort(nodePort);
-                        }
-                    }
-                }
-            }
-
-            // this should be no-op, keep it in case current.getSpec().getPorts() behavior changes in future
-            current.getSpec().setPorts(currentPorts);
-
-            return client.services()
-                    .inNamespace(getNamespace())
-                    .withName(original.getMetadata().getName())
-                    .edit()
-                    .withMetadata(current.getMetadata())
-                    .withSpec(current.getSpec())
-                    .done();
-        }
-
-        @Override
-        Service createResource(Service current) {
-            return client
-                    .services()
-                    .inNamespace(getNamespace())
-                    .create(current);
-        }
-
-        @Override
-        void notifyUpdate(Service original, Service current) {
-            resourceUpdateMonitor.onServiceUpdate(original, current);
-        }
-    }
-
-    private class IngressUpdater extends ResourceUpdater<Ingress> {
-        IngressUpdater(Ingress ingress) {
-            super(ingress);
-        }
-
-        @Override
-        Ingress getCurrentResource() {
-            return client
-                    .extensions()
-                    .ingresses()
-                    .inNamespace(getNamespace())
-                    .withName(getName())
-                    .get();
-        }
-
-        @Override
-        Ingress applyResource(Ingress original, Ingress current) {
-            return client
-                    .extensions()
-                    .ingresses()
-                    .inNamespace(getNamespace())
-                    .withName(current.getMetadata().getName())
-                    .edit()
-                    .withMetadata(current.getMetadata())
-                    .withSpec(current.getSpec())
-                    .done();
-        }
-
-        @Override
-        Ingress createResource(Ingress current) {
-            return client
-                    .extensions()
-                    .ingresses()
-                    .inNamespace(getNamespace())
-                    .create(current);
-        }
-
-        @Override
-        void notifyUpdate(Ingress original, Ingress current) {
-            resourceUpdateMonitor.onIngressUpdate(original, current);
-        }
-    }
-
-    private class ReplicationControllerUpdater extends ResourceUpdater<ReplicationController> {
-        ReplicationControllerUpdater(ReplicationController rc) {
-            super(rc);
-        }
-
-        @Override
-        ReplicationController getCurrentResource() {
-            return client
-                    .replicationControllers()
-                    .inNamespace(getNamespace())
-                    .withName(getName())
-                    .get();
-        }
-
-        @Override
-        ReplicationController applyResource(ReplicationController original, ReplicationController current) {
-            return client
-                    .replicationControllers()
-                    .inNamespace(getNamespace())
-                    .withName(current.getMetadata().getName())
-                    .edit()
-                    .withMetadata(current.getMetadata())
-                    .withSpec(current.getSpec())
-                    .done();
-        }
-
-        @Override
-        ReplicationController createResource(ReplicationController current) {
-            return client
-                    .replicationControllers()
-                    .inNamespace(getNamespace())
-                    .create(current);
-        }
-
-        @Override
-        void notifyUpdate(ReplicationController original, ReplicationController current) {
-            resourceUpdateMonitor.onReplicationControllerUpdate(original, current);
-        }
-    }
-
-    private class ReplicaSetUpdater extends ResourceUpdater<ReplicaSet> {
-        ReplicaSetUpdater(ReplicaSet rs) {
-            super(rs);
-        }
-
-        @Override
-        ReplicaSet getCurrentResource() {
-            return client
-                    .extensions()
-                    .replicaSets()
-                    .inNamespace(getNamespace())
-                    .withName(getName())
-                    .get();
-        }
-
-        @Override
-        ReplicaSet applyResource(ReplicaSet original, ReplicaSet current) {
-            return client
-                    .extensions()
-                    .replicaSets()
-                    .inNamespace(getNamespace())
-                    .withName(current.getMetadata().getName())
-                    .edit()
-                    .withMetadata(current.getMetadata())
-                    .withSpec(current.getSpec())
-                    .done();
-        }
-
-        @Override
-        ReplicaSet createResource(ReplicaSet current) {
-            return client
-                    .extensions()
-                    .replicaSets()
-                    .inNamespace(getNamespace())
-                    .create(current);
-        }
-
-        @Override
-        void notifyUpdate(ReplicaSet original, ReplicaSet current) {
-            resourceUpdateMonitor.onReplicaSetUpdate(original, current);
-        }
-    }
-
-    private class DaemonSetUpdater extends ResourceUpdater<DaemonSet> {
-        DaemonSetUpdater(DaemonSet ds) {
-            super(ds);
-        }
-
-        @Override
-        DaemonSet getCurrentResource() {
-            return client
-                    .extensions()
-                    .daemonSets()
-                    .inNamespace(getNamespace())
-                    .withName(getName())
-                    .get();
-        }
-
-        @Override
-        DaemonSet applyResource(DaemonSet original, DaemonSet current) {
-            return client
-                    .extensions()
-                    .daemonSets()
-                    .inNamespace(getNamespace())
-                    .withName(current.getMetadata().getName())
-                    .edit()
-                    .withMetadata(current.getMetadata())
-                    .withSpec(current.getSpec())
-                    .done();
-        }
-
-        @Override
-        DaemonSet createResource(DaemonSet current) {
-            return client
-                    .extensions()
-                    .daemonSets()
-                    .inNamespace(getNamespace())
-                    .create(current);
-        }
-
-        @Override
-        void notifyUpdate(DaemonSet original, DaemonSet current) {
-            resourceUpdateMonitor.onDaemonSetUpdate(original, current);
-        }
-    }
-
-    private class JobUpdater extends ResourceUpdater<Job> {
-        JobUpdater(Job job) {
-            super(job);
-        }
-
-        @Override
-        Job getCurrentResource() {
-            return client
-                    .extensions()
-                    .jobs()
-                    .inNamespace(getNamespace())
-                    .withName(getName())
-                    .get();
-        }
-
-        @Override
-        Job applyResource(Job original, Job current) {
-            return client
-                    .extensions()
-                    .jobs()
-                    .inNamespace(getNamespace())
-                    .withName(current.getMetadata().getName())
-                    .edit()
-                    .withMetadata(current.getMetadata())
-                    .withSpec(current.getSpec())
-                    .done();
-        }
-
-        @Override
-        Job createResource(Job current) {
-            return client
-                    .extensions()
-                    .jobs()
-                    .inNamespace(getNamespace())
-                    .create(current);
-        }
-
-        @Override
-        void notifyUpdate(Job original, Job current) {
-            resourceUpdateMonitor.onJobUpdate(original, current);
-        }
-    }
-
-    private class PodUpdater extends ResourceUpdater<Pod> {
-        PodUpdater(Pod pod) {
-            super(pod);
-        }
-
-        @Override
-        Pod getCurrentResource() {
-            return client
-                    .pods()
-                    .inNamespace(getNamespace())
-                    .withName(getName())
-                    .get();
-        }
-
-        @Override
-        Pod applyResource(Pod original, Pod current) {
-            return client
-                    .pods()
-                    .inNamespace(getNamespace())
-                    .withName(current.getMetadata().getName())
-                    .edit()
-                    .withMetadata(current.getMetadata())
-                    .withSpec(current.getSpec())
-                    .done();
-        }
-
-        @Override
-        Pod createResource(Pod current) {
-            return client
-                    .pods()
-                    .inNamespace(getNamespace())
-                    .create(current);
-        }
-
-        @Override
-        void notifyUpdate(Pod original, Pod current) {
-            resourceUpdateMonitor.onPodUpdate(original, current);
-        }
-    }
-
-    private class ConfigMapUpdater extends ResourceUpdater<ConfigMap> {
-        ConfigMapUpdater(ConfigMap configMap) {
-            super(configMap);
-        }
-
-        @Override
-        ConfigMap getCurrentResource() {
-            return client
-                    .configMaps()
-                    .inNamespace(getNamespace())
-                    .withName(getName())
-                    .get();
-        }
-
-        @Override
-        ConfigMap applyResource(ConfigMap original, ConfigMap current) {
-            return client
-                    .configMaps()
-                    .inNamespace(getNamespace())
-                    .withName(current.getMetadata().getName())
-                    .edit()
-                    .withMetadata(current.getMetadata())
-                    .withData(current.getData())
-                    .done();
-        }
-
-        @Override
-        ConfigMap createResource(ConfigMap current) {
-            return client
-                    .configMaps()
-                    .inNamespace(getNamespace())
-                    .create(current);
-        }
-
-        @Override
-        void notifyUpdate(ConfigMap original, ConfigMap current) {
-            resourceUpdateMonitor.onConfigMapUpdate(original, current);
-        }
-    }
-
-    private class SecretUpdater extends ResourceUpdater<Secret> {
-        SecretUpdater(Secret secret) {
-            super(secret);
-        }
-
-        @Override
-        Secret getCurrentResource() {
-            return client
-                    .secrets()
-                    .inNamespace(getNamespace())
-                    .withName(getName())
-                    .get();
-        }
-
-        @Override
-        Secret applyResource(Secret original, Secret current) {
-            return client
-                    .secrets()
-                    .inNamespace(getNamespace())
-                    .withName(current.getMetadata().getName())
-                    .edit()
-                    .withMetadata(current.getMetadata())
-                    .withData(current.getData())
-                    .withStringData(current.getStringData())
-                    .withType(current.getType())
-                    .done();
-        }
-
-        @Override
-        Secret createResource(Secret current) {
-            return client
-                    .secrets()
-                    .inNamespace(getNamespace())
-                    .create(current);
-        }
-
-        @Override
-        void notifyUpdate(Secret original, Secret current) {
-            resourceUpdateMonitor.onSecretUpdate(original, current);
-        }
-
-        @Override
-        void logApplied(Secret res) {
-            // do not show the secret details
-            log(Messages.KubernetesClientWrapper_applied("Secret", "name: " + getName()));
-        }
-
-        @Override
-        void logCreated(Secret res) {
-            log(Messages.KubernetesClientWrapper_created(getKind(), "name: " + getName()));
-        }
-    }
-
-    private class NamespaceUpdater extends ResourceUpdater<Namespace> {
-        NamespaceUpdater(Namespace namespace) {
-            super(namespace);
-        }
-
-        @Override
-        Namespace getCurrentResource() {
-            return client
-                    .namespaces()
-                    .withName(getName())
-                    .get();
-        }
-
-        @Override
-        Namespace applyResource(Namespace original, Namespace current) {
-            return client
-                    .namespaces()
-                    .withName(getName())
-                    .edit()
-                    .withMetadata(current.getMetadata())
-                    .withSpec(current.getSpec())
-                    .done();
-        }
-
-        @Override
-        Namespace createResource(Namespace current) {
-            return client
-                    .namespaces()
-                    .create(current);
-        }
-
-        @Override
-        void notifyUpdate(Namespace original, Namespace current) {
-            resourceUpdateMonitor.onNamespaceUpdate(original, current);
         }
     }
 }

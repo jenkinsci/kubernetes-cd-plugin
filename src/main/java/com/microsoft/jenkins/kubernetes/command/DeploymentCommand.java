@@ -25,13 +25,12 @@ import hudson.model.Item;
 import hudson.model.TaskListener;
 import hudson.remoting.ProxyException;
 import hudson.util.VariableResolver;
-import io.fabric8.kubernetes.client.KubernetesClient;
+import io.kubernetes.client.ApiClient;
 import jenkins.security.MasterToSlaveCallable;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,12 +90,13 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
     @VisibleForTesting
     static String getMasterHost(KubernetesClientWrapper wrapper) {
         if (wrapper != null) {
-            KubernetesClient client = wrapper.getClient();
+            ApiClient client = wrapper.getClient();
             if (client != null) {
-                URL masterURL = client.getMasterUrl();
-                if (masterURL != null) {
-                    return masterURL.getHost();
-                }
+                return client.getBasePath();
+//                URL masterURL = client.getMasterUrl();
+//                if (masterURL != null) {
+//                    return masterURL.getHost();
+//                }
             }
         }
         return "Unknown";

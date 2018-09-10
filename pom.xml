@@ -15,7 +15,7 @@
     <properties>
         <!-- Baseline Jenkins version you use to build the plugin. Users must have this version or newer to run. -->
         <jenkins.version>1.651.3</jenkins.version>
-        <java.level>7</java.level>
+        <java.level>8</java.level>
 
         <azure-commons-version>0.2.6</azure-commons-version>
         <credentials.version>2.1.14</credentials.version>
@@ -23,7 +23,7 @@
         <ssh-credentials.version>1.13</ssh-credentials.version>
         <workflow-step-api.version>2.10</workflow-step-api.version>
 
-        <kubernetes-client.version>3.1.10</kubernetes-client.version>
+        <kubernetes-client.version>3.0.0-beta1</kubernetes-client.version>
     </properties>
 
     <name>Kubernetes Continuous Deploy Plugin</name>
@@ -107,8 +107,19 @@
             <version>${azure-commons-version}</version>
         </dependency>
         <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-client</artifactId>
+            <groupId>io.kubernetes</groupId>
+            <artifactId>client-java</artifactId>
+            <version>${kubernetes-client.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.kubernetes</groupId>
+            <artifactId>client-java-proto</artifactId>
+            <version>${kubernetes-client.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.kubernetes</groupId>
+            <artifactId>client-java-api</artifactId>
             <version>${kubernetes-client.version}</version>
         </dependency>
         <dependency>

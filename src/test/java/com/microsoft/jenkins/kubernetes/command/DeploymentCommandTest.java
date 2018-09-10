@@ -1,10 +1,8 @@
 package com.microsoft.jenkins.kubernetes.command;
 
 import com.microsoft.jenkins.kubernetes.KubernetesClientWrapper;
-import io.fabric8.kubernetes.client.KubernetesClient;
+import io.kubernetes.client.ApiClient;
 import org.junit.Test;
-
-import java.net.URL;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -23,14 +21,12 @@ public class DeploymentCommandTest {
         KubernetesClientWrapper wrapper = mock(KubernetesClientWrapper.class);
         assertEquals(FALLBACK_MASTER, DeploymentCommand.getMasterHost(wrapper));
 
-        KubernetesClient client = mock(KubernetesClient.class);
+        ApiClient client = mock(ApiClient.class);
         when(wrapper.getClient()).thenReturn(client);
         assertEquals(FALLBACK_MASTER, DeploymentCommand.getMasterHost(wrapper));
 
-        URL url = mock(URL.class);
         final String host = "some.host";
-        when(url.getHost()).thenReturn(host);
-        when(client.getMasterUrl()).thenReturn(url);
+        when(client.getBasePath()).thenReturn(host);
         assertEquals(host, DeploymentCommand.getMasterHost(wrapper));
     }
 }
