@@ -19,6 +19,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 public abstract class ResourceManager {
+    protected static final String DEFAULT_PRETTY = "true";
+
     protected abstract class ResourceUpdater<T> {
         private final T resource;
         private final V1ObjectMeta metadata;

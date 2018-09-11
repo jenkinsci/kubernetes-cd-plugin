@@ -92,7 +92,10 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
         if (wrapper != null) {
             ApiClient client = wrapper.getClient();
             if (client != null) {
-                return client.getBasePath();
+                String url = client.getBasePath();
+                if (url != null) {
+                    return url;
+                }
 //                URL masterURL = client.getMasterUrl();
 //                if (masterURL != null) {
 //                    return masterURL.getHost();

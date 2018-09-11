@@ -16,9 +16,6 @@ import hudson.FilePath;
 import hudson.util.VariableResolver;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.Configuration;
-import io.kubernetes.client.apis.AppsV1beta1Api;
-import io.kubernetes.client.apis.CoreV1Api;
-import io.kubernetes.client.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1SecretBuilder;
@@ -44,9 +41,6 @@ import java.util.UUID;
 
 public class KubernetesClientWrapper {
     private final ApiClient client;
-    private final CoreV1Api coreV1ApiInstance;
-    private final AppsV1beta1Api appsV1beta1ApiInstance;
-    private final ExtensionsV1beta1Api extensionsV1beta1ApiInstance;
     //    private final KubernetesClient client;
     private PrintStream logger = System.out;
     private VariableResolver<String> variableResolver;
@@ -55,10 +49,6 @@ public class KubernetesClientWrapper {
     KubernetesClientWrapper(ApiClient client) {
         this.client = client;
         Configuration.setDefaultApiClient(client);
-
-        coreV1ApiInstance = new CoreV1Api();
-        appsV1beta1ApiInstance = new AppsV1beta1Api();
-        extensionsV1beta1ApiInstance = new ExtensionsV1beta1Api();
     }
 
     public KubernetesClientWrapper(String kubeConfig) {
@@ -78,10 +68,6 @@ public class KubernetesClientWrapper {
             throw new RuntimeException(e);
         }
         Configuration.setDefaultApiClient(client);
-
-        coreV1ApiInstance = new CoreV1Api();
-        appsV1beta1ApiInstance = new AppsV1beta1Api();
-        extensionsV1beta1ApiInstance = new ExtensionsV1beta1Api();
     }
 
 
@@ -97,10 +83,6 @@ public class KubernetesClientWrapper {
                 .setCertificateAuthority(certificateAuthorityData.getBytes())
                 .build();
         Configuration.setDefaultApiClient(client);
-
-        coreV1ApiInstance = new CoreV1Api();
-        appsV1beta1ApiInstance = new AppsV1beta1Api();
-        extensionsV1beta1ApiInstance = new ExtensionsV1beta1Api();
     }
 
     public ApiClient getClient() {

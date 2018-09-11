@@ -16,10 +16,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class V1beta1ResourceManager extends ResourceManager {
     private ExtensionsV1beta1Api extensionsV1beta1ApiInstance;
+    private String pretty = DEFAULT_PRETTY;
     private V1beta1ResourceUpdateMonitor resourceUpdateMonitor = V1beta1ResourceUpdateMonitor.NOOP;
 
     public V1beta1ResourceManager() {
         extensionsV1beta1ApiInstance = new ExtensionsV1beta1Api();
+    }
+
+    public V1beta1ResourceManager(String pretty) {
+        this();
+        this.pretty = pretty;
     }
 
     @Override
@@ -52,7 +58,7 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1Ingress getCurrentResource() {
             V1beta1Ingress ingress = null;
             try {
-                ingress = extensionsV1beta1ApiInstance.readNamespacedIngress(getName(), getNamespace(), null,
+                ingress = extensionsV1beta1ApiInstance.readNamespacedIngress(getName(), getNamespace(), pretty,
                         true, true);
             } catch (ApiException e) {
                 e.printStackTrace();
@@ -65,7 +71,7 @@ public class V1beta1ResourceManager extends ResourceManager {
             V1beta1Ingress ingress = null;
             try {
                 ingress = extensionsV1beta1ApiInstance.replaceNamespacedIngress(getName(), getNamespace(), current,
-                        null);
+                        pretty);
             } catch (ApiException e) {
                 e.printStackTrace();
             }
@@ -76,7 +82,7 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1Ingress createResource(V1beta1Ingress current) {
             V1beta1Ingress ingress = null;
             try {
-                ingress = extensionsV1beta1ApiInstance.createNamespacedIngress(getNamespace(), current, null);
+                ingress = extensionsV1beta1ApiInstance.createNamespacedIngress(getNamespace(), current, pretty);
             } catch (ApiException e) {
                 e.printStackTrace();
             }
