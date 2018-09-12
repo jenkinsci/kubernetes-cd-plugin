@@ -8,7 +8,9 @@ package com.microsoft.jenkins.kubernetes;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.ExtensionsV1beta1Api;
+import io.kubernetes.client.models.V1beta1DaemonSet;
 import io.kubernetes.client.models.V1beta1Ingress;
+import io.kubernetes.client.models.V1beta1ReplicaSet;
 
 import java.io.IOException;
 
@@ -33,6 +35,12 @@ public class V1beta1ResourceManager extends ResourceManager {
         if (resource instanceof V1beta1Ingress) {
             V1beta1Ingress ingress = (V1beta1Ingress) resource;
             new IngressUpdater(ingress).createOrApply();
+        } else if (resource instanceof V1beta1DaemonSet) {
+            V1beta1DaemonSet daemonSet = (V1beta1DaemonSet) resource;
+            new DaemonSetUpdater(daemonSet).createOrApply();
+        } else if (resource instanceof V1beta1ReplicaSet) {
+            V1beta1ReplicaSet replicaSet = (V1beta1ReplicaSet) resource;
+            new ReplicaSetUpdater(replicaSet).createOrApply();
         } else {
             return false;
         }
@@ -48,6 +56,95 @@ public class V1beta1ResourceManager extends ResourceManager {
         this.resourceUpdateMonitor = monitor;
         return this;
     }
+
+    private class ReplicaSetUpdater extends ResourceUpdater<V1beta1ReplicaSet> {
+        ReplicaSetUpdater(V1beta1ReplicaSet replicaSet) {
+            super(replicaSet);
+        }
+
+        @Override
+        V1beta1ReplicaSet getCurrentResource() {
+            V1beta1ReplicaSet replicaSet = null;
+            try {
+                replicaSet = extensionsV1beta1ApiInstance.readNamespacedReplicaSet(getName(), getNamespace(), pretty, true, true);
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+            return replicaSet;
+        }
+
+        @Override
+        V1beta1ReplicaSet applyResource(V1beta1ReplicaSet original, V1beta1ReplicaSet current) {
+            V1beta1ReplicaSet replicaSet = null;
+            try {
+                replicaSet = extensionsV1beta1ApiInstance.replaceNamespacedReplicaSet(getName(), getNamespace(), current, pretty);
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+            return replicaSet;
+        }
+
+        @Override
+        V1beta1ReplicaSet createResource(V1beta1ReplicaSet current) {
+            V1beta1ReplicaSet replicaSet = null;
+            try {
+                replicaSet = extensionsV1beta1ApiInstance.createNamespacedReplicaSet(getNamespace(), current, pretty);
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+            return replicaSet;
+        }
+
+        @Override
+        void notifyUpdate(V1beta1ReplicaSet original, V1beta1ReplicaSet current) {
+            resourceUpdateMonitor.onReplicaSetUpdate(original, current);
+        }
+    }
+
+    private class DaemonSetUpdater extends ResourceUpdater<V1beta1DaemonSet> {
+        DaemonSetUpdater(V1beta1DaemonSet daemonSet) {
+            super(daemonSet);
+        }
+
+        @Override
+        V1beta1DaemonSet getCurrentResource() {
+            V1beta1DaemonSet daemonSet = null;
+            try {
+                daemonSet = extensionsV1beta1ApiInstance.readNamespacedDaemonSet(getName(), getNamespace(), pretty, true, true);
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+            return daemonSet;
+        }
+
+        @Override
+        V1beta1DaemonSet applyResource(V1beta1DaemonSet original, V1beta1DaemonSet current) {
+            V1beta1DaemonSet daemonSet = null;
+            try {
+                daemonSet = extensionsV1beta1ApiInstance.replaceNamespacedDaemonSet(getName(), getNamespace(), current, pretty);
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+            return daemonSet;
+        }
+
+        @Override
+        V1beta1DaemonSet createResource(V1beta1DaemonSet current) {
+            V1beta1DaemonSet daemonSet = null;
+            try {
+                daemonSet = extensionsV1beta1ApiInstance.createNamespacedDaemonSet(getNamespace(), current, pretty);
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+            return daemonSet;
+        }
+
+        @Override
+        void notifyUpdate(V1beta1DaemonSet original, V1beta1DaemonSet current) {
+            resourceUpdateMonitor.onDaemonSetUpdate(original, current);
+        }
+    }
+
 
     private class IngressUpdater extends ResourceUpdater<V1beta1Ingress> {
         IngressUpdater(V1beta1Ingress ingress) {
