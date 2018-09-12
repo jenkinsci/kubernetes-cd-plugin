@@ -69,7 +69,6 @@ public class KubernetesClientWrapper {
         Configuration.setDefaultApiClient(client);
     }
 
-
     public KubernetesClientWrapper(String server,
                                    String certificateAuthorityData,
                                    String clientCertificateData,
@@ -105,7 +104,6 @@ public class KubernetesClientWrapper {
         this.variableResolver = resolver;
         return this;
     }
-
 
     /**
      * Apply Kubernetes configurations through the given Kubernetes client.
