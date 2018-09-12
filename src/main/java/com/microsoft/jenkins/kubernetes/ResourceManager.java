@@ -21,7 +21,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 public abstract class ResourceManager {
-    protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
+    private final Logger logger = LoggerFactory.getLogger(getClass());
     protected static final String DEFAULT_PRETTY = "true";
 
     protected abstract class ResourceUpdater<T> {
@@ -36,7 +36,7 @@ public abstract class ResourceManager {
                 Method method = resource.getClass().getMethod("getMetadata");
                 meta = (V1ObjectMeta) method.invoke(resource);
             } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                LOGGER.error(String.format("Fail to fetch meta data for %s", resource));
+                logger.error(String.format("Fail to fetch meta data for %s", resource));
             }
             metadata = meta;
             checkState(StringUtils.isNotBlank(getName()),
@@ -104,12 +104,16 @@ public abstract class ResourceManager {
         abstract void notifyUpdate(T original, T current);
 
         void logApplied(T res) {
-            LOGGER.info(Messages.KubernetesClientWrapper_applied(res.getClass().getSimpleName(), res));
+            getLogger().info(Messages.KubernetesClientWrapper_applied(res.getClass().getSimpleName(), res));
         }
 
         void logCreated(T res) {
-            LOGGER.info(Messages.KubernetesClientWrapper_created(res.getClass().getSimpleName(), res));
+            getLogger().info(Messages.KubernetesClientWrapper_created(res.getClass().getSimpleName(), res));
         }
+    }
+
+    public Logger getLogger() {
+        return logger;
     }
 
     /**

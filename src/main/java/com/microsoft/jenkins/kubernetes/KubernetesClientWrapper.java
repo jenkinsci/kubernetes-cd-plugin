@@ -125,6 +125,7 @@ public class KubernetesClientWrapper {
 
             ResourceManager v1ResourceManager = new V1ResourceManager();
             ResourceManager v1beta1ResourceManager = new V1beta1ResourceManager();
+            ResourceManager extensionV1beta1ResourceManager = new ExtensionV1beta1ResourceManager();
 
             // Process the Namespace in the list first, as it may be a dependency of other resources.
             Iterator<Object> iterator = resources.iterator();
@@ -142,7 +143,11 @@ public class KubernetesClientWrapper {
                     continue;
                 }
                 boolean isVersion1beta1 = v1beta1ResourceManager.apply(resource);
-                if (!isVersion1beta1) {
+                if (isVersion1beta1) {
+                    continue;
+                }
+                boolean isExtensionV1beta1 = extensionV1beta1ResourceManager.apply(resource);
+                if (!isExtensionV1beta1) {
                     log(Messages.KubernetesClientWrapper_skipped(resource));
                 }
             }

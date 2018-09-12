@@ -57,7 +57,8 @@ public class ExtensionV1beta1ResourceManager extends ResourceManager {
         ExtensionsV1beta1Deployment getCurrentResource() {
             ExtensionsV1beta1Deployment deployment = null;
             try {
-                deployment = extensionsV1beta1ApiInstance.readNamespacedDeployment(getName(), getNamespace(), pretty, true, true);
+                deployment = extensionsV1beta1ApiInstance.readNamespacedDeployment(getName(), getNamespace(), pretty,
+                        true, true);
             } catch (ApiException e) {
                 e.printStackTrace();
             }
@@ -65,10 +66,12 @@ public class ExtensionV1beta1ResourceManager extends ResourceManager {
         }
 
         @Override
-        ExtensionsV1beta1Deployment applyResource(ExtensionsV1beta1Deployment original, ExtensionsV1beta1Deployment current) {
+        ExtensionsV1beta1Deployment applyResource(ExtensionsV1beta1Deployment original,
+                                                  ExtensionsV1beta1Deployment current) {
             ExtensionsV1beta1Deployment deployment = null;
             try {
-                deployment = extensionsV1beta1ApiInstance.replaceNamespacedDeployment(getName(), getNamespace(), current, pretty);
+                deployment = extensionsV1beta1ApiInstance.replaceNamespacedDeployment(getName(), getNamespace(),
+                        current, pretty);
             } catch (ApiException e) {
                 e.printStackTrace();
             }

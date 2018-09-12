@@ -66,7 +66,8 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1ReplicaSet getCurrentResource() {
             V1beta1ReplicaSet replicaSet = null;
             try {
-                replicaSet = extensionsV1beta1ApiInstance.readNamespacedReplicaSet(getName(), getNamespace(), pretty, true, true);
+                replicaSet = extensionsV1beta1ApiInstance.readNamespacedReplicaSet(getName(), getNamespace(), pretty,
+                        true, true);
             } catch (ApiException e) {
                 e.printStackTrace();
             }
@@ -77,7 +78,8 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1ReplicaSet applyResource(V1beta1ReplicaSet original, V1beta1ReplicaSet current) {
             V1beta1ReplicaSet replicaSet = null;
             try {
-                replicaSet = extensionsV1beta1ApiInstance.replaceNamespacedReplicaSet(getName(), getNamespace(), current, pretty);
+                replicaSet = extensionsV1beta1ApiInstance.replaceNamespacedReplicaSet(getName(), getNamespace(),
+                        current, pretty);
             } catch (ApiException e) {
                 e.printStackTrace();
             }
@@ -110,7 +112,8 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1DaemonSet getCurrentResource() {
             V1beta1DaemonSet daemonSet = null;
             try {
-                daemonSet = extensionsV1beta1ApiInstance.readNamespacedDaemonSet(getName(), getNamespace(), pretty, true, true);
+                daemonSet = extensionsV1beta1ApiInstance.readNamespacedDaemonSet(getName(), getNamespace(), pretty,
+                        true, true);
             } catch (ApiException e) {
                 e.printStackTrace();
             }
@@ -121,7 +124,8 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1DaemonSet applyResource(V1beta1DaemonSet original, V1beta1DaemonSet current) {
             V1beta1DaemonSet daemonSet = null;
             try {
-                daemonSet = extensionsV1beta1ApiInstance.replaceNamespacedDaemonSet(getName(), getNamespace(), current, pretty);
+                daemonSet = extensionsV1beta1ApiInstance.replaceNamespacedDaemonSet(getName(), getNamespace(),
+                        current, pretty);
             } catch (ApiException e) {
                 e.printStackTrace();
             }
