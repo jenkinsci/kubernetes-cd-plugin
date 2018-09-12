@@ -8,6 +8,7 @@ package com.microsoft.jenkins.kubernetes;
 
 import com.microsoft.jenkins.kubernetes.util.CommonUtils;
 import com.microsoft.jenkins.kubernetes.util.Constants;
+import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -22,7 +23,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 public abstract class ResourceManager {
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    protected static final String DEFAULT_PRETTY = "true";
+    public static final String DEFAULT_PRETTY = "true";
 
     protected abstract class ResourceUpdater<T> {
         private final T resource;
@@ -114,6 +115,12 @@ public abstract class ResourceManager {
 
     public Logger getLogger() {
         return logger;
+    }
+
+    protected void handleApiException(ApiException e) {
+        int code = e.getCode();
+        String responseBody = e.getResponseBody();
+        getLogger().error(String.format("Api call failed with code %d, detailed message: %s", code, responseBody));
     }
 
     /**

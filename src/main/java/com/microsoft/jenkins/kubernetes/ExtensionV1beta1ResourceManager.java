@@ -42,6 +42,7 @@ public class ExtensionV1beta1ResourceManager extends ResourceManager {
     public boolean apply(Object resource) throws IOException {
         if (resource instanceof ExtensionsV1beta1Deployment) {
             ExtensionsV1beta1Deployment deployment = (ExtensionsV1beta1Deployment) resource;
+            new DeploymentUpdater(deployment).createOrApply();
         } else {
             return false;
         }
@@ -60,7 +61,7 @@ public class ExtensionV1beta1ResourceManager extends ResourceManager {
                 deployment = extensionsV1beta1ApiInstance.readNamespacedDeployment(getName(), getNamespace(), pretty,
                         true, true);
             } catch (ApiException e) {
-                e.printStackTrace();
+                handleApiException(e);
             }
             return deployment;
         }
@@ -73,7 +74,7 @@ public class ExtensionV1beta1ResourceManager extends ResourceManager {
                 deployment = extensionsV1beta1ApiInstance.replaceNamespacedDeployment(getName(), getNamespace(),
                         current, pretty);
             } catch (ApiException e) {
-                e.printStackTrace();
+                handleApiException(e);
             }
             return deployment;
         }
@@ -84,7 +85,7 @@ public class ExtensionV1beta1ResourceManager extends ResourceManager {
             try {
                 deployment = extensionsV1beta1ApiInstance.createNamespacedDeployment(getNamespace(), current, pretty);
             } catch (ApiException e) {
-                e.printStackTrace();
+                handleApiException(e);
             }
             return deployment;
         }
