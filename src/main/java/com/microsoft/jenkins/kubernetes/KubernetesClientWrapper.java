@@ -41,7 +41,6 @@ import java.util.UUID;
 
 public class KubernetesClientWrapper {
     private final ApiClient client;
-    //    private final KubernetesClient client;
     private PrintStream logger = System.out;
     private VariableResolver<String> variableResolver;
 
@@ -145,9 +144,9 @@ public class KubernetesClientWrapper {
                     continue;
                 }
                 boolean isVersion1beta1 = v1beta1ResourceManager.apply(resource);
-//                if (isVersion1beta1) {
-//                    continue;
-//                }
+                if (!isVersion1beta1) {
+                    log(Messages.KubernetesClientWrapper_skipped(resource));
+                }
             }
         }
     }

@@ -10,6 +10,7 @@ import com.microsoft.jenkins.kubernetes.util.CommonUtils;
 import com.microsoft.jenkins.kubernetes.util.Constants;
 import io.kubernetes.client.models.V1ObjectMeta;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -110,10 +111,12 @@ public abstract class ResourceManager {
     }
 
     protected void log(String s) {
+        LoggerFactory.getLogger(getClass()).info(s);
     }
 
     /**
      * Check the resource object is matched in the API version, if matched, apply the action defined in the resource.
+     *
      * @param resource
      * @return true if resource matched
      * @throws IOException

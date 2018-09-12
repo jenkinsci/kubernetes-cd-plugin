@@ -20,8 +20,12 @@ import io.kubernetes.client.models.V1ReplicaSet;
 import io.kubernetes.client.models.V1ReplicationController;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServicePort;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -76,7 +80,6 @@ public class V1ResourceManager extends ResourceManager {
             V1ConfigMap configMap = (V1ConfigMap) resource;
             new ConfigMapUpdater(configMap).createOrApply();
         } else {
-            //log
             return false;
         }
         return true;
@@ -299,52 +302,51 @@ public class V1ResourceManager extends ResourceManager {
 
         @Override
         V1Service applyResource(V1Service original, V1Service current) {
-//            List<ServicePort> originalPorts = original.getSpec().getPorts();
-//            List<ServicePort> currentPorts = current.getSpec().getPorts();
-//            // Pin the nodePort to the public port
-//            // The kubernetes-client library will compare the server config and the current applied config,
-//            // and compute the difference, which will be sent to the PATCH API of Kubernetes. The missing nodePort
-//            // will be considered as deletion, which will cause the Kubernetes to assign a new nodePort to the
-//            // service, which may have problem with the port forwarding as in the load balancer.
-//            //
-//            // "kubectl apply" handles the service update in the same way.
-//            if (originalPorts != null && currentPorts != null) {
-//                Map<Integer, Integer> portToNodePort = new HashMap<>();
-//                for (ServicePort servicePort : originalPorts) {
-//                    Integer port = servicePort.getPort();
-//                    Integer nodePort = servicePort.getNodePort();
-//                    if (port != null && nodePort != null) {
-//                        portToNodePort.put(servicePort.getPort(), servicePort.getNodePort());
-//                    }
-//                }
-//                for (ServicePort servicePort : currentPorts) {
-//                    // if the nodePort is defined in the config, use it
-//                    Integer currentNodePort = servicePort.getNodePort();
-//                    if (currentNodePort != null && currentNodePort != 0) {
-//                        continue;
-//                    }
-//                    // otherwise try to copy the nodePort from the current service status
-//                    Integer port = servicePort.getPort();
-//                    if (port != null) {
-//                        Integer nodePort = portToNodePort.get(port);
-//                        if (nodePort != null) {
-//                            servicePort.setNodePort(nodePort);
-//                        }
-//                    }
-//                }
-//            }
-//
-//            // this should be no-op, keep it in case current.getSpec().getPorts() behavior changes in future
-//            current.getSpec().setPorts(currentPorts);
-//
-//            return client.services()
-//                    .inNamespace(getNamespace())
-//                    .withName(original.getMetadata().getName())
-//                    .edit()
-//                    .withMetadata(current.getMetadata())
-//                    .withSpec(current.getSpec())
-//                    .done();
-            return null;
+            List<V1ServicePort> originalPorts = original.getSpec().getPorts();
+            List<V1ServicePort> currentPorts = current.getSpec().getPorts();
+            // Pin the nodePort to the public port
+            // The kubernetes-client library will compare the server config and the current applied config,
+            // and compute the difference, which will be sent to the PATCH API of Kubernetes. The missing nodePort
+            // will be considered as deletion, which will cause the Kubernetes to assign a new nodePort to the
+            // service, which may have problem with the port forwarding as in the load balancer.
+            //
+            // "kubectl apply" handles the service update in the same way.
+            if (originalPorts != null && currentPorts != null) {
+                Map<Integer, Integer> portToNodePort = new HashMap<>();
+                for (V1ServicePort servicePort : originalPorts) {
+                    Integer port = servicePort.getPort();
+                    Integer nodePort = servicePort.getNodePort();
+                    if (port != null && nodePort != null) {
+                        portToNodePort.put(servicePort.getPort(), servicePort.getNodePort());
+                    }
+                }
+                for (V1ServicePort servicePort : currentPorts) {
+                    // if the nodePort is defined in the config, use it
+                    Integer currentNodePort = servicePort.getNodePort();
+                    if (currentNodePort != null && currentNodePort != 0) {
+                        continue;
+                    }
+                    // otherwise try to copy the nodePort from the current service status
+                    Integer port = servicePort.getPort();
+                    if (port != null) {
+                        Integer nodePort = portToNodePort.get(port);
+                        if (nodePort != null) {
+                            servicePort.setNodePort(nodePort);
+                        }
+                    }
+                }
+            }
+
+            // this should be no-op, keep it in case current.getSpec().getPorts() behavior changes in future
+            current.getSpec().setPorts(currentPorts);
+
+            V1Service service = null;
+            try {
+                service = coreV1ApiInstance.replaceNamespacedService(getName(), getNamespace(), current, pretty);
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+            return service;
         }
 
         @Override

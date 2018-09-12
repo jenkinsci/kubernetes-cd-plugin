@@ -17,7 +17,6 @@ public interface V1beta1ResourceUpdateMonitor {
     class Adapter implements V1beta1ResourceUpdateMonitor {
         @Override
         public void onIngressUpdate(V1beta1Ingress original, V1beta1Ingress current) {
-
         }
     }
 }
