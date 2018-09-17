@@ -96,10 +96,6 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
                 if (url != null) {
                     return url;
                 }
-//                URL masterURL = client.getMasterUrl();
-//                if (masterURL != null) {
-//                    return masterURL.getHost();
-//                }
             }
         }
         return "Unknown";
