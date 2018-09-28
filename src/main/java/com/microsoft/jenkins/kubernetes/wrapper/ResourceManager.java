@@ -23,7 +23,14 @@ import static com.google.common.base.Preconditions.checkState;
 
 public abstract class ResourceManager {
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    public static final String DEFAULT_PRETTY = "true";
+    /**
+     * If true, then the output of api call is pretty printed.
+     */
+    protected final String pretty;
+
+    ResourceManager(boolean pretty) {
+        this.pretty = String.valueOf(pretty);
+    }
 
     protected abstract class ResourceUpdater<T> {
         private final T resource;
@@ -120,7 +127,7 @@ public abstract class ResourceManager {
     protected void handleApiException(ApiException e) {
         int code = e.getCode();
         String responseBody = e.getResponseBody();
-        getLogger().error(String.format("Api call failed with code %d, detailed message: %s", code, responseBody));
+        getLogger().error(Messages.KubernetesClientWrapper_apiException(code, responseBody));
     }
 
     /**

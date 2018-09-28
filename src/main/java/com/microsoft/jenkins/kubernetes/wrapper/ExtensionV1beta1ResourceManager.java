@@ -15,17 +15,15 @@ import java.io.IOException;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ExtensionV1beta1ResourceManager extends ResourceManager {
-    private ExtensionsV1beta1Api extensionsV1beta1ApiInstance;
-    private String pretty = DEFAULT_PRETTY;
+    private static final ExtensionsV1beta1Api extensionsV1beta1ApiInstance = new ExtensionsV1beta1Api();
     private ExtensionV1beta1ResourceUpdateMonitor resourceUpdateMonitor = ExtensionV1beta1ResourceUpdateMonitor.NOOP;
 
     public ExtensionV1beta1ResourceManager() {
-        extensionsV1beta1ApiInstance = new ExtensionsV1beta1Api();
+        super(true);
     }
 
-    public ExtensionV1beta1ResourceManager(String pretty) {
-        this();
-        this.pretty = pretty;
+    public ExtensionV1beta1ResourceManager(boolean pretty) {
+        super(pretty);
     }
 
     public ExtensionV1beta1ResourceUpdateMonitor getResourceUpdateMonitor() {

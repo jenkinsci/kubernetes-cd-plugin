@@ -30,21 +30,17 @@ import java.util.Map;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class V1ResourceManager extends ResourceManager {
-    private CoreV1Api coreV1ApiInstance;
-    private AppsV1Api appsV1ApiInstance;
-    private BatchV1Api batchV1ApiInstance;
-    private String pretty = DEFAULT_PRETTY;
+    private static final CoreV1Api coreV1ApiInstance = new CoreV1Api();
+    private static final AppsV1Api appsV1ApiInstance = new AppsV1Api();
+    private static final BatchV1Api batchV1ApiInstance = new BatchV1Api();
     private V1ResourceUpdateMonitor resourceUpdateMonitor = V1ResourceUpdateMonitor.NOOP;
 
     public V1ResourceManager() {
-        coreV1ApiInstance = new CoreV1Api();
-        appsV1ApiInstance = new AppsV1Api();
-        batchV1ApiInstance = new BatchV1Api();
+        super(true);
     }
 
-    public V1ResourceManager(String pretty) {
-        this();
-        this.pretty = pretty;
+    public V1ResourceManager(boolean pretty) {
+        super(pretty);
     }
 
     @Override

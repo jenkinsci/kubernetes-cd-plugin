@@ -76,7 +76,7 @@ public class KubernetesClientWrapper {
                                    String clientKeyData) {
         ClientCertificateAuthentication authentication = new ClientCertificateAuthentication(
                 clientCertificateData.getBytes(), clientKeyData.getBytes());
-        client = (new ClientBuilder())
+        client = new ClientBuilder()
                 .setBasePath(server)
                 .setAuthentication(authentication)
                 .setCertificateAuthority(certificateAuthorityData.getBytes())
@@ -139,16 +139,17 @@ public class KubernetesClientWrapper {
             }
 
             for (Object resource : resources) {
-                boolean isVersion1 = v1ResourceManager.apply(resource);
-                if (isVersion1) {
+                boolean isMatched;
+                isMatched = v1ResourceManager.apply(resource);
+                if (isMatched) {
                     continue;
                 }
-                boolean isVersion1beta1 = v1beta1ResourceManager.apply(resource);
-                if (isVersion1beta1) {
+                isMatched = v1beta1ResourceManager.apply(resource);
+                if (isMatched) {
                     continue;
                 }
-                boolean isExtensionV1beta1 = extensionV1beta1ResourceManager.apply(resource);
-                if (!isExtensionV1beta1) {
+                isMatched = extensionV1beta1ResourceManager.apply(resource);
+                if (!isMatched) {
                     log(Messages.KubernetesClientWrapper_skipped(resource));
                 }
             }
