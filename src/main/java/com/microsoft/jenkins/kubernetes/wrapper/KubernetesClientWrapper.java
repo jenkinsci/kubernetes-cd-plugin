@@ -7,7 +7,6 @@
 package com.microsoft.jenkins.kubernetes.wrapper;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.microsoft.jenkins.kubernetes.Messages;
 import com.microsoft.jenkins.kubernetes.credentials.ResolvedDockerRegistryEndpoint;
 import com.microsoft.jenkins.kubernetes.util.CommonUtils;
 import com.microsoft.jenkins.kubernetes.util.Constants;
@@ -116,9 +115,13 @@ public class KubernetesClientWrapper {
     public void apply(FilePath[] configFiles) throws IOException, InterruptedException {
         for (FilePath path : configFiles) {
             log(Messages.KubernetesClientWrapper_loadingConfiguration(path));
-
-            InputStream inputStream = CommonUtils.replaceMacro(path.read(), variableResolver);
-            List<Object> resources = Yaml.loadAll(new InputStreamReader(inputStream));
+            List<Object> resources;
+            try {
+                InputStream inputStream = CommonUtils.replaceMacro(path.read(), variableResolver);
+                resources = Yaml.loadAll(new InputStreamReader(inputStream));
+            } catch (IOException e) {
+                throw new IOException(Messages.KubernetesClientWrapper_invalidYaml(path.getName()));
+            }
             if (resources.isEmpty()) {
                 log(Messages.KubernetesClientWrapper_noResourceLoadedFrom(path));
                 continue;

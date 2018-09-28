@@ -17,7 +17,7 @@ import java.io.IOException;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class V1beta1ResourceManager extends ResourceManager {
-    private static final ExtensionsV1beta1Api extensionsV1beta1ApiInstance = new ExtensionsV1beta1Api();
+    private static final ExtensionsV1beta1Api EXTENSIONS_V1_BETA1_API_INSTANCE = new ExtensionsV1beta1Api();
     private V1beta1ResourceUpdateMonitor resourceUpdateMonitor = V1beta1ResourceUpdateMonitor.NOOP;
 
     public V1beta1ResourceManager() {
@@ -64,8 +64,8 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1ReplicaSet getCurrentResource() {
             V1beta1ReplicaSet replicaSet = null;
             try {
-                replicaSet = extensionsV1beta1ApiInstance.readNamespacedReplicaSet(getName(), getNamespace(), pretty,
-                        true, true);
+                replicaSet = EXTENSIONS_V1_BETA1_API_INSTANCE.readNamespacedReplicaSet(getName(), getNamespace(),
+                        getPretty(), true, true);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -76,8 +76,8 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1ReplicaSet applyResource(V1beta1ReplicaSet original, V1beta1ReplicaSet current) {
             V1beta1ReplicaSet replicaSet = null;
             try {
-                replicaSet = extensionsV1beta1ApiInstance.replaceNamespacedReplicaSet(getName(), getNamespace(),
-                        current, pretty);
+                replicaSet = EXTENSIONS_V1_BETA1_API_INSTANCE.replaceNamespacedReplicaSet(getName(), getNamespace(),
+                        current, getPretty());
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -88,7 +88,8 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1ReplicaSet createResource(V1beta1ReplicaSet current) {
             V1beta1ReplicaSet replicaSet = null;
             try {
-                replicaSet = extensionsV1beta1ApiInstance.createNamespacedReplicaSet(getNamespace(), current, pretty);
+                replicaSet = EXTENSIONS_V1_BETA1_API_INSTANCE.createNamespacedReplicaSet(getNamespace(),
+                        current, getPretty());
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -110,8 +111,8 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1DaemonSet getCurrentResource() {
             V1beta1DaemonSet daemonSet = null;
             try {
-                daemonSet = extensionsV1beta1ApiInstance.readNamespacedDaemonSet(getName(), getNamespace(), pretty,
-                        true, true);
+                daemonSet = EXTENSIONS_V1_BETA1_API_INSTANCE.readNamespacedDaemonSet(getName(), getNamespace(),
+                        getPretty(), true, true);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -122,8 +123,8 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1DaemonSet applyResource(V1beta1DaemonSet original, V1beta1DaemonSet current) {
             V1beta1DaemonSet daemonSet = null;
             try {
-                daemonSet = extensionsV1beta1ApiInstance.replaceNamespacedDaemonSet(getName(), getNamespace(),
-                        current, pretty);
+                daemonSet = EXTENSIONS_V1_BETA1_API_INSTANCE.replaceNamespacedDaemonSet(getName(), getNamespace(),
+                        current, getPretty());
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -134,7 +135,8 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1DaemonSet createResource(V1beta1DaemonSet current) {
             V1beta1DaemonSet daemonSet = null;
             try {
-                daemonSet = extensionsV1beta1ApiInstance.createNamespacedDaemonSet(getNamespace(), current, pretty);
+                daemonSet = EXTENSIONS_V1_BETA1_API_INSTANCE.createNamespacedDaemonSet(getNamespace(),
+                        current, getPretty());
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -157,7 +159,7 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1Ingress getCurrentResource() {
             V1beta1Ingress ingress = null;
             try {
-                ingress = extensionsV1beta1ApiInstance.readNamespacedIngress(getName(), getNamespace(), pretty,
+                ingress = EXTENSIONS_V1_BETA1_API_INSTANCE.readNamespacedIngress(getName(), getNamespace(), getPretty(),
                         true, true);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -169,8 +171,8 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1Ingress applyResource(V1beta1Ingress original, V1beta1Ingress current) {
             V1beta1Ingress ingress = null;
             try {
-                ingress = extensionsV1beta1ApiInstance.replaceNamespacedIngress(getName(), getNamespace(), current,
-                        pretty);
+                ingress = EXTENSIONS_V1_BETA1_API_INSTANCE.replaceNamespacedIngress(getName(), getNamespace(), current,
+                        getPretty());
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -181,7 +183,8 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1Ingress createResource(V1beta1Ingress current) {
             V1beta1Ingress ingress = null;
             try {
-                ingress = extensionsV1beta1ApiInstance.createNamespacedIngress(getNamespace(), current, pretty);
+                ingress = EXTENSIONS_V1_BETA1_API_INSTANCE.createNamespacedIngress(getNamespace(),
+                        current, getPretty());
             } catch (ApiException e) {
                 handleApiException(e);
             }

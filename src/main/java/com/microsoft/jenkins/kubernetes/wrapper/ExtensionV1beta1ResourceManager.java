@@ -15,7 +15,7 @@ import java.io.IOException;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ExtensionV1beta1ResourceManager extends ResourceManager {
-    private static final ExtensionsV1beta1Api extensionsV1beta1ApiInstance = new ExtensionsV1beta1Api();
+    private static final ExtensionsV1beta1Api EXTENSIONS_V1_BETA1_API_INSTANCE = new ExtensionsV1beta1Api();
     private ExtensionV1beta1ResourceUpdateMonitor resourceUpdateMonitor = ExtensionV1beta1ResourceUpdateMonitor.NOOP;
 
     public ExtensionV1beta1ResourceManager() {
@@ -56,8 +56,8 @@ public class ExtensionV1beta1ResourceManager extends ResourceManager {
         ExtensionsV1beta1Deployment getCurrentResource() {
             ExtensionsV1beta1Deployment deployment = null;
             try {
-                deployment = extensionsV1beta1ApiInstance.readNamespacedDeployment(getName(), getNamespace(), pretty,
-                        true, true);
+                deployment = EXTENSIONS_V1_BETA1_API_INSTANCE.readNamespacedDeployment(getName(), getNamespace(),
+                        getPretty(), true, true);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -69,8 +69,8 @@ public class ExtensionV1beta1ResourceManager extends ResourceManager {
                                                   ExtensionsV1beta1Deployment current) {
             ExtensionsV1beta1Deployment deployment = null;
             try {
-                deployment = extensionsV1beta1ApiInstance.replaceNamespacedDeployment(getName(), getNamespace(),
-                        current, pretty);
+                deployment = EXTENSIONS_V1_BETA1_API_INSTANCE.replaceNamespacedDeployment(getName(), getNamespace(),
+                        current, getPretty());
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -81,7 +81,8 @@ public class ExtensionV1beta1ResourceManager extends ResourceManager {
         ExtensionsV1beta1Deployment createResource(ExtensionsV1beta1Deployment current) {
             ExtensionsV1beta1Deployment deployment = null;
             try {
-                deployment = extensionsV1beta1ApiInstance.createNamespacedDeployment(getNamespace(), current, pretty);
+                deployment = EXTENSIONS_V1_BETA1_API_INSTANCE.createNamespacedDeployment(getNamespace(),
+                        current, getPretty());
             } catch (ApiException e) {
                 handleApiException(e);
             }

@@ -26,10 +26,14 @@ public abstract class ResourceManager {
     /**
      * If true, then the output of api call is pretty printed.
      */
-    protected final String pretty;
+    private final String pretty;
 
     ResourceManager(boolean pretty) {
         this.pretty = String.valueOf(pretty);
+    }
+
+    public String getPretty() {
+        return pretty;
     }
 
     protected abstract class ResourceUpdater<T> {
