@@ -70,9 +70,8 @@ public abstract class ResourceManager {
             return name;
         }
 
-        @Deprecated
         final String getKind() {
-            return "GetKind not support in this version";
+            return resource.getClass().getSimpleName();
         }
 
         /**
