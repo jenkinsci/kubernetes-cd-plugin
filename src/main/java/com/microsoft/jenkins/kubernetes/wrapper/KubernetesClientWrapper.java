@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -74,11 +75,11 @@ public class KubernetesClientWrapper {
                                    String clientCertificateData,
                                    String clientKeyData) {
         ClientCertificateAuthentication authentication = new ClientCertificateAuthentication(
-                clientCertificateData.getBytes(), clientKeyData.getBytes());
+                clientCertificateData.getBytes(StandardCharsets.UTF_8), clientKeyData.getBytes(StandardCharsets.UTF_8));
         client = new ClientBuilder()
                 .setBasePath(server)
                 .setAuthentication(authentication)
-                .setCertificateAuthority(certificateAuthorityData.getBytes())
+                .setCertificateAuthority(certificateAuthorityData.getBytes(StandardCharsets.UTF_8))
                 .build();
         Configuration.setDefaultApiClient(client);
     }
@@ -118,7 +119,7 @@ public class KubernetesClientWrapper {
             List<Object> resources;
             try {
                 InputStream inputStream = CommonUtils.replaceMacro(path.read(), variableResolver);
-                resources = Yaml.loadAll(new InputStreamReader(inputStream));
+                resources = Yaml.loadAll(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
             } catch (IOException e) {
                 throw new IOException(Messages.KubernetesClientWrapper_invalidYaml(path.getName()));
             }
@@ -183,7 +184,7 @@ public class KubernetesClientWrapper {
         String dockercfg = dockerConfigBuilder.buildDockercfgBase64();
 
         Map<String, byte[]> data = new HashMap<>();
-        data.put(".dockercfg", dockercfg.getBytes());
+        data.put(".dockercfg", dockercfg.getBytes(StandardCharsets.UTF_8));
         V1Secret secret = new V1SecretBuilder()
                 .withNewMetadata()
                 .withName(secretName)
