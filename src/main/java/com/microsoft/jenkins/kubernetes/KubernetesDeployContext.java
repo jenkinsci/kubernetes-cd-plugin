@@ -27,6 +27,7 @@ import com.microsoft.jenkins.kubernetes.credentials.ResolvedDockerRegistryEndpoi
 import com.microsoft.jenkins.kubernetes.credentials.SSHCredentials;
 import com.microsoft.jenkins.kubernetes.credentials.TextCredentials;
 import com.microsoft.jenkins.kubernetes.util.Constants;
+import com.microsoft.jenkins.kubernetes.wrapper.KubernetesClientWrapper;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;

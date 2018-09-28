@@ -14,7 +14,7 @@ import com.microsoft.jenkins.azurecommons.command.ICommand;
 import com.microsoft.jenkins.azurecommons.core.EnvironmentInjector;
 import com.microsoft.jenkins.azurecommons.telemetry.AppInsightsUtils;
 import com.microsoft.jenkins.kubernetes.KubernetesCDPlugin;
-import com.microsoft.jenkins.kubernetes.KubernetesClientWrapper;
+import com.microsoft.jenkins.kubernetes.wrapper.KubernetesClientWrapper;
 import com.microsoft.jenkins.kubernetes.Messages;
 import com.microsoft.jenkins.kubernetes.credentials.ClientWrapperFactory;
 import com.microsoft.jenkins.kubernetes.credentials.ResolvedDockerRegistryEndpoint;

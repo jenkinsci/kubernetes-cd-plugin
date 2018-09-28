@@ -7,6 +7,7 @@
 package com.microsoft.jenkins.kubernetes;
 
 import com.microsoft.jenkins.kubernetes.util.Constants;
+import com.microsoft.jenkins.kubernetes.wrapper.KubernetesClientWrapper;
 import hudson.EnvVars;
 import org.junit.Test;
 

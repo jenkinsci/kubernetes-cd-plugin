@@ -4,7 +4,7 @@
  * license information.
  */
 
-package com.microsoft.jenkins.kubernetes;
+package com.microsoft.jenkins.kubernetes.wrapper;
 
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1DaemonSet;

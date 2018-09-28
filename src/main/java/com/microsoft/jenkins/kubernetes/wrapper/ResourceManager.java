@@ -4,7 +4,7 @@
  * license information.
  */
 
-package com.microsoft.jenkins.kubernetes;
+package com.microsoft.jenkins.kubernetes.wrapper;
 
 import com.microsoft.jenkins.kubernetes.util.CommonUtils;
 import com.microsoft.jenkins.kubernetes.util.Constants;

@@ -4,7 +4,7 @@
  * license information.
  */
 
-package com.microsoft.jenkins.kubernetes;
+package com.microsoft.jenkins.kubernetes.wrapper;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.ExtensionsV1beta1Api;

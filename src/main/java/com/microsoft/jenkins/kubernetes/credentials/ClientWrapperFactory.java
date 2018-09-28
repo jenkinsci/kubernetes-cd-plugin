@@ -6,7 +6,7 @@
 
 package com.microsoft.jenkins.kubernetes.credentials;
 
-import com.microsoft.jenkins.kubernetes.KubernetesClientWrapper;
+import com.microsoft.jenkins.kubernetes.wrapper.KubernetesClientWrapper;
 import hudson.FilePath;
 import hudson.model.Item;
 

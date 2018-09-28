@@ -4,9 +4,10 @@
  * license information.
  */
 
-package com.microsoft.jenkins.kubernetes;
+package com.microsoft.jenkins.kubernetes.wrapper;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.microsoft.jenkins.kubernetes.Messages;
 import com.microsoft.jenkins.kubernetes.credentials.ResolvedDockerRegistryEndpoint;
 import com.microsoft.jenkins.kubernetes.util.CommonUtils;
 import com.microsoft.jenkins.kubernetes.util.Constants;

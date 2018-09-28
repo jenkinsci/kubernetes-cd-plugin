@@ -1,6 +1,6 @@
 package com.microsoft.jenkins.kubernetes.command;
 
-import com.microsoft.jenkins.kubernetes.KubernetesClientWrapper;
+import com.microsoft.jenkins.kubernetes.wrapper.KubernetesClientWrapper;
 import io.kubernetes.client.ApiClient;
 import org.junit.Test;
 

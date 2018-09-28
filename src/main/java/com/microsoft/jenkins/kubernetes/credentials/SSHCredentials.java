@@ -14,7 +14,7 @@ import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.microsoft.jenkins.azurecommons.remote.SSHClient;
-import com.microsoft.jenkins.kubernetes.KubernetesClientWrapper;
+import com.microsoft.jenkins.kubernetes.wrapper.KubernetesClientWrapper;
 import com.microsoft.jenkins.kubernetes.Messages;
 import com.microsoft.jenkins.kubernetes.util.Constants;
 import hudson.Extension;
