@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.StringReader;
+import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -121,42 +122,48 @@ public class KubernetesClientWrapper {
                 InputStream inputStream = CommonUtils.replaceMacro(path.read(), variableResolver);
                 resources = Yaml.loadAll(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
             } catch (IOException e) {
-                throw new IOException(Messages.KubernetesClientWrapper_invalidYaml(path.getName()));
+                throw new IOException(Messages.KubernetesClientWrapper_invalidYaml(path.getName(), e));
             }
             if (resources.isEmpty()) {
                 log(Messages.KubernetesClientWrapper_noResourceLoadedFrom(path));
                 continue;
             }
 
-            ResourceManager v1ResourceManager = new V1ResourceManager();
-            ResourceManager v1beta1ResourceManager = new V1beta1ResourceManager();
-            ResourceManager extensionV1beta1ResourceManager = new ExtensionV1beta1ResourceManager();
-
             // Process the Namespace in the list first, as it may be a dependency of other resources.
             Iterator<Object> iterator = resources.iterator();
             while (iterator.hasNext()) {
                 Object resource = iterator.next();
                 if (resource instanceof V1Namespace) {
-                    v1ResourceManager.apply(resource);
+                    handleResource(resource);
                     iterator.remove();
                 }
             }
 
             for (Object resource : resources) {
-                boolean isMatched;
-                isMatched = v1ResourceManager.apply(resource);
-                if (isMatched) {
-                    continue;
-                }
-                isMatched = v1beta1ResourceManager.apply(resource);
-                if (isMatched) {
-                    continue;
-                }
-                isMatched = extensionV1beta1ResourceManager.apply(resource);
-                if (!isMatched) {
-                    log(Messages.KubernetesClientWrapper_skipped(resource));
-                }
+                handleResource(resource);
             }
+        }
+    }
+
+    /**
+     * Get related updater in{@link ResourceUpdaterMap} by resource's class type and handle the resource by updater
+     *
+     * @param resource k8s resource
+     */
+    private void handleResource(Object resource) {
+        Class<? extends ResourceManager.ResourceUpdater> updaterClass = ResourceUpdaterMap.getUnmodifiableInstance().
+                get(resource.getClass());
+        if (updaterClass != null) {
+            try {
+                Constructor constructor = updaterClass.getConstructor(resource.getClass());
+                ResourceManager.ResourceUpdater updater = (ResourceManager.ResourceUpdater) constructor
+                        .newInstance(resource);
+                updater.createOrApply();
+            } catch (Exception e) {
+                log(Messages.KubernetesClientWrapper_illegalUpdater(resource, e));
+            }
+        } else {
+            log(Messages.KubernetesClientWrapper_skipped(resource));
         }
     }
 
@@ -193,8 +200,7 @@ public class KubernetesClientWrapper {
                 .withData(data)
                 .withType("kubernetes.io/dockercfg")
                 .build();
-        ResourceManager v1ResourceManager = new V1beta1ResourceManager();
-        v1ResourceManager.apply(secret);
+        handleResource(secret);
     }
 
     private static void restoreProperty(String name, String value) {

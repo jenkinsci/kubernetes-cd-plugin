@@ -10,8 +10,6 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 
-import java.io.IOException;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ExtensionV1beta1ResourceManager extends ResourceManager {
@@ -36,18 +34,7 @@ public class ExtensionV1beta1ResourceManager extends ResourceManager {
         return this;
     }
 
-    @Override
-    public boolean apply(Object resource) throws IOException {
-        if (resource instanceof ExtensionsV1beta1Deployment) {
-            ExtensionsV1beta1Deployment deployment = (ExtensionsV1beta1Deployment) resource;
-            new DeploymentUpdater(deployment).createOrApply();
-        } else {
-            return false;
-        }
-        return true;
-    }
-
-    private class DeploymentUpdater extends ResourceUpdater<ExtensionsV1beta1Deployment> {
+    class DeploymentUpdater extends ResourceUpdater<ExtensionsV1beta1Deployment> {
         DeploymentUpdater(ExtensionsV1beta1Deployment deployment) {
             super(deployment);
         }

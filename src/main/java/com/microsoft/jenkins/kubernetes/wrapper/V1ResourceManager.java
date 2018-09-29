@@ -22,7 +22,6 @@ import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServicePort;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,44 +42,6 @@ public class V1ResourceManager extends ResourceManager {
         super(pretty);
     }
 
-    @Override
-    public boolean apply(Object resource) throws IOException {
-        if (resource instanceof V1Namespace) {
-            V1Namespace namespace = (V1Namespace) resource;
-            new NamespaceUpdater(namespace).createOrApply();
-        } else if (resource instanceof V1Deployment) {
-            V1Deployment deployment = (V1Deployment) resource;
-            new DeploymentUpdater(deployment).createOrApply();
-        } else if (resource instanceof V1Service) {
-            V1Service service = (V1Service) resource;
-            new ServiceUpdater(service).createOrApply();
-        } else if (resource instanceof V1ReplicationController) {
-            V1ReplicationController replicationController = (V1ReplicationController) resource;
-            new ReplicationControllerUpdater(replicationController).createOrApply();
-        } else if (resource instanceof V1ReplicaSet) {
-            V1ReplicaSet replicaSet = (V1ReplicaSet) resource;
-            new ReplicaSetUpdater(replicaSet).createOrApply();
-        } else if (resource instanceof V1DaemonSet) {
-            V1DaemonSet daemonSet = (V1DaemonSet) resource;
-            new DaemonSetUpdater(daemonSet).createOrApply();
-        } else if (resource instanceof V1Job) {
-            V1Job job = (V1Job) resource;
-            new JobUpdater(job).createOrApply();
-        } else if (resource instanceof V1Pod) {
-            V1Pod pod = (V1Pod) resource;
-            new PodUpdater(pod).createOrApply();
-        } else if (resource instanceof V1Secret) {
-            V1Secret secret = (V1Secret) resource;
-            new SecretUpdater(secret).createOrApply();
-        } else if (resource instanceof V1ConfigMap) {
-            V1ConfigMap configMap = (V1ConfigMap) resource;
-            new ConfigMapUpdater(configMap).createOrApply();
-        } else {
-            return false;
-        }
-        return true;
-    }
-
     public V1ResourceUpdateMonitor getResourceUpdateMonitor() {
         return resourceUpdateMonitor;
     }
@@ -91,7 +52,7 @@ public class V1ResourceManager extends ResourceManager {
         return this;
     }
 
-    private class ReplicaSetUpdater extends ResourceUpdater<V1ReplicaSet> {
+    class ReplicaSetUpdater extends ResourceUpdater<V1ReplicaSet> {
         ReplicaSetUpdater(V1ReplicaSet rs) {
             super(rs);
         }
@@ -137,7 +98,7 @@ public class V1ResourceManager extends ResourceManager {
         }
     }
 
-    private class DeploymentUpdater extends ResourceUpdater<V1Deployment> {
+    class DeploymentUpdater extends ResourceUpdater<V1Deployment> {
         DeploymentUpdater(V1Deployment deployment) {
             super(deployment);
         }
@@ -185,7 +146,7 @@ public class V1ResourceManager extends ResourceManager {
     }
 
 
-    private class DaemonSetUpdater extends ResourceUpdater<V1DaemonSet> {
+    class DaemonSetUpdater extends ResourceUpdater<V1DaemonSet> {
         DaemonSetUpdater(V1DaemonSet ds) {
             super(ds);
         }
@@ -231,7 +192,7 @@ public class V1ResourceManager extends ResourceManager {
         }
     }
 
-    private class ReplicationControllerUpdater extends ResourceUpdater<V1ReplicationController> {
+    class ReplicationControllerUpdater extends ResourceUpdater<V1ReplicationController> {
         ReplicationControllerUpdater(V1ReplicationController rc) {
             super(rc);
         }
@@ -279,7 +240,7 @@ public class V1ResourceManager extends ResourceManager {
     }
 
 
-    private class ServiceUpdater extends ResourceUpdater<V1Service> {
+    class ServiceUpdater extends ResourceUpdater<V1Service> {
         ServiceUpdater(V1Service service) {
             super(service);
         }
@@ -363,7 +324,7 @@ public class V1ResourceManager extends ResourceManager {
         }
     }
 
-    private class JobUpdater extends ResourceUpdater<V1Job> {
+    class JobUpdater extends ResourceUpdater<V1Job> {
         JobUpdater(V1Job job) {
             super(job);
         }
@@ -407,7 +368,7 @@ public class V1ResourceManager extends ResourceManager {
         }
     }
 
-    private class PodUpdater extends ResourceUpdater<V1Pod> {
+    class PodUpdater extends ResourceUpdater<V1Pod> {
         PodUpdater(V1Pod pod) {
             super(pod);
         }
@@ -451,7 +412,7 @@ public class V1ResourceManager extends ResourceManager {
         }
     }
 
-    private class ConfigMapUpdater extends ResourceUpdater<V1ConfigMap> {
+    class ConfigMapUpdater extends ResourceUpdater<V1ConfigMap> {
         ConfigMapUpdater(V1ConfigMap configMap) {
             super(configMap);
         }
@@ -497,7 +458,7 @@ public class V1ResourceManager extends ResourceManager {
         }
     }
 
-    private class SecretUpdater extends ResourceUpdater<V1Secret> {
+    class SecretUpdater extends ResourceUpdater<V1Secret> {
         SecretUpdater(V1Secret secret) {
             super(secret);
         }
@@ -552,7 +513,7 @@ public class V1ResourceManager extends ResourceManager {
         }
     }
 
-    private class NamespaceUpdater extends ResourceUpdater<V1Namespace> {
+    class NamespaceUpdater extends ResourceUpdater<V1Namespace> {
         NamespaceUpdater(V1Namespace namespace) {
             super(namespace);
         }

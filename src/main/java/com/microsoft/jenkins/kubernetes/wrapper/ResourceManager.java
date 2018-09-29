@@ -132,13 +132,4 @@ public abstract class ResourceManager {
         String responseBody = e.getResponseBody();
         getLogger().error(Messages.KubernetesClientWrapper_apiException(code, responseBody));
     }
-
-    /**
-     * Check the resource object is matched in the API version, if matched, apply the action defined in the resource.
-     *
-     * @param resource
-     * @return true if resource matched
-     * @throws IOException
-     */
-    public abstract boolean apply(Object resource) throws IOException;
 }

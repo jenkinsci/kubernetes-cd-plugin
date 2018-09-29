@@ -12,8 +12,6 @@ import io.kubernetes.client.models.V1beta1DaemonSet;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.V1beta1ReplicaSet;
 
-import java.io.IOException;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class V1beta1ResourceManager extends ResourceManager {
@@ -28,23 +26,6 @@ public class V1beta1ResourceManager extends ResourceManager {
         super(pretty);
     }
 
-    @Override
-    public boolean apply(Object resource) throws IOException {
-        if (resource instanceof V1beta1Ingress) {
-            V1beta1Ingress ingress = (V1beta1Ingress) resource;
-            new IngressUpdater(ingress).createOrApply();
-        } else if (resource instanceof V1beta1DaemonSet) {
-            V1beta1DaemonSet daemonSet = (V1beta1DaemonSet) resource;
-            new DaemonSetUpdater(daemonSet).createOrApply();
-        } else if (resource instanceof V1beta1ReplicaSet) {
-            V1beta1ReplicaSet replicaSet = (V1beta1ReplicaSet) resource;
-            new ReplicaSetUpdater(replicaSet).createOrApply();
-        } else {
-            return false;
-        }
-        return true;
-    }
-
     public V1beta1ResourceUpdateMonitor getResourceUpdateMonitor() {
         return resourceUpdateMonitor;
     }
@@ -55,7 +36,7 @@ public class V1beta1ResourceManager extends ResourceManager {
         return this;
     }
 
-    private class ReplicaSetUpdater extends ResourceUpdater<V1beta1ReplicaSet> {
+    class ReplicaSetUpdater extends ResourceUpdater<V1beta1ReplicaSet> {
         ReplicaSetUpdater(V1beta1ReplicaSet replicaSet) {
             super(replicaSet);
         }
@@ -102,7 +83,7 @@ public class V1beta1ResourceManager extends ResourceManager {
         }
     }
 
-    private class DaemonSetUpdater extends ResourceUpdater<V1beta1DaemonSet> {
+    class DaemonSetUpdater extends ResourceUpdater<V1beta1DaemonSet> {
         DaemonSetUpdater(V1beta1DaemonSet daemonSet) {
             super(daemonSet);
         }
@@ -150,7 +131,7 @@ public class V1beta1ResourceManager extends ResourceManager {
     }
 
 
-    private class IngressUpdater extends ResourceUpdater<V1beta1Ingress> {
+    class IngressUpdater extends ResourceUpdater<V1beta1Ingress> {
         IngressUpdater(V1beta1Ingress ingress) {
             super(ingress);
         }
