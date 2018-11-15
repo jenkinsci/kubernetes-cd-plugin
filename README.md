@@ -23,13 +23,13 @@ It provides the following features:
 1. Select "Deploy to Kubernetes"
 1. In the "Kubeconfig" dropdown, select the [**kubeconfig**](https://kubernetes.io/docs/tasks/access-application-cluster/authenticate-across-clusters-kubeconfig/)
    stored in Jenkins. You can click the "Add" button on the right to add new kubeconfig (Kind: `Kubernetes configuration (kubeconfig)`).
-   
+
    You can choose one of the following methods to provide the kubeconfig details:
-   
+
    * Enter the kubeconfig content directly
    * Set the path to the kubeconfig on the Jenkins master
    * Fetch the kubeconfig from a remote SSH server
-1. Fill in the "Config Files" with the configuration file paths. Split multiple entries with comma (`,`). 
+1. Fill in the "Config Files" with the configuration file paths. Split multiple entries with comma (`,`).
    [Ant glob syntax](https://ant.apache.org/manual/dirtasks.html#patterns) is supported for path patterns.
 1. By checking "Enable Variable Substitution in Config", the variables (in the form of `$VARIABLE` or `${VARIABLE})
    in the configuration files will be replaced with the values from corresponding environment variables before
@@ -38,7 +38,7 @@ It provides the following features:
 1. If your Kubernetes resources being deployed need to pull images from private registry, you can click the
    "Docker Container Registry Credentials / Kubernetes Secrets..." button and configure all the required registry
    credentials.
-   * Kubernetes Namespace for Secret: the namespace in which the secrets will be created with the credentials 
+   * Kubernetes Namespace for Secret: the namespace in which the secrets will be created with the credentials
       configured below. By default this will be `default`.
    * Secret Name: the name of the secret that will be generated or updated if exists. If left blank, a unique name will
       be generated. The name will be exposed as environment variable `KUBERNETES_SECRET_NAME` and you may reference it
@@ -70,7 +70,7 @@ It provides the following features:
 
    You may also prepare the [Kubernetes Secrets](https://kubernetes.io/docs/concepts/configuration/secret/) beforehand.
    and reference the secret from your resource configurations directly.
-   
+
 ## Resource Types
 
 The following resource types are supported by the plugin:
@@ -84,12 +84,12 @@ The following resource types are supported by the plugin:
 * Pod
 * Replica Set
 * Replication Controller - No rolling-update support. If that's required, consider using [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-update-deployment).
+* Stateful Set
 * Secret - The plugin also provides secrets configuration.
 * Service
 
 In the context of continuous integration & continuous deployment, only those resources that need to be updated
-regularly should be placed in Jenkins deployment. So most of the time the plugin should mainly deal with resources
-of type **Deployment**.
+regularly should be placed in Jenkins deployment. So most of the time the plugin should mainly deal with resources of type **Deployment**.
 
 ## Pipeline Support
 
@@ -104,7 +104,7 @@ kubernetesDeploy(kubeconfigId: 'kubeconfig-credentials-id',               // REQ
 
                  configs: '<ant-glob-pattern-for-resource-config-paths>', // REQUIRED
                  enableConfigSubstitution: false,
-        
+
                  secretNamespace: '<secret-namespace>',
                  secretName: '<secret-name>',
                  dockerCredentials: [
@@ -131,7 +131,7 @@ The parameters can be divided into the following groups, which you may configure
    )
    ```
    * `enableConfigSubstitution` defaults to `true`
-   
+
 * Docker Container Registry Credentials / Kubernetes Secrets
 
    ```groovy
@@ -146,7 +146,7 @@ The parameters can be divided into the following groups, which you may configure
    )
    ```
    * `secretNamespace` will be `default` if omitted.
-   * A unique `secretName` will be generated if omitted, and you need to reference it with variable 
+   * A unique `secretName` will be generated if omitted, and you need to reference it with variable
       `$KUBERNETES_SECRET_NAME` in your resource configurations.
 
 ## Kubeconfig Binding
