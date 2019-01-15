@@ -19,6 +19,7 @@ import com.microsoft.jenkins.azurecommons.command.ICommand;
 import com.microsoft.jenkins.azurecommons.command.SimpleBuildStepExecution;
 import com.microsoft.jenkins.azurecommons.remote.SSHClient;
 import com.microsoft.jenkins.kubernetes.command.DeploymentCommand;
+import com.microsoft.jenkins.kubernetes.command.HelmDeploymentCommand;
 import com.microsoft.jenkins.kubernetes.credentials.ClientWrapperFactory;
 import com.microsoft.jenkins.kubernetes.credentials.ConfigFileCredentials;
 import com.microsoft.jenkins.kubernetes.credentials.KubeconfigCredentials;
@@ -55,7 +56,8 @@ import java.util.List;
 import java.util.Set;
 
 public class KubernetesDeployContext extends BaseCommandContext implements
-        DeploymentCommand.IDeploymentCommand {
+        DeploymentCommand.IDeploymentCommand,
+        HelmDeploymentCommand.IHelmDeploymentData {
 
     private String kubeconfigId;
 
@@ -63,6 +65,12 @@ public class KubernetesDeployContext extends BaseCommandContext implements
     private SSHCredentials ssh;
     private ConfigFileCredentials kubeConfig;
     private TextCredentials textCredentials;
+
+    private DeployTypeClass deployTypeClass;
+    private String deployType;
+    private String helmChartLocation;
+    private String helmReleaseName;
+    private String helmNamespace;
 
     private String configs;
     private boolean enableConfigSubstitution;
@@ -82,10 +90,24 @@ public class KubernetesDeployContext extends BaseCommandContext implements
             @Nonnull Launcher launcher,
             @Nonnull TaskListener listener) throws IOException, InterruptedException {
 
-        CommandService commandService = CommandService.builder()
-                .withSingleCommand(DeploymentCommand.class)
-                .withStartCommand(DeploymentCommand.class)
-                .build();
+        CommandService commandService;
+        switch (DeployType.get(getDeployType())) {
+            case ORIGIN:
+                commandService = CommandService.builder()
+                        .withSingleCommand(DeploymentCommand.class)
+                        .withStartCommand(DeploymentCommand.class)
+                        .build();
+                break;
+            case HELM:
+                commandService = CommandService.builder()
+                        .withSingleCommand(HelmDeploymentCommand.class)
+                        .withStartCommand(HelmDeploymentCommand.class)
+                        .build();
+                break;
+            default:
+                throw new IOException("Unknown deploy type");
+        }
+
 
         final JobContext jobContext = new JobContext(run, workspace, launcher, listener);
         super.configure(jobContext, commandService);
@@ -164,6 +186,52 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         } else {
             this.secretNamespace = secretNamespace;
         }
+    }
+
+    private String getDeployType(DeployTypeClass deployTypeClassData) {
+        if (deployTypeClassData == null) {
+            return DeployType.UNKNOWN.getName();
+        }
+        if (StringUtils.isNotBlank(deployTypeClassData.getConfigs())) {
+            return DeployType.ORIGIN.getName();
+        }
+        if (StringUtils.isNotBlank(deployTypeClassData.getHelmChartLocation())) {
+            return DeployType.HELM.getName();
+        }
+        return DeployType.UNKNOWN.getName();
+    }
+
+    @DataBoundSetter
+    public void setDeployTypeClass(DeployTypeClass deployTypeClass) {
+        this.deployTypeClass = deployTypeClass;
+        this.deployType = getDeployType(deployTypeClass);
+        this.configs = StringUtils.trimToNull(deployTypeClass.getConfigs());
+        this.helmChartLocation = StringUtils.trimToNull(deployTypeClass.getHelmChartLocation());
+        this.helmReleaseName = StringUtils.trimToNull(deployTypeClass.getHelmReleaseName());
+        this.helmNamespace = StringUtils.trimToNull(deployTypeClass.getHelmNamespace());
+    }
+
+    public DeployTypeClass getDeployTypeClass() {
+        return deployTypeClass;
+    }
+
+    public String getDeployType() {
+        return deployType;
+    }
+
+    @Override
+    public String getHelmChartLocation() {
+        return helmChartLocation;
+    }
+
+    @Override
+    public String getHelmReleaseName() {
+        return helmReleaseName;
+    }
+
+    @Override
+    public String getHelmNamespace() {
+        return helmNamespace;
     }
 
     @Override
@@ -286,6 +354,10 @@ public class KubernetesDeployContext extends BaseCommandContext implements
 
     @Extension
     public static final class DescriptorImpl extends StepDescriptor {
+        public String doFillDeployTypeItems() {
+            return null;
+        }
+
         public ListBoxModel doFillCredentialsTypeItems() {
             ListBoxModel model = new ListBoxModel();
             for (KubernetesCredentialsType type : KubernetesCredentialsType.values()) {
@@ -464,6 +536,40 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         @Override
         public KubernetesClientWrapper buildClient(FilePath workspace) {
             return new KubernetesClientWrapper(kubeconfig.getContent());
+        }
+    }
+
+    public static class DeployTypeClass {
+        private String configs;
+        private String helmChartLocation;
+        private String helmReleaseName;
+        private String helmNamespace;
+
+        @DataBoundConstructor
+        public DeployTypeClass(String configs,
+                               String helmChartLocation,
+                               String helmReleaseName,
+                               String helmNamespace) {
+            this.configs = configs;
+            this.helmChartLocation = helmChartLocation;
+            this.helmReleaseName = helmReleaseName;
+            this.helmNamespace = helmNamespace;
+        }
+
+        public String getConfigs() {
+            return configs;
+        }
+
+        public String getHelmChartLocation() {
+            return helmChartLocation;
+        }
+
+        public String getHelmReleaseName() {
+            return helmReleaseName;
+        }
+
+        public String getHelmNamespace() {
+            return helmNamespace;
         }
     }
 }

@@ -15,7 +15,7 @@
     <properties>
         <!-- Baseline Jenkins version you use to build the plugin. Users must have this version or newer to run. -->
         <jenkins.version>1.651.3</jenkins.version>
-        <java.level>7</java.level>
+        <java.level>8</java.level>
 
         <azure-commons-version>0.2.6</azure-commons-version>
         <credentials.version>2.1.14</credentials.version>
@@ -24,6 +24,7 @@
         <workflow-step-api.version>2.10</workflow-step-api.version>
 
         <kubernetes-client.version>3.1.10</kubernetes-client.version>
+        <grpc.version>1.17.1</grpc.version>
     </properties>
 
     <name>Kubernetes Continuous Deploy Plugin</name>
@@ -111,6 +112,38 @@
             <artifactId>kubernetes-client</artifactId>
             <version>${kubernetes-client.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.microbean</groupId>
+            <artifactId>microbean-helm</artifactId>
+            <version>2.8.2.1.1.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty-tcnative-boringssl-static</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty</artifactId>
+            <version>${grpc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-protobuf</artifactId>
+            <version>${grpc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-services</artifactId>
+            <version>${grpc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-stub</artifactId>
+            <version>${grpc.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>

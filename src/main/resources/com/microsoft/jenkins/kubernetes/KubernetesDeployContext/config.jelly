@@ -4,7 +4,7 @@
   ~ Licensed under the MIT License. See License.txt in the project root for
   ~ license information.
   -->
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:f="/lib/form" xmlns:c="/lib/credentials" xmlns:ui="/lib/azure">
     <f:entry title="${%kubeconfigId_title}" field="kubeconfigId">
         <c:select expressionAllowed="false" />
     </f:entry>
@@ -41,9 +41,25 @@
         </f:entry>
     </f:advanced>
 
-    <f:entry title="${%configs_title}" field="configs">
-        <f:textbox/>
-    </f:entry>
+    <ui:dropdownList title="${%deploy_type_title}" selectedName="deployType" name="deployTypeClass">
+        <f:dropdownListBlock value="origin" title="${%origin_type_title}" selected="${instance == null || instance.getDeployType() == 'origin'}">
+            <f:entry title="${%configs_title}" field="configs">
+                <f:textbox/>
+            </f:entry>
+        </f:dropdownListBlock>
+
+        <f:dropdownListBlock value="helm" title="${%helm_type_title}" selected="${instance.getDeployType() == 'helm'}">
+            <f:entry title="${%helm_chart_location_title}" field="helmChartLocation">
+                <f:textbox/>
+            </f:entry>
+            <f:entry title="${%helm_release_name_title}" field="helmReleaseName">
+                <f:textbox/>
+            </f:entry>
+            <f:entry title="${%helm_namespace_title}" field="helmNamespace">
+                <f:textbox/>
+            </f:entry>
+        </f:dropdownListBlock>
+    </ui:dropdownList>
 
     <f:entry title="${%enableConfigSubstitution_title}" field="enableConfigSubstitution">
         <f:checkbox default="${descriptor.defaultEnableConfigSubstitution}"/>
