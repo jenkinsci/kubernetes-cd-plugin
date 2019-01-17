@@ -181,7 +181,7 @@
                     <maskClasses>
                         okhttp3.
                         okio.
-                        com.google.common.base.
+                        com.google.common.
                         com.fasterxml.jackson.
                         com.microsoft.jenkins.azurecommons.core.
                     </maskClasses>

@@ -58,6 +58,17 @@
             <f:entry title="${%helm_namespace_title}" field="helmNamespace">
                 <f:textbox/>
             </f:entry>
+            <f:advanced>
+                <f:entry title="${%tiller_namespace_title}" field="tillerNamespace">
+                    <f:textbox/>
+                </f:entry>
+                <f:entry title="${%helm_timeout_title}" field="helmTimeout">
+                    <f:textbox/>
+                </f:entry>
+                <f:entry title="${%helm_wait_title}" field="helmWait">
+                    <f:checkbox default="${descriptor.defaultHelmWait}"/>
+                </f:entry>
+            </f:advanced>
         </f:dropdownListBlock>
     </ui:dropdownList>
 

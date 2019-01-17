@@ -1,61 +1,110 @@
+/*
+ * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for
+ * license information.
+ */
+
 package com.microsoft.jenkins.kubernetes;
 
-import hapi.chart.ChartOuterClass;
-
-public class HelmContext {
-    private String namespace;
+public final class HelmContext {
+    private String chartLocation;
+    private String targetNamespace;
+    private String tillerNamespace;
     private String releaseName;
-    private ChartOuterClass.Chart.Builder chart;
-    private String rawValue;
+    private boolean wait;
     private long timeout;
 
-    public String getNamespace() {
-        return namespace;
+    private HelmContext(String chartLocation,
+                        String targetNamespace,
+                        String tillerNamespace,
+                        String releaseName,
+                        boolean wait,
+                        long timeout) {
+        this.chartLocation = chartLocation;
+        this.targetNamespace = targetNamespace;
+        this.tillerNamespace = tillerNamespace;
+        this.releaseName = releaseName;
+        this.wait = wait;
+        this.timeout = timeout;
     }
 
-    public void setNamespace(String namespace) {
-        this.namespace = namespace;
+    public static class Builder {
+        private String nestChartLocation;
+        private String nestTargetNamespace;
+        private String nestTillerNamespace;
+        private String nestReleaseName;
+        private boolean nestWait;
+        private long nestTimeout;
+
+        public Builder(String nestChartLocation) {
+            this.nestChartLocation = nestChartLocation;
+        }
+
+        public Builder withTargetNamespace(String targetNamespace) {
+            this.nestTargetNamespace = targetNamespace;
+            return this;
+        }
+
+        public Builder withTillerNamespace(String tillerNamespace) {
+            this.nestTillerNamespace = tillerNamespace;
+            return this;
+        }
+
+        public Builder withReleaseName(String releaseName) {
+            this.nestReleaseName = releaseName;
+            return this;
+        }
+
+        public Builder withWait(boolean wait) {
+            this.nestWait = wait;
+            return this;
+        }
+
+        public Builder withTimeout(long timeout) {
+            this.nestTimeout = timeout;
+            return this;
+        }
+
+        public HelmContext build() {
+            return new HelmContext(nestChartLocation, nestTargetNamespace,
+                    nestTillerNamespace, nestReleaseName, nestWait, nestTimeout);
+        }
     }
+
+    public String getTargetNamespace() {
+        return targetNamespace;
+    }
+
 
     public String getReleaseName() {
         return releaseName;
     }
 
-    public void setReleaseName(String releaseName) {
-        this.releaseName = releaseName;
-    }
-
-    public ChartOuterClass.Chart.Builder getChart() {
-        return chart;
-    }
-
-    public void setChart(ChartOuterClass.Chart.Builder chart) {
-        this.chart = chart;
-    }
-
-    public String getRawValue() {
-        return rawValue;
-    }
-
-    public void setRawValue(String rawValue) {
-        this.rawValue = rawValue;
-    }
 
     public long getTimeout() {
         return timeout;
     }
 
-    public void setTimeout(long timeout) {
-        this.timeout = timeout;
+    public String getChartLocation() {
+        return chartLocation;
+    }
+
+    public String getTillerNamespace() {
+        return tillerNamespace;
+    }
+
+    public boolean isWait() {
+        return wait;
     }
 
     @Override
     public String toString() {
         return "HelmContext{"
-                + "namespace='" + namespace + '\''
+                + "chartLocation='" + chartLocation + '\''
+                + ", targetNamespace='" + targetNamespace + '\''
+                + ", tillerNamespace='" + tillerNamespace + '\''
                 + ", releaseName='" + releaseName + '\''
-                + ", chart=" + chart
-                + ", rawValue='" + rawValue + '\''
+                + ", wait=" + wait
                 + ", timeout=" + timeout
                 + '}';
     }

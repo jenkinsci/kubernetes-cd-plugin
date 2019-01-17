@@ -68,9 +68,13 @@ public class KubernetesDeployContext extends BaseCommandContext implements
 
     private DeployTypeClass deployTypeClass;
     private String deployType;
+    private HelmContext helmContext;
     private String helmChartLocation;
     private String helmReleaseName;
     private String helmNamespace;
+    private String tillerNamespace;
+    private long helmTimeout;
+    private boolean helmWait;
 
     private String configs;
     private boolean enableConfigSubstitution;
@@ -209,6 +213,17 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         this.helmChartLocation = StringUtils.trimToNull(deployTypeClass.getHelmChartLocation());
         this.helmReleaseName = StringUtils.trimToNull(deployTypeClass.getHelmReleaseName());
         this.helmNamespace = StringUtils.trimToNull(deployTypeClass.getHelmNamespace());
+        this.tillerNamespace = StringUtils.trimToNull(deployTypeClass.getTillerNamespace());
+        this.helmWait = deployTypeClass.isHelmWait();
+        this.helmTimeout = deployTypeClass.getHelmTimeout();
+
+        this.helmContext = new HelmContext.Builder(deployTypeClass.getHelmChartLocation())
+                .withReleaseName(deployTypeClass.getHelmReleaseName())
+                .withTargetNamespace(deployTypeClass.getHelmNamespace())
+                .withTillerNamespace(deployTypeClass.getTillerNamespace())
+                .withWait(deployTypeClass.isHelmWait())
+                .withTimeout(deployTypeClass.getHelmTimeout())
+                .build();
     }
 
     public DeployTypeClass getDeployTypeClass() {
@@ -219,19 +234,33 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         return deployType;
     }
 
-    @Override
     public String getHelmChartLocation() {
         return helmChartLocation;
     }
 
-    @Override
     public String getHelmReleaseName() {
         return helmReleaseName;
     }
 
-    @Override
     public String getHelmNamespace() {
         return helmNamespace;
+    }
+
+    public String getTillerNamespace() {
+        return tillerNamespace;
+    }
+
+    public long getHelmTimeout() {
+        return helmTimeout;
+    }
+
+    public boolean isHelmWait() {
+        return helmWait;
+    }
+
+    @Override
+    public HelmContext getHelmContext() {
+        return this.helmContext;
     }
 
     @Override
@@ -509,6 +538,10 @@ public class KubernetesDeployContext extends BaseCommandContext implements
             return true;
         }
 
+        public boolean getDefaultHelmWait() {
+            return true;
+        }
+
         @Override
         public Set<? extends Class<?>> getRequiredContext() {
             return SimpleBuildStepExecution.REQUIRED_CONTEXT;
@@ -539,21 +572,33 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         }
     }
 
+    /**
+     * Class Reflected with deployment configurations.
+     */
     public static class DeployTypeClass {
         private String configs;
         private String helmChartLocation;
         private String helmReleaseName;
         private String helmNamespace;
+        private String tillerNamespace;
+        private long helmTimeout;
+        private boolean helmWait;
 
         @DataBoundConstructor
         public DeployTypeClass(String configs,
                                String helmChartLocation,
                                String helmReleaseName,
-                               String helmNamespace) {
+                               String helmNamespace,
+                               String tillerNamespace,
+                               long helmTimeout,
+                               boolean helmWait) {
             this.configs = configs;
             this.helmChartLocation = helmChartLocation;
             this.helmReleaseName = helmReleaseName;
             this.helmNamespace = helmNamespace;
+            this.tillerNamespace = tillerNamespace;
+            this.helmTimeout = helmTimeout;
+            this.helmWait = helmWait;
         }
 
         public String getConfigs() {
@@ -570,6 +615,18 @@ public class KubernetesDeployContext extends BaseCommandContext implements
 
         public String getHelmNamespace() {
             return helmNamespace;
+        }
+
+        public String getTillerNamespace() {
+            return tillerNamespace;
+        }
+
+        public long getHelmTimeout() {
+            return helmTimeout;
+        }
+
+        public boolean isHelmWait() {
+            return helmWait;
         }
     }
 }
