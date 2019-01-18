@@ -75,6 +75,7 @@ public class KubernetesDeployContext extends BaseCommandContext implements
     private String tillerNamespace;
     private long helmTimeout;
     private boolean helmWait;
+    private List<HelmRepositoryEndPoint> helmRepositoryEndPoints;
 
     private String configs;
     private boolean enableConfigSubstitution;
@@ -216,14 +217,22 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         this.tillerNamespace = StringUtils.trimToNull(deployTypeClass.getTillerNamespace());
         this.helmWait = deployTypeClass.isHelmWait();
         this.helmTimeout = deployTypeClass.getHelmTimeout();
+        this.helmRepositoryEndPoints = parseHelmRepositoryEndpoint(deployTypeClass.getHelmRepositoryEndPoints());
 
-        this.helmContext = new HelmContext.Builder(deployTypeClass.getHelmChartLocation())
-                .withReleaseName(deployTypeClass.getHelmReleaseName())
-                .withTargetNamespace(deployTypeClass.getHelmNamespace())
-                .withTillerNamespace(deployTypeClass.getTillerNamespace())
-                .withWait(deployTypeClass.isHelmWait())
-                .withTimeout(deployTypeClass.getHelmTimeout())
+
+        this.helmContext = new HelmContext.Builder(this.getHelmChartLocation())
+                .withReleaseName(this.getHelmReleaseName())
+                .withTargetNamespace(this.getHelmNamespace())
+                .withTillerNamespace(this.getTillerNamespace())
+                .withWait(this.isHelmWait())
+                .withTimeout(this.getHelmTimeout())
+                .withHelmRepositoryEndpoints(this.getHelmRepositoryEndPoints())
                 .build();
+    }
+
+    private List<HelmRepositoryEndPoint> parseHelmRepositoryEndpoint(List<HelmRepositoryEndPoint> endPoints) {
+        //TODO format data.
+        return endPoints;
     }
 
     public DeployTypeClass getDeployTypeClass() {
@@ -300,7 +309,6 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         return ImmutableList.copyOf(dockerCredentials);
     }
 
-
     @DataBoundSetter
     public void setDockerCredentials(List<DockerRegistryEndpoint> dockerCredentials) {
         List<DockerRegistryEndpoint> endpoints = new ArrayList<>();
@@ -323,6 +331,13 @@ public class KubernetesDeployContext extends BaseCommandContext implements
             endpoints.add(new DockerRegistryEndpoint(registryUrl, credentialsId));
         }
         this.dockerCredentials = endpoints;
+    }
+
+    public List<HelmRepositoryEndPoint> getHelmRepositoryEndPoints() {
+        if (this.helmRepositoryEndPoints == null) {
+            return ImmutableList.of();
+        }
+        return ImmutableList.copyOf(this.helmRepositoryEndPoints);
     }
 
     @Override
@@ -583,6 +598,7 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         private String tillerNamespace;
         private long helmTimeout;
         private boolean helmWait;
+        private List<HelmRepositoryEndPoint> helmRepositoryEndPoints;
 
         @DataBoundConstructor
         public DeployTypeClass(String configs,
@@ -591,7 +607,8 @@ public class KubernetesDeployContext extends BaseCommandContext implements
                                String helmNamespace,
                                String tillerNamespace,
                                long helmTimeout,
-                               boolean helmWait) {
+                               boolean helmWait,
+                               List<HelmRepositoryEndPoint> helmRepositoryEndPoints) {
             this.configs = configs;
             this.helmChartLocation = helmChartLocation;
             this.helmReleaseName = helmReleaseName;
@@ -599,6 +616,7 @@ public class KubernetesDeployContext extends BaseCommandContext implements
             this.tillerNamespace = tillerNamespace;
             this.helmTimeout = helmTimeout;
             this.helmWait = helmWait;
+            this.helmRepositoryEndPoints = helmRepositoryEndPoints;
         }
 
         public String getConfigs() {
@@ -627,6 +645,10 @@ public class KubernetesDeployContext extends BaseCommandContext implements
 
         public boolean isHelmWait() {
             return helmWait;
+        }
+
+        public List<HelmRepositoryEndPoint> getHelmRepositoryEndPoints() {
+            return helmRepositoryEndPoints;
         }
     }
 }

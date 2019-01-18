@@ -58,6 +58,7 @@
             <f:entry title="${%helm_namespace_title}" field="helmNamespace">
                 <f:textbox/>
             </f:entry>
+
             <f:advanced>
                 <f:entry title="${%tiller_namespace_title}" field="tillerNamespace">
                     <f:textbox/>
@@ -68,6 +69,30 @@
                 <f:entry title="${%helm_wait_title}" field="helmWait">
                     <f:checkbox default="${descriptor.defaultHelmWait}"/>
                 </f:entry>
+
+                <f:advanced title="${%helm_repository_title}">
+                    <!--<f:section title="${%helm_repository_credentials}">-->
+                        <!--<f:entry title="${%helm_repository_name_title}" field="helmRepositoryName">-->
+                            <!--<f:textbox/>-->
+                        <!--</f:entry>-->
+                        <!--<f:entry title="${%helm_repository_url}" field="helmRepositoryUrl">-->
+                            <!--<f:textbox/>-->
+                        <!--</f:entry>-->
+                        <!--<f:entry title="${%helm_repository_secret}" field="helmRepositorySecretName">-->
+                            <!--<f:textbox/>-->
+                        <!--</f:entry>-->
+
+                        <f:entry title="${%helm_repository_credentials_title}" field="helmRepositoryEndpoints">
+                            <f:repeatableProperty field="helmRepositoryEndPoints">
+                                <f:entry title="">
+                                    <div align="right">
+                                        <f:repeatableDeleteButton/>
+                                    </div>
+                                </f:entry>
+                            </f:repeatableProperty>
+                        </f:entry>
+                    <!--</f:section>-->
+                </f:advanced>
             </f:advanced>
         </f:dropdownListBlock>
     </ui:dropdownList>

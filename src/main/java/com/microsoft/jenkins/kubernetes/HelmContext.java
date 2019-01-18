@@ -6,6 +6,8 @@
 
 package com.microsoft.jenkins.kubernetes;
 
+import java.util.List;
+
 public final class HelmContext {
     private String chartLocation;
     private String targetNamespace;
@@ -13,19 +15,22 @@ public final class HelmContext {
     private String releaseName;
     private boolean wait;
     private long timeout;
+    private List<HelmRepositoryEndPoint> helmRepositoryEndPoints;
 
     private HelmContext(String chartLocation,
                         String targetNamespace,
                         String tillerNamespace,
                         String releaseName,
                         boolean wait,
-                        long timeout) {
+                        long timeout,
+                        List<HelmRepositoryEndPoint> helmRepositoryEndPoints) {
         this.chartLocation = chartLocation;
         this.targetNamespace = targetNamespace;
         this.tillerNamespace = tillerNamespace;
         this.releaseName = releaseName;
         this.wait = wait;
         this.timeout = timeout;
+        this.helmRepositoryEndPoints = helmRepositoryEndPoints;
     }
 
     public static class Builder {
@@ -35,6 +40,7 @@ public final class HelmContext {
         private String nestReleaseName;
         private boolean nestWait;
         private long nestTimeout;
+        private List<HelmRepositoryEndPoint> nestHelmRepositoryEndPoints;
 
         public Builder(String nestChartLocation) {
             this.nestChartLocation = nestChartLocation;
@@ -65,9 +71,15 @@ public final class HelmContext {
             return this;
         }
 
+        public Builder withHelmRepositoryEndpoints(List<HelmRepositoryEndPoint> helmRepositoryEndpoints) {
+            this.nestHelmRepositoryEndPoints = helmRepositoryEndpoints;
+            return this;
+        }
+
         public HelmContext build() {
             return new HelmContext(nestChartLocation, nestTargetNamespace,
-                    nestTillerNamespace, nestReleaseName, nestWait, nestTimeout);
+                    nestTillerNamespace, nestReleaseName, nestWait, nestTimeout,
+                    nestHelmRepositoryEndPoints);
         }
     }
 
