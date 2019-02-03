@@ -13,8 +13,10 @@ import com.microsoft.jenkins.azurecommons.command.CommandState;
 import com.microsoft.jenkins.azurecommons.command.IBaseCommandData;
 import com.microsoft.jenkins.azurecommons.command.ICommand;
 import com.microsoft.jenkins.kubernetes.CustomerTiller;
-import com.microsoft.jenkins.kubernetes.HelmContext;
+import com.microsoft.jenkins.kubernetes.helm.HelmContext;
+import com.microsoft.jenkins.kubernetes.helm.HelmRepositoryEndPoint;
 import com.microsoft.jenkins.kubernetes.credentials.KubeconfigCredentials;
+import com.microsoft.jenkins.kubernetes.util.Constants;
 import hapi.chart.ChartOuterClass;
 import hapi.release.ReleaseOuterClass;
 import hapi.release.StatusOuterClass;
@@ -24,14 +26,19 @@ import hapi.services.tiller.Tiller.ListReleasesRequest;
 import hapi.services.tiller.Tiller.ListReleasesResponse;
 import hapi.services.tiller.Tiller.UpdateReleaseRequest;
 import hapi.services.tiller.Tiller.UpdateReleaseResponse;
+import hapi.services.tiller.Tiller.RollbackReleaseRequest;
+import hapi.services.tiller.Tiller.RollbackReleaseResponse;
 import hudson.model.Item;
 import hudson.security.ACL;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.microbean.helm.ReleaseManager;
 import org.microbean.helm.Tiller;
 import org.microbean.helm.chart.DirectoryChartLoader;
+import org.microbean.helm.chart.repository.ChartRepository;
+import org.microbean.helm.chart.resolver.ChartResolverException;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,6 +48,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -50,38 +58,84 @@ public class HelmDeploymentCommand implements ICommand<HelmDeploymentCommand.IHe
     public void execute(IHelmDeploymentData context) {
         HelmContext helmContext = context.getHelmContext();
 
-        // helm chart
-        String helmChartLocation = helmContext.getChartLocation();
-        helmChartLocation = context.getJobContext().getWorkspace().child(helmChartLocation).getRemote();
-
-        File file = new File(helmChartLocation);
-        if (!file.exists()) {
-            context.logError(String.format("cannot find helm chart at %s", file.getAbsolutePath()));
-            return;
-        }
-        URI uri = file.toURI();
-        ChartOuterClass.Chart.Builder chart = null;
-        try (final DirectoryChartLoader chartLoader = new DirectoryChartLoader()) {
-            Path path = Paths.get(uri);
-            chart = chartLoader.load(path);
-        } catch (IOException e) {
-            // TODO locating charts fails
-            context.logError(e);
-        }
-
         String tillerNamespace = helmContext.getTillerNamespace();
 
         String kubeConfig = getKubeConfigContent(context.getKubeconfigId(), context.getJobContext().getOwner());
-
         try (final DefaultKubernetesClient client = new DefaultKubernetesClient(Config.fromKubeconfig(kubeConfig));
              final Tiller tiller = new CustomerTiller(client, tillerNamespace);
              final ReleaseManager releaseManager = new ReleaseManager(tiller)) {
 
-            context.logStatus(helmChartLocation);
+            String helmCommandType = helmContext.getHelmCommandType();
+            switch (helmCommandType) {
+                case Constants.HELM_COMMAND_TYPE_INSTALL:
+                    // helm chart
+                    String chartType = helmContext.getHelmChartType();
+                    ChartOuterClass.Chart.Builder chart = null;
+                    switch (chartType) {
+                        case Constants.HELM_CHART_TYPE_URI:
+                            String helmChartLocation = helmContext.getChartLocation();
+                            helmChartLocation = context.getJobContext().getWorkspace()
+                                    .child(helmChartLocation).getRemote();
 
-            createOrUpdateHelm(releaseManager, helmContext, chart);
+                            File file = new File(helmChartLocation);
+                            if (!file.exists()) {
+                                context.logError(String.format("cannot find helm chart at %s", file.getAbsolutePath()));
+                                return;
+                            }
+                            URI uri = file.toURI();
+                            try (final DirectoryChartLoader chartLoader = new DirectoryChartLoader()) {
+                                Path path = Paths.get(uri);
+                                chart = chartLoader.load(path);
+                            } catch (IOException e) {
+                                // TODO locating charts fails
+                                context.logError(e);
+                            }
+                            context.logStatus(helmChartLocation);
+                            break;
 
-            context.setCommandState(CommandState.Success);
+                        case Constants.HELM_CHART_TYPE_REPOSITORY:
+                            List<HelmRepositoryEndPoint> helmRepositoryEndPoints = context.getHelmRepositoryEndPoints();
+                            String chartName = helmContext.getChartName();
+                            String chartVersion = helmContext.getChartVersion();
+                            if (!CollectionUtils.isEmpty(helmRepositoryEndPoints)) {
+                                for (HelmRepositoryEndPoint helmRepositoryEndPoint : helmRepositoryEndPoints) {
+                                    ChartRepository chartRepository =
+                                            new ChartRepository(helmRepositoryEndPoint.getName(),
+                                                    URI.create(helmRepositoryEndPoint.getUrl()));
+                                    try {
+                                        chart = chartRepository.resolve(chartName, chartVersion);
+                                    } catch (ChartResolverException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
+                            break;
+                        default:
+
+                    }
+
+
+                    createOrUpdateHelm(releaseManager, helmContext, chart);
+
+                    context.setCommandState(CommandState.Success);
+                    break;
+                case Constants.HELM_COMMAND_TYPE_ROLLBACK:
+                    String rollbackName = helmContext.getRollbackName();
+                    int revisionNumber = helmContext.getRevisionNumber();
+                    RollbackReleaseRequest.Builder rollbackBuilder = RollbackReleaseRequest.newBuilder();
+                    rollbackBuilder.setName(rollbackName);
+                    rollbackBuilder.setVersion(revisionNumber);
+                    Future<RollbackReleaseResponse> rollback = releaseManager.rollback(rollbackBuilder.build());
+                    try {
+                        RollbackReleaseResponse rollbackReleaseResponse = rollback.get();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } catch (ExecutionException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                default:
+            }
         } catch (IOException e) {
             context.logError(e);
             context.setCommandState(CommandState.HasError);
@@ -178,5 +232,7 @@ public class HelmDeploymentCommand implements ICommand<HelmDeploymentCommand.IHe
         String getKubeconfigId();
 
         HelmContext getHelmContext();
+
+        List<HelmRepositoryEndPoint> getHelmRepositoryEndPoints();
     }
 }

@@ -27,6 +27,8 @@ import com.microsoft.jenkins.kubernetes.credentials.KubernetesCredentialsType;
 import com.microsoft.jenkins.kubernetes.credentials.ResolvedDockerRegistryEndpoint;
 import com.microsoft.jenkins.kubernetes.credentials.SSHCredentials;
 import com.microsoft.jenkins.kubernetes.credentials.TextCredentials;
+import com.microsoft.jenkins.kubernetes.helm.HelmContext;
+import com.microsoft.jenkins.kubernetes.helm.HelmRepositoryEndPoint;
 import com.microsoft.jenkins.kubernetes.util.Constants;
 import hudson.Extension;
 import hudson.FilePath;
@@ -70,12 +72,18 @@ public class KubernetesDeployContext extends BaseCommandContext implements
     private String deployType;
     private HelmContext helmContext;
     private String helmChartLocation;
+    private String helmChartName;
+    private String helmChartVersion;
     private String helmReleaseName;
     private String helmNamespace;
     private String tillerNamespace;
     private long helmTimeout;
     private boolean helmWait;
     private List<HelmRepositoryEndPoint> helmRepositoryEndPoints;
+    private String helmCommandType;
+    private String helmChartType;
+    private int helmRevisionNumber;
+    private String helmRollbackName;
 
     private String configs;
     private boolean enableConfigSubstitution;
@@ -193,46 +201,89 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         }
     }
 
-    private String getDeployType(DeployTypeClass deployTypeClassData) {
-        if (deployTypeClassData == null) {
-            return DeployType.UNKNOWN.getName();
-        }
-        if (StringUtils.isNotBlank(deployTypeClassData.getConfigs())) {
-            return DeployType.ORIGIN.getName();
-        }
-        if (StringUtils.isNotBlank(deployTypeClassData.getHelmChartLocation())) {
-            return DeployType.HELM.getName();
-        }
-        return DeployType.UNKNOWN.getName();
+    @DataBoundSetter
+    public void setDeployType(String deployType) {
+        this.deployType = deployType;
     }
+
+    @DataBoundSetter
+    public void setHelmChartType(String helmChartType) {
+        this.helmChartType = helmChartType;
+    }
+
+//    private String getDeployType(DeployTypeClass deployTypeClassData) {
+//        if (deployTypeClassData == null) {
+//            return DeployType.UNKNOWN.getName();
+//        }
+//        if (StringUtils.isNotBlank(deployTypeClassData.getConfigs())) {
+//            return DeployType.ORIGIN.getName();
+//        }
+//        if (StringUtils.isNotBlank(deployTypeClassData.getOuterHelmChartLocation())) {
+//            return DeployType.HELM.getName();
+//        }
+//        return DeployType.UNKNOWN.getName();
+//    }
 
     @DataBoundSetter
     public void setDeployTypeClass(DeployTypeClass deployTypeClass) {
         this.deployTypeClass = deployTypeClass;
-        this.deployType = getDeployType(deployTypeClass);
+//        this.deployType = getDeployType(deployTypeClass);
         this.configs = StringUtils.trimToNull(deployTypeClass.getConfigs());
-        this.helmChartLocation = StringUtils.trimToNull(deployTypeClass.getHelmChartLocation());
-        this.helmReleaseName = StringUtils.trimToNull(deployTypeClass.getHelmReleaseName());
-        this.helmNamespace = StringUtils.trimToNull(deployTypeClass.getHelmNamespace());
+        HelmCommandClass helmCommandClass = deployTypeClass.getHelmCommandClass();
+        this.helmChartLocation = StringUtils.trimToNull(helmCommandClass.getHelmChartLocation());
+        this.helmChartName = StringUtils.trimToNull(helmCommandClass.getHelmChartName());
+        this.helmChartVersion = StringUtils.trimToNull(helmCommandClass.getHelmChartVersion());
+        this.helmReleaseName = StringUtils.trimToNull(helmCommandClass.getHelmReleaseName());
+        this.helmNamespace = StringUtils.trimToNull(helmCommandClass.getHelmNamespace());
         this.tillerNamespace = StringUtils.trimToNull(deployTypeClass.getTillerNamespace());
         this.helmWait = deployTypeClass.isHelmWait();
         this.helmTimeout = deployTypeClass.getHelmTimeout();
         this.helmRepositoryEndPoints = parseHelmRepositoryEndpoint(deployTypeClass.getHelmRepositoryEndPoints());
+        this.helmCommandType = deployTypeClass.getHelmCommandType();
+        this.helmChartType = helmCommandClass.getHelmChartType();
+        this.helmRevisionNumber = helmCommandClass.getHelmRevisionNumber();
+        this.helmRollbackName = helmCommandClass.getHelmRollbackName();
 
-
-        this.helmContext = new HelmContext.Builder(this.getHelmChartLocation())
-                .withReleaseName(this.getHelmReleaseName())
-                .withTargetNamespace(this.getHelmNamespace())
-                .withTillerNamespace(this.getTillerNamespace())
-                .withWait(this.isHelmWait())
-                .withTimeout(this.getHelmTimeout())
-                .withHelmRepositoryEndpoints(this.getHelmRepositoryEndPoints())
+        this.helmContext = new HelmContext.Builder(getHelmChartLocation())
+                .withReleaseName(getHelmReleaseName())
+                .withTargetNamespace(getHelmNamespace())
+                .withTillerNamespace(getTillerNamespace())
+                .withWait(isHelmWait())
+                .withTimeout(getHelmTimeout())
+                .withHelmRepositoryEndpoints(getHelmRepositoryEndPoints())
+                .withHelmCommandType(getHelmCommandType())
+                .withHelmChartType(getHelmChartType())
+                .withRevisionNumber(getHelmRevisionNumber())
+                .withRollbackName(getHelmRollbackName())
+                .withChartName(getHelmChartName())
+                .withChartVersion(getHelmChartVersion())
                 .build();
     }
 
     private List<HelmRepositoryEndPoint> parseHelmRepositoryEndpoint(List<HelmRepositoryEndPoint> endPoints) {
         //TODO format data.
         return endPoints;
+    }
+
+    public boolean isDeployTypeEquals(String type) {
+        if (this.deployType == null && type.equalsIgnoreCase(DeployType.ORIGIN.getName())) {
+            return true;
+        }
+        return type != null && type.equalsIgnoreCase(this.deployType);
+    }
+
+    public boolean isHelmCommandTypeEquals(String type) {
+        if (this.helmCommandType == null && type.equalsIgnoreCase(Constants.HELM_COMMAND_TYPE_INSTALL)) {
+            return true;
+        }
+        return type != null && type.equalsIgnoreCase(this.helmCommandType);
+    }
+
+    public boolean isHelmChartTypeEquals(String type) {
+        if (this.helmChartType == null && type.equalsIgnoreCase(Constants.HELM_CHART_TYPE_URI)) {
+            return true;
+        }
+        return type != null && type.equalsIgnoreCase(this.helmChartType);
     }
 
     public DeployTypeClass getDeployTypeClass() {
@@ -245,6 +296,14 @@ public class KubernetesDeployContext extends BaseCommandContext implements
 
     public String getHelmChartLocation() {
         return helmChartLocation;
+    }
+
+    public String getHelmChartName() {
+        return helmChartName;
+    }
+
+    public String getHelmChartVersion() {
+        return helmChartVersion;
     }
 
     public String getHelmReleaseName() {
@@ -265,6 +324,22 @@ public class KubernetesDeployContext extends BaseCommandContext implements
 
     public boolean isHelmWait() {
         return helmWait;
+    }
+
+    public String getHelmCommandType() {
+        return helmCommandType;
+    }
+
+    public String getHelmChartType() {
+        return helmChartType;
+    }
+
+    public int getHelmRevisionNumber() {
+        return helmRevisionNumber;
+    }
+
+    public String getHelmRollbackName() {
+        return helmRollbackName;
     }
 
     @Override
@@ -333,6 +408,7 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         this.dockerCredentials = endpoints;
     }
 
+    @Override
     public List<HelmRepositoryEndPoint> getHelmRepositoryEndPoints() {
         if (this.helmRepositoryEndPoints == null) {
             return ImmutableList.of();
@@ -399,6 +475,10 @@ public class KubernetesDeployContext extends BaseCommandContext implements
     @Extension
     public static final class DescriptorImpl extends StepDescriptor {
         public String doFillDeployTypeItems() {
+            return null;
+        }
+
+        public String doFillHelmCommandTypeItems() {
             return null;
         }
 
@@ -587,44 +667,45 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         }
     }
 
-    /**
-     * Class Reflected with deployment configurations.
-     */
-    public static class DeployTypeClass {
-        private String configs;
+    public static class HelmCommandClass {
         private String helmChartLocation;
+        private String helmChartName;
+        private String helmChartVersion;
         private String helmReleaseName;
         private String helmNamespace;
-        private String tillerNamespace;
-        private long helmTimeout;
-        private boolean helmWait;
-        private List<HelmRepositoryEndPoint> helmRepositoryEndPoints;
+        private String helmChartType;
+        private String helmRollbackName;
+        private int helmRevisionNumber;
 
         @DataBoundConstructor
-        public DeployTypeClass(String configs,
-                               String helmChartLocation,
-                               String helmReleaseName,
-                               String helmNamespace,
-                               String tillerNamespace,
-                               long helmTimeout,
-                               boolean helmWait,
-                               List<HelmRepositoryEndPoint> helmRepositoryEndPoints) {
-            this.configs = configs;
+        public HelmCommandClass(String helmChartLocation,
+                                String helmChartName,
+                                String helmChartVersion,
+                                String helmReleaseName,
+                                String helmNamespace,
+                                String helmChartType,
+                                String helmRollbackName,
+                                int helmRevisionNumber) {
             this.helmChartLocation = helmChartLocation;
+            this.helmChartName = helmChartName;
+            this.helmChartVersion = helmChartVersion;
             this.helmReleaseName = helmReleaseName;
             this.helmNamespace = helmNamespace;
-            this.tillerNamespace = tillerNamespace;
-            this.helmTimeout = helmTimeout;
-            this.helmWait = helmWait;
-            this.helmRepositoryEndPoints = helmRepositoryEndPoints;
-        }
-
-        public String getConfigs() {
-            return configs;
+            this.helmChartType = helmChartType;
+            this.helmRollbackName = helmRollbackName;
+            this.helmRevisionNumber = helmRevisionNumber;
         }
 
         public String getHelmChartLocation() {
             return helmChartLocation;
+        }
+
+        public String getHelmChartName() {
+            return helmChartName;
+        }
+
+        public String getHelmChartVersion() {
+            return helmChartVersion;
         }
 
         public String getHelmReleaseName() {
@@ -633,6 +714,52 @@ public class KubernetesDeployContext extends BaseCommandContext implements
 
         public String getHelmNamespace() {
             return helmNamespace;
+        }
+
+        public String getHelmChartType() {
+            return helmChartType;
+        }
+
+        public String getHelmRollbackName() {
+            return helmRollbackName;
+        }
+
+        public int getHelmRevisionNumber() {
+            return helmRevisionNumber;
+        }
+    }
+
+    /**
+     * Class Reflected with deployment configurations.
+     */
+    public static class DeployTypeClass {
+        private String configs;
+        private String tillerNamespace;
+        private long helmTimeout;
+        private boolean helmWait;
+        private List<HelmRepositoryEndPoint> helmRepositoryEndPoints;
+        private String helmCommandType;
+        private HelmCommandClass helmCommandClass;
+
+        @DataBoundConstructor
+        public DeployTypeClass(String configs,
+                               String tillerNamespace,
+                               long helmTimeout,
+                               boolean helmWait,
+                               List<HelmRepositoryEndPoint> helmRepositoryEndPoints,
+                               String helmCommandType,
+                               HelmCommandClass helmCommandClass) {
+            this.configs = configs;
+            this.helmCommandClass = helmCommandClass;
+            this.tillerNamespace = tillerNamespace;
+            this.helmTimeout = helmTimeout;
+            this.helmWait = helmWait;
+            this.helmRepositoryEndPoints = helmRepositoryEndPoints;
+            this.helmCommandType = helmCommandType;
+        }
+
+        public String getConfigs() {
+            return configs;
         }
 
         public String getTillerNamespace() {
@@ -650,5 +777,14 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         public List<HelmRepositoryEndPoint> getHelmRepositoryEndPoints() {
             return helmRepositoryEndPoints;
         }
+
+        public HelmCommandClass getHelmCommandClass() {
+            return helmCommandClass;
+        }
+
+        public String getHelmCommandType() {
+            return helmCommandType;
+        }
+
     }
 }

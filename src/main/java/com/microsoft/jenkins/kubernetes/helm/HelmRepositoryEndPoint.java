@@ -1,4 +1,4 @@
-package com.microsoft.jenkins.kubernetes;
+package com.microsoft.jenkins.kubernetes.helm;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
@@ -16,9 +16,11 @@ import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import javax.annotation.Nonnull;
+import java.io.Serializable;
 import java.util.Collections;
 
-public class HelmRepositoryEndPoint extends AbstractDescribableImpl<HelmRepositoryEndPoint> {
+public class HelmRepositoryEndPoint extends AbstractDescribableImpl<HelmRepositoryEndPoint>
+        implements Serializable {
     private final String name;
     private final String url;
     private final String credentialsId;

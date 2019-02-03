@@ -58,6 +58,12 @@ public final class Constants {
     public static final Pattern URI_SCHEME_PREFIX =
             Pattern.compile("^[a-z][a-z0-9+.\\-]*://", Pattern.CASE_INSENSITIVE);
 
+    public static final String HELM_COMMAND_TYPE_INSTALL = "install";
+    public static final String HELM_COMMAND_TYPE_ROLLBACK = "rollback";
+
+    public static final String HELM_CHART_TYPE_URI = "uri";
+    public static final String HELM_CHART_TYPE_REPOSITORY = "repository";
+
     private Constants() {
         // hide constructor
     }
