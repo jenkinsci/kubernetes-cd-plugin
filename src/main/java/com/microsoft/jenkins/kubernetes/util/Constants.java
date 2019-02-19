@@ -63,6 +63,7 @@ public final class Constants {
 
     public static final String HELM_CHART_TYPE_URI = "uri";
     public static final String HELM_CHART_TYPE_REPOSITORY = "repository";
+    public static final long DEFAULT_HELM_TIMEOUT = 300;
 
     private Constants() {
         // hide constructor

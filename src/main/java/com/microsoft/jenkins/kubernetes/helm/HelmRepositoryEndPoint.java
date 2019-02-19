@@ -21,8 +21,17 @@ import java.util.Collections;
 
 public class HelmRepositoryEndPoint extends AbstractDescribableImpl<HelmRepositoryEndPoint>
         implements Serializable {
+    /**
+     * Name of a helm repository.
+     */
     private final String name;
+    /**
+     * URL of a helm repository.
+     */
     private final String url;
+    /**
+     * Credentials to authenticate helm repository.
+     */
     private final String credentialsId;
 
     @DataBoundConstructor

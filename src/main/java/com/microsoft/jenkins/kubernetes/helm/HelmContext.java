@@ -6,21 +6,63 @@
 
 package com.microsoft.jenkins.kubernetes.helm;
 
+import com.microsoft.jenkins.kubernetes.util.Constants;
+
 import java.util.List;
 
 public final class HelmContext {
+    /**
+     * A path to a packaged chart, a path to an unpacked chart directory or a URL.
+     */
     private String chartLocation;
+    /**
+     * Name of a helm chart, used in chart reference.
+     */
     private String chartName;
+    /**
+     * Version of a helm chart, used in chart reference.
+     */
     private String chartVersion;
+    /**
+     * Namespace which the helm chart will be installed into.
+     */
     private String targetNamespace;
+    /**
+     * Namespace where the tiller is installed.
+     */
     private String tillerNamespace;
+    /**
+     * Release name of a helm chart installation.
+     */
     private String releaseName;
+    /**
+     * If this is true, will wait until all Pods, PVCs, and Services are in a ready state
+     * before marking the release as successful. It will wait for as long as timeout
+     */
     private boolean wait;
+    /**
+     * time in seconds to wait for any individual Kubernetes operation (default 300)
+     */
     private long timeout;
+    /**
+     * List of helm repositories configured in this plugin.
+     */
     private List<HelmRepositoryEndPoint> helmRepositoryEndPoints;
+    /**
+     * Type of helm command.
+     */
     private String helmCommandType;
+    /**
+     * Way to locate the target helm chart.
+     */
     private String helmChartType;
+    /**
+     * The version which the release wants to be rollback to.
+     */
     private int revisionNumber;
+    /**
+     * The name of the release needed to be rollback.
+     */
     private String rollbackName;
 
     private HelmContext(String chartLocation,
@@ -59,7 +101,7 @@ public final class HelmContext {
         private String nestTillerNamespace;
         private String nestReleaseName;
         private boolean nestWait;
-        private long nestTimeout;
+        private long nestTimeout = Constants.DEFAULT_HELM_TIMEOUT;
         private List<HelmRepositoryEndPoint> nestHelmRepositoryEndPoints;
         private String nestHelmCommandType;
         private String nestHelmChartType;
@@ -194,11 +236,18 @@ public final class HelmContext {
     public String toString() {
         return "HelmContext{"
                 + "chartLocation='" + chartLocation + '\''
+                + ", chartName='" + chartName + '\''
+                + ", chartVersion='" + chartVersion + '\''
                 + ", targetNamespace='" + targetNamespace + '\''
                 + ", tillerNamespace='" + tillerNamespace + '\''
                 + ", releaseName='" + releaseName + '\''
                 + ", wait=" + wait
                 + ", timeout=" + timeout
+                + ", helmRepositoryEndPoints=" + helmRepositoryEndPoints
+                + ", helmCommandType='" + helmCommandType + '\''
+                + ", helmChartType='" + helmChartType + '\''
+                + ", revisionNumber=" + revisionNumber
+                + ", rollbackName='" + rollbackName + '\''
                 + '}';
     }
 }

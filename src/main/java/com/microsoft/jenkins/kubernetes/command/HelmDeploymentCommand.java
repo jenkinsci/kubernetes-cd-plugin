@@ -60,7 +60,11 @@ public class HelmDeploymentCommand implements ICommand<HelmDeploymentCommand.IHe
 
         String tillerNamespace = helmContext.getTillerNamespace();
 
-        String kubeConfig = getKubeConfigContent(context.getKubeconfigId(), context.getJobContext().getOwner());
+        String kubeconfigId = context.getKubeconfigId();
+        if (StringUtils.isBlank(kubeconfigId)) {
+            throw new IllegalArgumentException("Kubeconfig id is empty, please check your configuration");
+        }
+        String kubeConfig = getKubeConfigContent(kubeconfigId, context.getJobContext().getOwner());
         try (final DefaultKubernetesClient client = new DefaultKubernetesClient(Config.fromKubeconfig(kubeConfig));
              final Tiller tiller = new CustomerTiller(client, tillerNamespace);
              final ReleaseManager releaseManager = new ReleaseManager(tiller)) {

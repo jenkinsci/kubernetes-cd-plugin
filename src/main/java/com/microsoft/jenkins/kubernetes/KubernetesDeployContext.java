@@ -244,20 +244,23 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         this.helmRevisionNumber = helmCommandClass.getHelmRevisionNumber();
         this.helmRollbackName = helmCommandClass.getHelmRollbackName();
 
-        this.helmContext = new HelmContext.Builder(getHelmChartLocation())
+        HelmContext.Builder builder = new HelmContext.Builder(getHelmChartLocation())
                 .withReleaseName(getHelmReleaseName())
                 .withTargetNamespace(getHelmNamespace())
                 .withTillerNamespace(getTillerNamespace())
                 .withWait(isHelmWait())
-                .withTimeout(getHelmTimeout())
                 .withHelmRepositoryEndpoints(getHelmRepositoryEndPoints())
                 .withHelmCommandType(getHelmCommandType())
                 .withHelmChartType(getHelmChartType())
                 .withRevisionNumber(getHelmRevisionNumber())
                 .withRollbackName(getHelmRollbackName())
                 .withChartName(getHelmChartName())
-                .withChartVersion(getHelmChartVersion())
-                .build();
+                .withChartVersion(getHelmChartVersion());
+        long helmTimeout = getHelmTimeout();
+        if (helmTimeout > 0) {
+            builder = builder.withTimeout(helmTimeout);
+        }
+        this.helmContext = builder.build();
     }
 
     private List<HelmRepositoryEndPoint> parseHelmRepositoryEndpoint(List<HelmRepositoryEndPoint> endPoints) {
