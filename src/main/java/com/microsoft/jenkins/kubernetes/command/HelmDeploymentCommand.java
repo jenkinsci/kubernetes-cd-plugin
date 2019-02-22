@@ -6,16 +6,12 @@
 
 package com.microsoft.jenkins.kubernetes.command;
 
-import com.cloudbees.plugins.credentials.CredentialsMatchers;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.microsoft.jenkins.azurecommons.command.CommandState;
 import com.microsoft.jenkins.azurecommons.command.IBaseCommandData;
 import com.microsoft.jenkins.azurecommons.command.ICommand;
 import com.microsoft.jenkins.kubernetes.CustomerTiller;
 import com.microsoft.jenkins.kubernetes.helm.HelmContext;
 import com.microsoft.jenkins.kubernetes.helm.HelmRepositoryEndPoint;
-import com.microsoft.jenkins.kubernetes.credentials.KubeconfigCredentials;
 import com.microsoft.jenkins.kubernetes.util.Constants;
 import hapi.chart.ChartOuterClass;
 import hapi.release.ReleaseOuterClass;
@@ -26,10 +22,7 @@ import hapi.services.tiller.Tiller.ListReleasesRequest;
 import hapi.services.tiller.Tiller.ListReleasesResponse;
 import hapi.services.tiller.Tiller.UpdateReleaseRequest;
 import hapi.services.tiller.Tiller.UpdateReleaseResponse;
-import hapi.services.tiller.Tiller.RollbackReleaseRequest;
-import hapi.services.tiller.Tiller.RollbackReleaseResponse;
-import hudson.model.Item;
-import hudson.security.ACL;
+import io.codearte.props2yaml.Props2YAML;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import org.apache.commons.collections.CollectionUtils;
@@ -39,6 +32,7 @@ import org.microbean.helm.Tiller;
 import org.microbean.helm.chart.DirectoryChartLoader;
 import org.microbean.helm.chart.repository.ChartRepository;
 import org.microbean.helm.chart.resolver.ChartResolverException;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,13 +40,13 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-public class HelmDeploymentCommand implements ICommand<HelmDeploymentCommand.IHelmDeploymentData> {
+public class HelmDeploymentCommand extends HelmCommand
+        implements ICommand<HelmDeploymentCommand.IHelmDeploymentData> {
 
     @Override
     public void execute(IHelmDeploymentData context) {
@@ -124,19 +118,6 @@ public class HelmDeploymentCommand implements ICommand<HelmDeploymentCommand.IHe
                     context.setCommandState(CommandState.Success);
                     break;
                 case Constants.HELM_COMMAND_TYPE_ROLLBACK:
-                    String rollbackName = helmContext.getRollbackName();
-                    int revisionNumber = helmContext.getRevisionNumber();
-                    RollbackReleaseRequest.Builder rollbackBuilder = RollbackReleaseRequest.newBuilder();
-                    rollbackBuilder.setName(rollbackName);
-                    rollbackBuilder.setVersion(revisionNumber);
-                    Future<RollbackReleaseResponse> rollback = releaseManager.rollback(rollbackBuilder.build());
-                    try {
-                        RollbackReleaseResponse rollbackReleaseResponse = rollback.get();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } catch (ExecutionException e) {
-                        e.printStackTrace();
-                    }
                     break;
                 default:
             }
@@ -145,24 +126,6 @@ public class HelmDeploymentCommand implements ICommand<HelmDeploymentCommand.IHe
             context.setCommandState(CommandState.HasError);
         }
     }
-
-    private String getKubeConfigContent(String configId, Item owner) {
-        if (StringUtils.isNotBlank(configId)) {
-            final KubeconfigCredentials credentials = CredentialsMatchers.firstOrNull(
-                    CredentialsProvider.lookupCredentials(
-                            KubeconfigCredentials.class,
-                            owner,
-                            ACL.SYSTEM,
-                            Collections.<DomainRequirement>emptyList()),
-                    CredentialsMatchers.withId(configId));
-            if (credentials == null) {
-                throw new IllegalArgumentException("Cannot find kubeconfig credentials with id " + configId);
-            }
-            return credentials.getContent();
-        }
-        return null;
-    }
-
 
     private void createOrUpdateHelm(ReleaseManager releaseManager, HelmContext helmContext,
                                     ChartOuterClass.Chart.Builder chart) {
@@ -176,7 +139,7 @@ public class HelmDeploymentCommand implements ICommand<HelmDeploymentCommand.IHe
     private boolean isHelmReleaseExist(ReleaseManager releaseManager, HelmContext helmContext) {
         ListReleasesRequest.Builder builder = ListReleasesRequest.newBuilder();
         builder.setFilter(helmContext.getReleaseName());
-        builder.addAllStatusCodes(Arrays.asList(StatusOuterClass.Status.Code.FAILED,
+        builder.addAllStatusCodes(Arrays.asList(
                 StatusOuterClass.Status.Code.DEPLOYED));
         Iterator<ListReleasesResponse> responses = releaseManager.list(builder.build());
         if (responses.hasNext()) {
@@ -192,6 +155,13 @@ public class HelmDeploymentCommand implements ICommand<HelmDeploymentCommand.IHe
         return false;
     }
 
+    private String setValues2Yaml(String setValues) {
+        String convert = Props2YAML.fromContent(setValues.replace(",", System.lineSeparator())).convert();
+        Yaml yaml = new Yaml();
+        Object load = yaml.load(convert);
+        return yaml.dump(load);
+    }
+
     private void installHelmRelease(ReleaseManager releaseManager, HelmContext helmContext,
                                     ChartOuterClass.Chart.Builder chart) {
         final InstallReleaseRequest.Builder requestBuilder = InstallReleaseRequest.newBuilder();
@@ -199,6 +169,8 @@ public class HelmDeploymentCommand implements ICommand<HelmDeploymentCommand.IHe
         requestBuilder.setTimeout(helmContext.getTimeout());
         requestBuilder.setName(helmContext.getReleaseName());
         requestBuilder.setWait(helmContext.isWait()); // Wait for Pods to be ready
+        String rawValues = setValues2Yaml(helmContext.getSetValues());
+        requestBuilder.getValuesBuilder().setRaw(rawValues);
 
         try {
             Future<InstallReleaseResponse> install =

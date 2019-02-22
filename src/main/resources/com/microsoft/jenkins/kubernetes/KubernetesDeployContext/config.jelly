@@ -60,6 +60,9 @@
                     <f:entry title="${%helm_namespace_title}" field="helmNamespace">
                         <f:textbox/>
                     </f:entry>
+                    <f:entry title="${%helm_set_values}" field="setValues">
+                        <f:textbox/>
+                    </f:entry>
                     <f:entry title="${%helm_chart_type_title}">
                         <ui:radioBlock name="helmChartType" value="uri"
                                        title="${%helm_chart_location_title}"

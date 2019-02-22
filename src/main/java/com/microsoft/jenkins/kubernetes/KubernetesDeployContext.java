@@ -20,6 +20,7 @@ import com.microsoft.jenkins.azurecommons.command.SimpleBuildStepExecution;
 import com.microsoft.jenkins.azurecommons.remote.SSHClient;
 import com.microsoft.jenkins.kubernetes.command.DeploymentCommand;
 import com.microsoft.jenkins.kubernetes.command.HelmDeploymentCommand;
+import com.microsoft.jenkins.kubernetes.command.HelmRollbackCommand;
 import com.microsoft.jenkins.kubernetes.credentials.ClientWrapperFactory;
 import com.microsoft.jenkins.kubernetes.credentials.ConfigFileCredentials;
 import com.microsoft.jenkins.kubernetes.credentials.KubeconfigCredentials;
@@ -59,7 +60,8 @@ import java.util.Set;
 
 public class KubernetesDeployContext extends BaseCommandContext implements
         DeploymentCommand.IDeploymentCommand,
-        HelmDeploymentCommand.IHelmDeploymentData {
+        HelmDeploymentCommand.IHelmDeploymentData,
+        HelmRollbackCommand.IHelmRollbackData {
 
     private String kubeconfigId;
 
@@ -78,6 +80,7 @@ public class KubernetesDeployContext extends BaseCommandContext implements
     private String helmNamespace;
     private String tillerNamespace;
     private long helmTimeout;
+    private String setValues;
     private boolean helmWait;
     private List<HelmRepositoryEndPoint> helmRepositoryEndPoints;
     private String helmCommandType;
@@ -112,10 +115,20 @@ public class KubernetesDeployContext extends BaseCommandContext implements
                         .build();
                 break;
             case HELM:
-                commandService = CommandService.builder()
-                        .withSingleCommand(HelmDeploymentCommand.class)
-                        .withStartCommand(HelmDeploymentCommand.class)
-                        .build();
+                String commandType = getHelmCommandType();
+                if (Constants.HELM_COMMAND_TYPE_INSTALL.equals(commandType)) {
+                    commandService = CommandService.builder()
+                            .withSingleCommand(HelmDeploymentCommand.class)
+                            .withStartCommand(HelmDeploymentCommand.class)
+                            .build();
+                } else if (Constants.HELM_COMMAND_TYPE_ROLLBACK.equals(commandType)) {
+                    commandService = CommandService.builder()
+                            .withSingleCommand(HelmRollbackCommand.class)
+                            .withStartCommand(HelmRollbackCommand.class)
+                            .build();
+                } else {
+                    throw new IOException("Unknown deploy type");
+                }
                 break;
             default:
                 throw new IOException("Unknown deploy type");
@@ -238,6 +251,7 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         this.tillerNamespace = StringUtils.trimToNull(deployTypeClass.getTillerNamespace());
         this.helmWait = deployTypeClass.isHelmWait();
         this.helmTimeout = deployTypeClass.getHelmTimeout();
+        this.setValues = helmCommandClass.getSetValues();
         this.helmRepositoryEndPoints = parseHelmRepositoryEndpoint(deployTypeClass.getHelmRepositoryEndPoints());
         this.helmCommandType = deployTypeClass.getHelmCommandType();
         this.helmChartType = helmCommandClass.getHelmChartType();
@@ -248,6 +262,7 @@ public class KubernetesDeployContext extends BaseCommandContext implements
                 .withReleaseName(getHelmReleaseName())
                 .withTargetNamespace(getHelmNamespace())
                 .withTillerNamespace(getTillerNamespace())
+                .withSetValues(getSetValues())
                 .withWait(isHelmWait())
                 .withHelmRepositoryEndpoints(getHelmRepositoryEndPoints())
                 .withHelmCommandType(getHelmCommandType())
@@ -256,9 +271,9 @@ public class KubernetesDeployContext extends BaseCommandContext implements
                 .withRollbackName(getHelmRollbackName())
                 .withChartName(getHelmChartName())
                 .withChartVersion(getHelmChartVersion());
-        long helmTimeout = getHelmTimeout();
-        if (helmTimeout > 0) {
-            builder = builder.withTimeout(helmTimeout);
+        long timeout = getHelmTimeout();
+        if (timeout > 0) {
+            builder = builder.withTimeout(timeout);
         }
         this.helmContext = builder.build();
     }
@@ -323,6 +338,10 @@ public class KubernetesDeployContext extends BaseCommandContext implements
 
     public long getHelmTimeout() {
         return helmTimeout;
+    }
+
+    public String getSetValues() {
+        return setValues;
     }
 
     public boolean isHelmWait() {
@@ -679,6 +698,7 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         private String helmChartType;
         private String helmRollbackName;
         private int helmRevisionNumber;
+        private String setValues;
 
         @DataBoundConstructor
         public HelmCommandClass(String helmChartLocation,
@@ -688,7 +708,8 @@ public class KubernetesDeployContext extends BaseCommandContext implements
                                 String helmNamespace,
                                 String helmChartType,
                                 String helmRollbackName,
-                                int helmRevisionNumber) {
+                                int helmRevisionNumber,
+                                String setValues) {
             this.helmChartLocation = helmChartLocation;
             this.helmChartName = helmChartName;
             this.helmChartVersion = helmChartVersion;
@@ -697,6 +718,7 @@ public class KubernetesDeployContext extends BaseCommandContext implements
             this.helmChartType = helmChartType;
             this.helmRollbackName = helmRollbackName;
             this.helmRevisionNumber = helmRevisionNumber;
+            this.setValues = setValues;
         }
 
         public String getHelmChartLocation() {
@@ -729,6 +751,10 @@ public class KubernetesDeployContext extends BaseCommandContext implements
 
         public int getHelmRevisionNumber() {
             return helmRevisionNumber;
+        }
+
+        public String getSetValues() {
+            return setValues;
         }
     }
 

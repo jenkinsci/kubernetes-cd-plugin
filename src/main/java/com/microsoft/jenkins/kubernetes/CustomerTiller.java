@@ -53,7 +53,7 @@ public class CustomerTiller extends Tiller {
                 .idleTimeout(IDLE_TIMEOUT, TimeUnit.SECONDS)
                 .keepAliveTime(KEEP_ALIVE_TIME, TimeUnit.SECONDS)
                 .maxInboundMessageSize(MAX_MESSAGE_SIZE)
-                .usePlaintext(true)
+                .usePlaintext()
                 .build();
     }
 }

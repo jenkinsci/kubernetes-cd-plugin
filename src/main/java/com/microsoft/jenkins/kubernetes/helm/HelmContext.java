@@ -37,13 +37,17 @@ public final class HelmContext {
     private String releaseName;
     /**
      * If this is true, will wait until all Pods, PVCs, and Services are in a ready state
-     * before marking the release as successful. It will wait for as long as timeout
+     * before marking the release as successful. It will wait for as long as timeout.
      */
     private boolean wait;
     /**
-     * time in seconds to wait for any individual Kubernetes operation (default 300)
+     * Time in seconds to wait for any individual Kubernetes operation (default 300).
      */
     private long timeout;
+    /**
+     * Set values for the helm chart in yaml format.
+     */
+    private String setValues;
     /**
      * List of helm repositories configured in this plugin.
      */
@@ -73,6 +77,7 @@ public final class HelmContext {
                         String releaseName,
                         boolean wait,
                         long timeout,
+                        String setValues,
                         List<HelmRepositoryEndPoint> helmRepositoryEndPoints,
                         String helmCommandType,
                         String helmChartType,
@@ -86,6 +91,7 @@ public final class HelmContext {
         this.releaseName = releaseName;
         this.wait = wait;
         this.timeout = timeout;
+        this.setValues = setValues;
         this.helmRepositoryEndPoints = helmRepositoryEndPoints;
         this.helmCommandType = helmCommandType;
         this.helmChartType = helmChartType;
@@ -102,6 +108,7 @@ public final class HelmContext {
         private String nestReleaseName;
         private boolean nestWait;
         private long nestTimeout = Constants.DEFAULT_HELM_TIMEOUT;
+        private String nestSetValues;
         private List<HelmRepositoryEndPoint> nestHelmRepositoryEndPoints;
         private String nestHelmCommandType;
         private String nestHelmChartType;
@@ -147,6 +154,11 @@ public final class HelmContext {
             return this;
         }
 
+        public Builder withSetValues(String setValues) {
+            this.nestSetValues = setValues;
+            return this;
+        }
+
         public Builder withHelmRepositoryEndpoints(List<HelmRepositoryEndPoint> helmRepositoryEndpoints) {
             this.nestHelmRepositoryEndPoints = helmRepositoryEndpoints;
             return this;
@@ -175,7 +187,7 @@ public final class HelmContext {
         public HelmContext build() {
             return new HelmContext(nestChartLocation, nestChartName, nestChartVersion,
                     nestTargetNamespace, nestTillerNamespace, nestReleaseName, nestWait,
-                    nestTimeout, nestHelmRepositoryEndPoints, nestHelmCommandType,
+                    nestTimeout, nestSetValues, nestHelmRepositoryEndPoints, nestHelmCommandType,
                     nestHelmChartType, nestRevisionNumber, nestRollbackName);
         }
     }
@@ -190,6 +202,10 @@ public final class HelmContext {
 
     public long getTimeout() {
         return timeout;
+    }
+
+    public String getSetValues() {
+        return setValues;
     }
 
     public String getChartLocation() {
@@ -243,6 +259,7 @@ public final class HelmContext {
                 + ", releaseName='" + releaseName + '\''
                 + ", wait=" + wait
                 + ", timeout=" + timeout
+                + ", setValues=" + setValues
                 + ", helmRepositoryEndPoints=" + helmRepositoryEndPoints
                 + ", helmCommandType='" + helmCommandType + '\''
                 + ", helmChartType='" + helmChartType + '\''
