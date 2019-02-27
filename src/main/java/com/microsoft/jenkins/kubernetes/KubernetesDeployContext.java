@@ -224,23 +224,9 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         this.helmChartType = helmChartType;
     }
 
-//    private String getDeployType(DeployTypeClass deployTypeClassData) {
-//        if (deployTypeClassData == null) {
-//            return DeployType.UNKNOWN.getName();
-//        }
-//        if (StringUtils.isNotBlank(deployTypeClassData.getConfigs())) {
-//            return DeployType.ORIGIN.getName();
-//        }
-//        if (StringUtils.isNotBlank(deployTypeClassData.getOuterHelmChartLocation())) {
-//            return DeployType.HELM.getName();
-//        }
-//        return DeployType.UNKNOWN.getName();
-//    }
-
     @DataBoundSetter
     public void setDeployTypeClass(DeployTypeClass deployTypeClass) {
         this.deployTypeClass = deployTypeClass;
-//        this.deployType = getDeployType(deployTypeClass);
         this.configs = StringUtils.trimToNull(deployTypeClass.getConfigs());
         HelmCommandClass helmCommandClass = deployTypeClass.getHelmCommandClass();
         this.helmChartLocation = StringUtils.trimToNull(helmCommandClass.getHelmChartLocation());
@@ -279,7 +265,6 @@ public class KubernetesDeployContext extends BaseCommandContext implements
     }
 
     private List<HelmRepositoryEndPoint> parseHelmRepositoryEndpoint(List<HelmRepositoryEndPoint> endPoints) {
-        //TODO format data.
         return endPoints;
     }
 

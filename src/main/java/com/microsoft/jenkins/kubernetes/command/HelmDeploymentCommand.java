@@ -195,8 +195,6 @@ public class HelmDeploymentCommand extends HelmCommand
 
         builder.setName(helmContext.getReleaseName());
         builder.setTimeout(helmContext.getTimeout());
-//        builder.setRecreate(true);
-//        builder.setForce(true);
         builder.setWait(helmContext.isWait());
 
         try {
