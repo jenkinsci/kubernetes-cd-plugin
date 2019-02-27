@@ -6,14 +6,20 @@
 
 package com.microsoft.jenkins.kubernetes.util;
 
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.microsoft.jenkins.kubernetes.Messages;
 import hudson.Util;
+import hudson.security.ACL;
 import hudson.util.VariableResolver;
+import jenkins.model.Jenkins;
 import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.Random;
 
 public final class CommonUtils {
@@ -99,6 +105,16 @@ public final class CommonUtils {
             sample[i] = pool[rand.nextInt(pool.length)];
         }
         return new String(sample);
+    }
+
+    public static StandardUsernamePasswordCredentials getCredentials(String credentialsId) {
+        return CredentialsMatchers.firstOrNull(
+                CredentialsProvider.lookupCredentials(
+                        StandardUsernamePasswordCredentials.class,
+                        Jenkins.getInstance(),
+                        ACL.SYSTEM,
+                        Collections.emptyList()),
+                CredentialsMatchers.withId(credentialsId));
     }
 
     private CommonUtils() {

@@ -78,6 +78,13 @@ public class HelmRepositoryEndPoint extends AbstractDescribableImpl<HelmReposito
                             )
                     );
         }
+    }
 
+    @Override
+    public String toString() {
+        return "HelmRepositoryEndPoint{"
+                + "name='" + name + '\''
+                + ", url='" + url + '\''
+                + '}';
     }
 }
