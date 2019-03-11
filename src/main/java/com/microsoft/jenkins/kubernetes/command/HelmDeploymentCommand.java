@@ -42,15 +42,18 @@ import java.net.Authenticator;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.logging.Logger;
 
 
 public class HelmDeploymentCommand extends HelmCommand
         implements ICommand<HelmDeploymentCommand.IHelmDeploymentData> {
+    private static final Logger LOGGER = Logger.getLogger(HelmDeploymentCommand.class.getName());
 
     @Override
     public void execute(IHelmDeploymentData context) {
@@ -146,7 +149,11 @@ public class HelmDeploymentCommand extends HelmCommand
     private boolean isHelmReleaseExist(ReleaseManager releaseManager, HelmContext helmContext) throws IOException {
         ListReleasesRequest.Builder builder = ListReleasesRequest.newBuilder();
         builder.setFilter(helmContext.getReleaseName());
-        builder.addStatusCodes(StatusOuterClass.Status.Code.DEPLOYED);
+
+        builder.addAllStatusCodes(
+                Arrays.asList(StatusOuterClass.Status.Code.DEPLOYED, StatusOuterClass.Status.Code.FAILED)
+        );
+        LOGGER.info(String.format("List releases with name %s", helmContext.getReleaseName()));
         Iterator<ListReleasesResponse> responses = releaseManager.list(builder.build());
         if (responses.hasNext()) {
             ListReleasesResponse releasesResponse = responses.next();
@@ -196,6 +203,13 @@ public class HelmDeploymentCommand extends HelmCommand
         builder.setName(helmContext.getReleaseName());
         builder.setTimeout(helmContext.getTimeout());
         builder.setWait(helmContext.isWait());
+        String setValues = helmContext.getSetValues();
+        if (StringUtils.isNotBlank(setValues)) {
+            String rawValues = setValues2Yaml(setValues);
+            builder.getValuesBuilder().setRaw(rawValues);
+        }
+        builder.setForce(true);
+        builder.setRecreate(true);
 
         try {
             Future<UpdateReleaseResponse> update =

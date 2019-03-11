@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 public class CustomerTiller extends Tiller {
     private static final int IDLE_TIMEOUT = 5;
     private static final int KEEP_ALIVE_TIME = 30;
+    private static final int DEFAULT_LOCAL_PORT = 56006;
 
     public CustomerTiller(ManagedChannel channel) {
         super(channel);
@@ -23,7 +24,7 @@ public class CustomerTiller extends Tiller {
 
     public <T extends HttpClientAware & KubernetesClient>
     CustomerTiller(T client, String namespaceHousingTiller) throws MalformedURLException {
-        super(client, namespaceHousingTiller);
+        super(client, namespaceHousingTiller, DEFAULT_PORT, DEFAULT_LABELS, null, DEFAULT_LOCAL_PORT);
     }
 
     /**
