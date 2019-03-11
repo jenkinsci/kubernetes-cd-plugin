@@ -127,13 +127,13 @@ public class KubernetesDeployContext extends BaseCommandContext implements
                             .withStartCommand(HelmRollbackCommand.class)
                             .build();
                 } else {
-                    throw new IOException("Unknown deploy type");
+                    throw new IllegalArgumentException(String.format("Do not support "
+                            + "helm command %s for now.", commandType));
                 }
                 break;
             default:
-                throw new IOException("Unknown deploy type");
+                throw new IllegalArgumentException(String.format("Unknown deploy type: %s", getDeployType()));
         }
-
 
         final JobContext jobContext = new JobContext(run, workspace, launcher, listener);
         super.configure(jobContext, commandService);
