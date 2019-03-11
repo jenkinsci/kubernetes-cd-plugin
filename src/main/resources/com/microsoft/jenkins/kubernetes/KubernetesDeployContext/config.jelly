@@ -42,8 +42,8 @@
     </f:advanced>
 
     <ui:dropdownList title="${%deploy_type_title}" selectedName="deployType" name="deployTypeClass">
-        <f:dropdownListBlock value="origin" title="${%origin_type_title}"
-                             selected="${instance == null || instance.getDeployType() == 'origin'}">
+        <f:dropdownListBlock value="kubernetes" title="${%kubernetes_type_title}"
+                             selected="${instance == null || instance.getDeployType() == 'kubernetes'}">
             <f:entry title="${%configs_title}" field="configs">
                 <f:textbox/>
             </f:entry>

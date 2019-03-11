@@ -5,7 +5,7 @@ import java.util.Map;
 
 public enum DeployType {
     UNKNOWN("unknown"),
-    ORIGIN("origin"),
+    KUBERNETES("kubernetes"),
     HELM("helm");
 
     private String name;

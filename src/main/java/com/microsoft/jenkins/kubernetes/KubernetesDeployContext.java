@@ -108,7 +108,7 @@ public class KubernetesDeployContext extends BaseCommandContext implements
 
         CommandService commandService;
         switch (DeployType.get(getDeployType())) {
-            case ORIGIN:
+            case KUBERNETES:
                 commandService = CommandService.builder()
                         .withSingleCommand(DeploymentCommand.class)
                         .withStartCommand(DeploymentCommand.class)
@@ -269,7 +269,7 @@ public class KubernetesDeployContext extends BaseCommandContext implements
     }
 
     public boolean isDeployTypeEquals(String type) {
-        if (this.deployType == null && type.equalsIgnoreCase(DeployType.ORIGIN.getName())) {
+        if (this.deployType == null && type.equalsIgnoreCase(DeployType.KUBERNETES.getName())) {
             return true;
         }
         return type != null && type.equalsIgnoreCase(this.deployType);
