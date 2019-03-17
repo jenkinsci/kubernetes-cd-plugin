@@ -25,11 +25,13 @@ import hapi.services.tiller.Tiller.ListReleasesRequest;
 import hapi.services.tiller.Tiller.ListReleasesResponse;
 import hapi.services.tiller.Tiller.UpdateReleaseRequest;
 import hapi.services.tiller.Tiller.UpdateReleaseResponse;
+import hudson.remoting.ProxyException;
 import hudson.security.ACL;
 import io.codearte.props2yaml.Props2YAML;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import jenkins.model.Jenkins;
+import jenkins.security.MasterToSlaveCallable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.microbean.helm.ReleaseManager;
@@ -50,11 +52,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.logging.Logger;
 
 
 public class HelmDeploymentCommand extends HelmCommand
         implements ICommand<HelmDeploymentCommand.IHelmDeploymentData> {
-//    private static Logger LOGGER = Logger.getLogger(HelmDeploymentCommand.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(HelmDeploymentCommand.class.getName());
 
     @Override
     public void execute(IHelmDeploymentData context) {
@@ -130,94 +133,130 @@ public class HelmDeploymentCommand extends HelmCommand
                     throw new IOException(String.format("Do not support chart type %s", chartType));
             }
 
-            createOrUpdateHelm(releaseManager, helmContext, chart);
+            DeploymentTask task = new DeploymentTask();
+            task.setReleaseManager(releaseManager);
+            task.setHelmContext(helmContext);
+            task.setChart(chart);
+            context.getJobContext().getWorkspace().act(task);
 
             context.setCommandState(CommandState.Success);
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             context.logError(e);
             context.setCommandState(CommandState.HasError);
         }
     }
 
-    private void createOrUpdateHelm(ReleaseManager releaseManager, HelmContext helmContext,
-                                    ChartOuterClass.Chart.Builder chart) throws IOException {
-        if (isHelmReleaseExist(releaseManager, helmContext)) {
-            updateHelmRelease(releaseManager, helmContext, chart);
-        } else {
-            installHelmRelease(releaseManager, helmContext, chart);
-        }
-    }
 
-    private boolean isHelmReleaseExist(ReleaseManager releaseManager, HelmContext helmContext) throws IOException {
-        ListReleasesRequest.Builder builder = ListReleasesRequest.newBuilder();
-        builder.setFilter(helmContext.getReleaseName());
-//        builder.addStatusCodes(StatusOuterClass.Status.Code.DEPLOYED);
-        builder.addAllStatusCodes(
-                Arrays.asList(StatusOuterClass.Status.Code.DEPLOYED, StatusOuterClass.Status.Code.FAILED)
-        );
-        Iterator<ListReleasesResponse> responses = releaseManager.list(builder.build());
-        if (responses.hasNext()) {
-            ListReleasesResponse releasesResponse = responses.next();
-            List<ReleaseOuterClass.Release> releasesList = releasesResponse.getReleasesList();
-            for (ReleaseOuterClass.Release release : releasesList) {
-                String releaseNamespace = release.getNamespace();
-                if (!helmContext.getTargetNamespace().equals(releaseNamespace)) {
-                    throw new IOException(String.format("Release name has been used in"
-                            + " namespace %s", releaseNamespace));
-                }
+    static class DeploymentTask extends MasterToSlaveCallable<DeploymentCommand.TaskResult, ProxyException> {
+        private ReleaseManager releaseManager;
+        private HelmContext helmContext;
+        private ChartOuterClass.Chart.Builder chart;
+
+        public void setReleaseManager(ReleaseManager releaseManager) {
+            this.releaseManager = releaseManager;
+        }
+
+        public void setHelmContext(HelmContext helmContext) {
+            this.helmContext = helmContext;
+        }
+
+        public void setChart(ChartOuterClass.Chart.Builder chart) {
+            this.chart = chart;
+        }
+
+        @Override
+        public DeploymentCommand.TaskResult call() throws ProxyException {
+            try {
+                createOrUpdateHelm(releaseManager, helmContext, chart);
+            } catch (Exception e) {
+                throw new ProxyException(e);
             }
-            return true;
-        }
-        return false;
-    }
-
-    private String setValues2Yaml(String setValues) {
-        String convert = Props2YAML.fromContent(setValues.replace(",", System.lineSeparator())).convert();
-        Yaml yaml = new Yaml();
-        Object load = yaml.load(convert);
-        return yaml.dump(load);
-    }
-
-    private void installHelmRelease(ReleaseManager releaseManager, HelmContext helmContext,
-                                    ChartOuterClass.Chart.Builder chart) throws IOException {
-        InstallReleaseRequest.Builder requestBuilder = InstallReleaseRequest.newBuilder();
-        requestBuilder.setNamespace(helmContext.getTargetNamespace());
-        requestBuilder.setTimeout(helmContext.getTimeout());
-        requestBuilder.setName(helmContext.getReleaseName());
-        requestBuilder.setWait(helmContext.isWait());
-        String setValues = helmContext.getSetValues();
-        if (StringUtils.isNotBlank(setValues)) {
-            String rawValues = setValues2Yaml(setValues);
-            requestBuilder.getValuesBuilder().setRaw(rawValues);
+            return null;
         }
 
-        try {
-            Future<InstallReleaseResponse> install =
-                    releaseManager.install(requestBuilder, chart);
-            install.get();
-        } catch (IOException | InterruptedException | ExecutionException e) {
-            throw new IOException(e);
+
+        private void createOrUpdateHelm(ReleaseManager releaseManager, HelmContext helmContext,
+                                        ChartOuterClass.Chart.Builder chart) throws IOException {
+            if (isHelmReleaseExist(releaseManager, helmContext)) {
+                updateHelmRelease(releaseManager, helmContext, chart);
+            } else {
+                installHelmRelease(releaseManager, helmContext, chart);
+            }
         }
+
+        private boolean isHelmReleaseExist(ReleaseManager releaseManager, HelmContext helmContext) throws IOException {
+            ListReleasesRequest.Builder builder = ListReleasesRequest.newBuilder();
+            builder.setFilter(helmContext.getReleaseName());
+//        builder.addStatusCodes(StatusOuterClass.Status.Code.DEPLOYED);
+            builder.addAllStatusCodes(
+                    Arrays.asList(StatusOuterClass.Status.Code.DEPLOYED, StatusOuterClass.Status.Code.FAILED)
+            );
+            Iterator<ListReleasesResponse> responses = releaseManager.list(builder.build());
+            if (responses.hasNext()) {
+                ListReleasesResponse releasesResponse = responses.next();
+                List<ReleaseOuterClass.Release> releasesList = releasesResponse.getReleasesList();
+                for (ReleaseOuterClass.Release release : releasesList) {
+                    String releaseNamespace = release.getNamespace();
+                    if (!helmContext.getTargetNamespace().equals(releaseNamespace)) {
+                        throw new IOException(String.format("Release name has been used in"
+                                + " namespace %s", releaseNamespace));
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+
+        private String setValues2Yaml(String setValues) {
+            String convert = Props2YAML.fromContent(setValues.replace(",", System.lineSeparator())).convert();
+            Yaml yaml = new Yaml();
+            Object load = yaml.load(convert);
+            return yaml.dump(load);
+        }
+
+        private void installHelmRelease(ReleaseManager releaseManager, HelmContext helmContext,
+                                        ChartOuterClass.Chart.Builder chart) throws IOException {
+            InstallReleaseRequest.Builder requestBuilder = InstallReleaseRequest.newBuilder();
+            requestBuilder.setNamespace(helmContext.getTargetNamespace());
+            requestBuilder.setTimeout(helmContext.getTimeout());
+            requestBuilder.setName(helmContext.getReleaseName());
+            requestBuilder.setWait(helmContext.isWait());
+            String setValues = helmContext.getSetValues();
+            if (StringUtils.isNotBlank(setValues)) {
+                String rawValues = setValues2Yaml(setValues);
+                requestBuilder.getValuesBuilder().setRaw(rawValues);
+            }
+
+            try {
+                Future<InstallReleaseResponse> install =
+                        releaseManager.install(requestBuilder, chart);
+                install.get();
+            } catch (IOException | InterruptedException | ExecutionException e) {
+                throw new IOException(e);
+            }
+        }
+
+        private void updateHelmRelease(ReleaseManager releaseManager, HelmContext helmContext,
+                                       ChartOuterClass.Chart.Builder chart) throws IOException {
+            UpdateReleaseRequest.Builder builder = UpdateReleaseRequest.newBuilder();
+
+            builder.setName(helmContext.getReleaseName());
+            builder.setTimeout(helmContext.getTimeout());
+            builder.setWait(helmContext.isWait());
+            builder.setForce(true);
+            builder.setRecreate(true);
+
+            try {
+                Future<UpdateReleaseResponse> update =
+                        releaseManager.update(builder, chart);
+                update.get();
+            } catch (IOException | InterruptedException | ExecutionException e) {
+                throw new IOException(e);
+            }
+        }
+
     }
 
-    private void updateHelmRelease(ReleaseManager releaseManager, HelmContext helmContext,
-                                   ChartOuterClass.Chart.Builder chart) throws IOException {
-        UpdateReleaseRequest.Builder builder = UpdateReleaseRequest.newBuilder();
-
-        builder.setName(helmContext.getReleaseName());
-        builder.setTimeout(helmContext.getTimeout());
-        builder.setWait(helmContext.isWait());
-        builder.setForce(true);
-        builder.setRecreate(true);
-
-        try {
-            Future<UpdateReleaseResponse> update =
-                    releaseManager.update(builder, chart);
-            update.get();
-        } catch (IOException | InterruptedException | ExecutionException e) {
-            throw new IOException(e);
-        }
-    }
 
     public interface IHelmDeploymentData extends IBaseCommandData {
         String getKubeconfigId();
