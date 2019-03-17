@@ -13,7 +13,6 @@ import com.microsoft.jenkins.kubernetes.CustomerTiller;
 import com.microsoft.jenkins.kubernetes.credentials.KubeconfigCredentials;
 import hudson.model.Item;
 import hudson.security.ACL;
-import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import org.apache.commons.lang3.StringUtils;
 import org.microbean.helm.ReleaseManager;
@@ -40,12 +39,8 @@ public abstract class HelmCommand {
         return null;
     }
 
-    public ReleaseManager getReleaseManager(String kubeConfig, String tillerNamespace) throws IOException {
-        try (
-                final DefaultKubernetesClient client = new DefaultKubernetesClient(Config.fromKubeconfig(kubeConfig));
-                final Tiller tiller = new CustomerTiller(client, tillerNamespace);
-                final ReleaseManager releaseManager = new ReleaseManager(tiller)) {
-            return releaseManager;
-        }
+    public ReleaseManager getReleaseManager(DefaultKubernetesClient client, String tillerNamespace) throws IOException {
+        final Tiller tiller = new CustomerTiller(client, tillerNamespace);
+        return new ReleaseManager(tiller);
     }
 }

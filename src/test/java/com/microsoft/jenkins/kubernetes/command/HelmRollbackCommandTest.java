@@ -8,6 +8,7 @@ import com.microsoft.jenkins.kubernetes.util.Constants;
 import hapi.services.tiller.Tiller;
 import hudson.FilePath;
 import hudson.model.FreeStyleProject;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,7 +49,7 @@ public class HelmRollbackCommandTest {
         when(releaseManager.list(any())).thenReturn(Collections.emptyIterator());
 
         HelmRollbackCommand command = PowerMockito.spy(new HelmRollbackCommand());
-        doReturn(releaseManager).when(command).getReleaseManager(nullable(String.class), nullable(String.class));
+        doReturn(releaseManager).when(command).getReleaseManager(nullable(DefaultKubernetesClient.class), nullable(String.class));
         doReturn("kubeconfig").when(command).getKubeConfigContent(anyString(), notNull());
 
         when(helmContext.getHelmCommandType()).thenReturn(Constants.HELM_COMMAND_TYPE_ROLLBACK);

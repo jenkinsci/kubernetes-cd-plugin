@@ -27,6 +27,8 @@ import hapi.services.tiller.Tiller.UpdateReleaseRequest;
 import hapi.services.tiller.Tiller.UpdateReleaseResponse;
 import hudson.security.ACL;
 import io.codearte.props2yaml.Props2YAML;
+import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import jenkins.model.Jenkins;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -42,6 +44,7 @@ import java.net.Authenticator;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -51,6 +54,7 @@ import java.util.concurrent.Future;
 
 public class HelmDeploymentCommand extends HelmCommand
         implements ICommand<HelmDeploymentCommand.IHelmDeploymentData> {
+//    private static Logger LOGGER = Logger.getLogger(HelmDeploymentCommand.class.getName());
 
     @Override
     public void execute(IHelmDeploymentData context) {
@@ -63,7 +67,8 @@ public class HelmDeploymentCommand extends HelmCommand
         }
         String kubeConfig = getKubeConfigContent(kubeconfigId, context.getJobContext().getOwner());
 
-        try (final ReleaseManager releaseManager = getReleaseManager(kubeConfig, tillerNamespace)) {
+        try (final DefaultKubernetesClient client = new DefaultKubernetesClient(Config.fromKubeconfig(kubeConfig));
+             final ReleaseManager releaseManager = getReleaseManager(client, tillerNamespace)) {
             String chartType = helmContext.getHelmChartType();
             ChartOuterClass.Chart.Builder chart = null;
             switch (chartType) {
@@ -146,14 +151,20 @@ public class HelmDeploymentCommand extends HelmCommand
     private boolean isHelmReleaseExist(ReleaseManager releaseManager, HelmContext helmContext) throws IOException {
         ListReleasesRequest.Builder builder = ListReleasesRequest.newBuilder();
         builder.setFilter(helmContext.getReleaseName());
-        builder.addStatusCodes(StatusOuterClass.Status.Code.DEPLOYED);
+//        builder.addStatusCodes(StatusOuterClass.Status.Code.DEPLOYED);
+        builder.addAllStatusCodes(
+                Arrays.asList(StatusOuterClass.Status.Code.DEPLOYED, StatusOuterClass.Status.Code.FAILED)
+        );
         Iterator<ListReleasesResponse> responses = releaseManager.list(builder.build());
         if (responses.hasNext()) {
             ListReleasesResponse releasesResponse = responses.next();
-            ReleaseOuterClass.Release release = releasesResponse.getReleases(0);
-            String releaseNamespace = release.getNamespace();
-            if (!helmContext.getReleaseName().equals(releaseNamespace)) {
-                throw new IOException(String.format("Release name has been used in namespace %s", releaseNamespace));
+            List<ReleaseOuterClass.Release> releasesList = releasesResponse.getReleasesList();
+            for (ReleaseOuterClass.Release release : releasesList) {
+                String releaseNamespace = release.getNamespace();
+                if (!helmContext.getTargetNamespace().equals(releaseNamespace)) {
+                    throw new IOException(String.format("Release name has been used in"
+                            + " namespace %s", releaseNamespace));
+                }
             }
             return true;
         }
@@ -196,6 +207,8 @@ public class HelmDeploymentCommand extends HelmCommand
         builder.setName(helmContext.getReleaseName());
         builder.setTimeout(helmContext.getTimeout());
         builder.setWait(helmContext.isWait());
+        builder.setForce(true);
+        builder.setRecreate(true);
 
         try {
             Future<UpdateReleaseResponse> update =

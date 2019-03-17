@@ -686,24 +686,7 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         private String setValues;
 
         @DataBoundConstructor
-        public HelmCommandClass(String helmChartLocation,
-                                String helmChartName,
-                                String helmChartVersion,
-                                String helmReleaseName,
-                                String helmNamespace,
-                                String helmChartType,
-                                String helmRollbackName,
-                                int helmRevisionNumber,
-                                String setValues) {
-            this.helmChartLocation = helmChartLocation;
-            this.helmChartName = helmChartName;
-            this.helmChartVersion = helmChartVersion;
-            this.helmReleaseName = helmReleaseName;
-            this.helmNamespace = helmNamespace;
-            this.helmChartType = helmChartType;
-            this.helmRollbackName = helmRollbackName;
-            this.helmRevisionNumber = helmRevisionNumber;
-            this.setValues = setValues;
+        public HelmCommandClass() {
         }
 
         public String getHelmChartLocation() {
@@ -741,6 +724,51 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         public String getSetValues() {
             return setValues;
         }
+
+        @DataBoundSetter
+        public void setHelmChartLocation(String helmChartLocation) {
+            this.helmChartLocation = helmChartLocation;
+        }
+
+        @DataBoundSetter
+        public void setHelmChartName(String helmChartName) {
+            this.helmChartName = helmChartName;
+        }
+
+        @DataBoundSetter
+        public void setHelmChartVersion(String helmChartVersion) {
+            this.helmChartVersion = helmChartVersion;
+        }
+
+        @DataBoundSetter
+        public void setHelmReleaseName(String helmReleaseName) {
+            this.helmReleaseName = helmReleaseName;
+        }
+
+        @DataBoundSetter
+        public void setHelmNamespace(String helmNamespace) {
+            this.helmNamespace = helmNamespace;
+        }
+
+        @DataBoundSetter
+        public void setHelmChartType(String helmChartType) {
+            this.helmChartType = helmChartType;
+        }
+
+        @DataBoundSetter
+        public void setHelmRollbackName(String helmRollbackName) {
+            this.helmRollbackName = helmRollbackName;
+        }
+
+        @DataBoundSetter
+        public void setHelmRevisionNumber(int helmRevisionNumber) {
+            this.helmRevisionNumber = helmRevisionNumber;
+        }
+
+        @DataBoundSetter
+        public void setSetValues(String setValues) {
+            this.setValues = setValues;
+        }
     }
 
     /**
@@ -756,20 +784,42 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         private HelmCommandClass helmCommandClass;
 
         @DataBoundConstructor
-        public DeployTypeClass(String configs,
-                               String tillerNamespace,
-                               long helmTimeout,
-                               boolean helmWait,
-                               List<HelmRepositoryEndPoint> helmRepositoryEndPoints,
-                               String helmCommandType,
-                               HelmCommandClass helmCommandClass) {
+        public DeployTypeClass() {
+        }
+
+        @DataBoundSetter
+        public void setConfigs(String configs) {
             this.configs = configs;
-            this.helmCommandClass = helmCommandClass;
+        }
+
+        @DataBoundSetter
+        public void setTillerNamespace(String tillerNamespace) {
             this.tillerNamespace = tillerNamespace;
+        }
+
+        @DataBoundSetter
+        public void setHelmTimeout(long helmTimeout) {
             this.helmTimeout = helmTimeout;
+        }
+
+        @DataBoundSetter
+        public void setHelmWait(boolean helmWait) {
             this.helmWait = helmWait;
+        }
+
+        @DataBoundSetter
+        public void setHelmRepositoryEndPoints(List<HelmRepositoryEndPoint> helmRepositoryEndPoints) {
             this.helmRepositoryEndPoints = helmRepositoryEndPoints;
+        }
+
+        @DataBoundSetter
+        public void setHelmCommandType(String helmCommandType) {
             this.helmCommandType = helmCommandType;
+        }
+
+        @DataBoundSetter
+        public void setHelmCommandClass(HelmCommandClass helmCommandClass) {
+            this.helmCommandClass = helmCommandClass;
         }
 
         public String getConfigs() {

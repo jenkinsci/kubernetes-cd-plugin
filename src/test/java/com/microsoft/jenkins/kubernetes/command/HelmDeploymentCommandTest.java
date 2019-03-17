@@ -9,6 +9,7 @@ import hapi.chart.ChartOuterClass;
 import hapi.services.tiller.Tiller;
 import hudson.FilePath;
 import hudson.model.FreeStyleProject;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,7 +22,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.Future;
 
@@ -49,8 +49,7 @@ public class HelmDeploymentCommandTest {
         when(helmContext.getReleaseName()).thenReturn("releaseName");
 
 
-
-        doReturn(releaseManager).when(command).getReleaseManager(nullable(String.class), nullable(String.class));
+        doReturn(releaseManager).when(command).getReleaseManager(nullable(DefaultKubernetesClient.class), nullable(String.class));
         doReturn("kubeconfig").when(command).getKubeConfigContent(anyString(), notNull());
         doReturn(Collections.emptyIterator()).when(releaseManager).list(nullable(Tiller.ListReleasesRequest.class));
         when(helmContext.getHelmChartType()).thenReturn(Constants.HELM_CHART_TYPE_URI);
