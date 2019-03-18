@@ -12,8 +12,11 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 public class CustomerTiller extends Tiller {
+    private static final Logger LOGGER = Logger.getLogger(CustomerTiller.class.getName());
+
     private static final int IDLE_TIMEOUT = 5;
     private static final int KEEP_ALIVE_TIME = 30;
 
@@ -44,6 +47,7 @@ public class CustomerTiller extends Tiller {
                     new IllegalStateException("portForward.getLocalAddress() == null"));
         }
         final String hostAddress = localAddress.getHostAddress();
+        LOGGER.info(String.format("Local address is %s:%d", localAddress, portForward.getLocalPort()));
         if (hostAddress == null) {
             throw new IllegalArgumentException("portForward",
                     new IllegalStateException("portForward.getLocalAddress().getHostAddress() == null"));

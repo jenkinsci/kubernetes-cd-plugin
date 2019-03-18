@@ -18,7 +18,7 @@
         <jenkins.version>2.102</jenkins.version>
         <java.level>8</java.level>
 
-        <azure-commons-version>0.2.6</azure-commons-version>
+        <azure-commons-version>0.2.8</azure-commons-version>
         <credentials.version>2.1.14</credentials.version>
         <docker-commons.version>1.10</docker-commons.version>
         <ssh-credentials.version>1.13</ssh-credentials.version>
@@ -81,7 +81,12 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>20.0</version>
+            <version>25.1-jre</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.errorprone</groupId>
+            <artifactId>error_prone_annotations</artifactId>
+            <version>2.2.0</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
