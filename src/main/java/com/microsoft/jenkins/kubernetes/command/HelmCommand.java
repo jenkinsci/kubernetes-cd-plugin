@@ -43,4 +43,8 @@ public abstract class HelmCommand {
         final Tiller tiller = new CustomerTiller(client, tillerNamespace);
         return new ReleaseManager(tiller);
     }
+
+    public ReleaseManager getReleaseManager(ReleaseManager releaseManager) throws IOException {
+        return releaseManager;
+    }
 }
