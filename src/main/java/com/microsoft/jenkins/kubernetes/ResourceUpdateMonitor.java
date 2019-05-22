@@ -7,16 +7,18 @@
 package com.microsoft.jenkins.kubernetes;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.Job;
+import io.fabric8.kubernetes.api.model.batch.CronJob;
+import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.ReplicationController;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.extensions.DaemonSet;
-import io.fabric8.kubernetes.api.model.extensions.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DaemonSet;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
-import io.fabric8.kubernetes.api.model.extensions.ReplicaSet;
+import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
+import io.fabric8.kubernetes.api.model.HorizontalPodAutoscaler;
 
 public interface ResourceUpdateMonitor {
     void onSecretUpdate(Secret original, Secret current);
@@ -35,9 +37,13 @@ public interface ResourceUpdateMonitor {
 
     void onJobUpdate(Job original, Job current);
 
+    void onCronJobUpdate(CronJob original, CronJob current);
+
     void onPodUpdate(Pod original, Pod current);
 
     void onConfigMapUpdate(ConfigMap original, ConfigMap current);
+
+    void onHoriziontalPodAutoscalerUpdate(HorizontalPodAutoscaler original, HorizontalPodAutoscaler current);
 
     void onNamespaceUpdate(Namespace original, Namespace current);
 
@@ -78,7 +84,16 @@ public interface ResourceUpdateMonitor {
         }
 
         @Override
+        public void onCronJobUpdate(CronJob original, CronJob current) {
+        }
+
+        @Override
         public void onPodUpdate(Pod original, Pod current) {
+        }
+
+        @Override
+        public void onHoriziontalPodAutoscalerUpdate(HorizontalPodAutoscaler original,
+                                                     HorizontalPodAutoscaler current) {
         }
 
         @Override

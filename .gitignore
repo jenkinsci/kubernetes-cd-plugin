@@ -25,3 +25,5 @@ hs_err_pid*
 *.iml
 /target
 /work
+
+.DS_Store

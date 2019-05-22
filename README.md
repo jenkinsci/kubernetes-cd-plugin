@@ -80,8 +80,10 @@ The following resource types are supported by the plugin:
 * Deployment
 * Ingress
 * Job
+* CronJob
 * Namespace
 * Pod
+* HorizontalPodAutoscaler
 * Replica Set
 * Replication Controller - No rolling-update support. If that's required, consider using [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-update-deployment).
 * Secret - The plugin also provides secrets configuration.
@@ -170,3 +172,10 @@ withCredentials([kubeconfigContent(credentialsId: 'acs-ssh-folder', variable: 'K
 Kubernetes Continuous Deploy Plugin collects usage data and sends it to Microsoft to help improve our products and services. Read our [privacy statement](http://go.microsoft.com/fwlink/?LinkId=521839) to learn more.
 
 You can turn off usage data collection in Manage Jenkins -> Configure System -> Azure -> Help make Azure Jenkins plugins better by sending anonymous usage statistics to Azure Application Insights.
+
+## Contributing
+
+Build the plugin using docker as follows:
+````bash
+docker run --rm -it -v "$PWD":/usr/src/kubernetes-cd -v "$PWD/target:/usr/src/kubernetes-cd/target" -v "$HOME/.m2":/root/.m2 -w /usr/src/kubernetes-cd maven:3.5.4-jdk-7 mvn package
+````
