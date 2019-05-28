@@ -57,7 +57,7 @@ public class ExtensionV1beta1ResourceManager extends ResourceManager {
             ExtensionsV1beta1Deployment deployment = null;
             try {
                 deployment = EXTENSIONS_V1_BETA1_API_INSTANCE.replaceNamespacedDeployment(getName(), getNamespace(),
-                        current, getPretty());
+                        current, getPretty(),null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -69,7 +69,7 @@ public class ExtensionV1beta1ResourceManager extends ResourceManager {
             ExtensionsV1beta1Deployment deployment = null;
             try {
                 deployment = EXTENSIONS_V1_BETA1_API_INSTANCE.createNamespacedDeployment(getNamespace(),
-                        current, getPretty());
+                        current,null, getPretty(),null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
