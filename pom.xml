@@ -23,7 +23,7 @@
         <ssh-credentials.version>1.13</ssh-credentials.version>
         <workflow-step-api.version>2.10</workflow-step-api.version>
 
-        <kubernetes-client.version>3.0.0-beta1</kubernetes-client.version>
+        <kubernetes-client.version>4.0.0</kubernetes-client.version>
     </properties>
 
     <name>Kubernetes Continuous Deploy Plugin</name>
@@ -159,7 +159,7 @@
                     <maskClasses>
                         okhttp3.
                         okio.
-                        com.google.common.base.
+                        com.google.
                         com.fasterxml.jackson.
                         com.microsoft.jenkins.azurecommons.core.
                     </maskClasses>

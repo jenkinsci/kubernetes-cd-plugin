@@ -58,7 +58,7 @@ public class V1beta1ResourceManager extends ResourceManager {
             V1beta1ReplicaSet replicaSet = null;
             try {
                 replicaSet = EXTENSIONS_V1_BETA1_API_INSTANCE.replaceNamespacedReplicaSet(getName(), getNamespace(),
-                        current, getPretty());
+                        current, getPretty(),null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -70,7 +70,7 @@ public class V1beta1ResourceManager extends ResourceManager {
             V1beta1ReplicaSet replicaSet = null;
             try {
                 replicaSet = EXTENSIONS_V1_BETA1_API_INSTANCE.createNamespacedReplicaSet(getNamespace(),
-                        current, getPretty());
+                        current,null, getPretty(),null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -105,7 +105,7 @@ public class V1beta1ResourceManager extends ResourceManager {
             V1beta1DaemonSet daemonSet = null;
             try {
                 daemonSet = EXTENSIONS_V1_BETA1_API_INSTANCE.replaceNamespacedDaemonSet(getName(), getNamespace(),
-                        current, getPretty());
+                        current, getPretty(),null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -117,7 +117,7 @@ public class V1beta1ResourceManager extends ResourceManager {
             V1beta1DaemonSet daemonSet = null;
             try {
                 daemonSet = EXTENSIONS_V1_BETA1_API_INSTANCE.createNamespacedDaemonSet(getNamespace(),
-                        current, getPretty());
+                        current,null, getPretty(),null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -153,7 +153,7 @@ public class V1beta1ResourceManager extends ResourceManager {
             V1beta1Ingress ingress = null;
             try {
                 ingress = EXTENSIONS_V1_BETA1_API_INSTANCE.replaceNamespacedIngress(getName(), getNamespace(), current,
-                        getPretty());
+                        getPretty(),null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -165,7 +165,7 @@ public class V1beta1ResourceManager extends ResourceManager {
             V1beta1Ingress ingress = null;
             try {
                 ingress = EXTENSIONS_V1_BETA1_API_INSTANCE.createNamespacedIngress(getNamespace(),
-                        current, getPretty());
+                        current,null, getPretty(),null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
