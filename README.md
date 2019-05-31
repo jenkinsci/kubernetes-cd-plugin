@@ -9,6 +9,14 @@ It provides the following features:
 * Docker login credentials management for the private Docker registry.
 * No need to install the `kubectl` tool on the Jenkins slave nodes.
 
+## Breaking changes in version 1.0.0
+
+This plugin depends on [Kubernetes & OpenShift 3 Java Client](https://github.com/fabric8io/kubernetes-client). To apply more features of Kubernetes in this plugin, we have to upgrade the version of the sdk. However the new version of the sdk does not support some legacy Kubernetes api versions any more. **If you want to upgrade to version 1.0.0, please update your Kubernetes resource files**. Following API objects are no more support extensions group, please change them to apps group.
+
+- DaemonSet
+- Deployment
+- ReplicaSet
+
 ## Prerequisites
 
 * A Kubernetes cluster.

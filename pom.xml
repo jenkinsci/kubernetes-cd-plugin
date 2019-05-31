@@ -191,6 +191,7 @@
                 <artifactId>maven-hpi-plugin</artifactId>
                 <configuration>
                     <minimumJavaVersion>1.8</minimumJavaVersion>
+                    <compatibleSinceVersion>1.0.0</compatibleSinceVersion>
                     <maskClasses>
                         okhttp3.
                         okio.
