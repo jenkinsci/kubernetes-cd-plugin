@@ -19,11 +19,14 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
 import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
 import io.fabric8.kubernetes.api.model.HorizontalPodAutoscaler;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 
 public interface ResourceUpdateMonitor {
     void onSecretUpdate(Secret original, Secret current);
 
     void onDeploymentUpdate(Deployment original, Deployment current);
+
+    void onStatefulSetUpdate(StatefulSet original, StatefulSet current);
 
     void onServiceUpdate(Service original, Service current);
 
@@ -57,6 +60,10 @@ public interface ResourceUpdateMonitor {
 
         @Override
         public void onDeploymentUpdate(Deployment original, Deployment current) {
+        }
+
+        @Override
+        public void onStatefulSetUpdate(StatefulSet original, StatefulSet current) {
         }
 
         @Override
