@@ -31,6 +31,7 @@ import io.fabric8.kubernetes.api.model.apps.DaemonSet;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
 import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -190,6 +191,9 @@ public class KubernetesClientWrapper {
                 } else if (resource instanceof ConfigMap) {
                     ConfigMap configMap = (ConfigMap) resource;
                     new ConfigMapUpdater(configMap).createOrApply();
+                } else if (resource instanceof StatefulSet) {
+                    StatefulSet statefulSet = (StatefulSet) resource;
+                    new StatefulSetUpdater(statefulSet).createOrApply();
                 } else {
                     log(Messages.KubernetesClientWrapper_skipped(resource));
                 }
@@ -982,6 +986,49 @@ public class KubernetesClientWrapper {
         @Override
         void notifyUpdate(Namespace original, Namespace current) {
             resourceUpdateMonitor.onNamespaceUpdate(original, current);
+        }
+    }
+
+    private class StatefulSetUpdater extends ResourceUpdater<StatefulSet> {
+        StatefulSetUpdater(StatefulSet statefulSet) {
+            super(statefulSet);
+        }
+
+        @Override
+        StatefulSet getCurrentResource() {
+            return client
+                    .apps()
+                    .statefulSets()
+                    .inNamespace(getNamespace())
+                    .withName(getName())
+                    .get();
+        }
+
+        @Override
+        StatefulSet applyResource(StatefulSet original, StatefulSet current) {
+            return client
+                    .apps()
+                    .statefulSets()
+                    .inNamespace(getNamespace())
+                    .withName(current.getMetadata().getName())
+                    .edit()
+                    .withMetadata(current.getMetadata())
+                    .withSpec(current.getSpec())
+                    .done();
+        }
+
+        @Override
+        StatefulSet createResource(StatefulSet current) {
+            return client
+                    .apps()
+                    .statefulSets()
+                    .inNamespace(getNamespace())
+                    .create(current);
+        }
+
+        @Override
+        void notifyUpdate(StatefulSet original, StatefulSet current) {
+            resourceUpdateMonitor.onStatefulSetUpdate(original, current);
         }
     }
 }
