@@ -17,7 +17,6 @@ import hudson.util.VariableResolver;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.Configuration;
 import io.kubernetes.client.models.V1Namespace;
-import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1SecretBuilder;
 import io.kubernetes.client.util.ClientBuilder;
@@ -27,7 +26,6 @@ import io.kubernetes.client.util.credentials.ClientCertificateAuthentication;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
