@@ -225,7 +225,7 @@
                             </scriptpath>
                             <source>
                                 KubernetesModelClassesGen kubernetesModelGen = new KubernetesModelClassesGen()
-                                kubernetesModelGen.generate( project, 'io.kubesphere.jenkins.kubernetes', 'KubernetesModelClasses' )
+                                kubernetesModelGen.generate( project, 'io.kubesphere.jenkins.kubernetes.generated', 'KubernetesModelClasses' )
                             </source>
                         </configuration>
                     </execution>
@@ -250,6 +250,7 @@
                     <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <resourceIncludes>src/main/resources/**</resourceIncludes>
+                    <excludes>**/generated/**</excludes>
                 </configuration>
             </plugin>
         </plugins>

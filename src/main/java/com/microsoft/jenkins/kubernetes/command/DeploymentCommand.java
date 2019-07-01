@@ -7,7 +7,6 @@
 package com.microsoft.jenkins.kubernetes.command;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.reflect.ClassPath;
 import com.microsoft.jenkins.azurecommons.JobContext;
 import com.microsoft.jenkins.azurecommons.command.CommandState;
 import com.microsoft.jenkins.azurecommons.command.IBaseCommandData;
@@ -22,16 +21,13 @@ import com.microsoft.jenkins.kubernetes.credentials.ResolvedDockerRegistryEndpoi
 import com.microsoft.jenkins.kubernetes.util.Constants;
 import hudson.EnvVars;
 import hudson.FilePath;
-import hudson.PluginManager;
 import hudson.model.Item;
 import hudson.model.TaskListener;
 import hudson.remoting.ProxyException;
 import hudson.util.VariableResolver;
 import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.proto.V1;
 import io.kubernetes.client.util.Yaml;
-import io.kubesphere.jenkins.kubernetes.KubernetesModelClasses;
+import io.kubesphere.jenkins.kubernetes.generated.KubernetesModelClasses;
 import jenkins.security.MasterToSlaveCallable;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -39,15 +35,12 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
 

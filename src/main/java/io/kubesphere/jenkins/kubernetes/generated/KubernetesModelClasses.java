@@ -1,4 +1,4 @@
-package io.kubesphere.jenkins.kubernetes;
+package io.kubesphere.jenkins.kubernetes.generated;
  
 import io.kubernetes.client.models.*;
 import java.util.ArrayList;
