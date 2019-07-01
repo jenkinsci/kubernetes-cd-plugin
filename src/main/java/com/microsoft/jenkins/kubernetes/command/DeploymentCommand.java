@@ -7,6 +7,7 @@
 package com.microsoft.jenkins.kubernetes.command;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.reflect.ClassPath;
 import com.microsoft.jenkins.azurecommons.JobContext;
 import com.microsoft.jenkins.azurecommons.command.CommandState;
 import com.microsoft.jenkins.azurecommons.command.IBaseCommandData;
@@ -21,19 +22,32 @@ import com.microsoft.jenkins.kubernetes.credentials.ResolvedDockerRegistryEndpoi
 import com.microsoft.jenkins.kubernetes.util.Constants;
 import hudson.EnvVars;
 import hudson.FilePath;
+import hudson.PluginManager;
 import hudson.model.Item;
 import hudson.model.TaskListener;
 import hudson.remoting.ProxyException;
 import hudson.util.VariableResolver;
 import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.proto.V1;
+import io.kubernetes.client.util.Yaml;
+import io.kubesphere.jenkins.kubernetes.KubernetesModelClasses;
 import jenkins.security.MasterToSlaveCallable;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -43,6 +57,92 @@ import static com.google.common.base.Preconditions.checkState;
  * Mark it as serializable so that the inner Callable can be serialized correctly.
  */
 public class DeploymentCommand implements ICommand<DeploymentCommand.IDeploymentCommand>, Serializable {
+    private static final Logger logger = LoggerFactory.getLogger(DeploymentCommand.class);
+
+    private static Map<String, String> apiGroups = new HashMap<>();
+    private static List<String> apiVersions = new ArrayList<>();
+
+
+    private static void initApiGroupMap() {
+        apiGroups.put("Admissionregistration", "admissionregistration.k8s.io");
+        apiGroups.put("Apiextensions", "apiextensions.k8s.io");
+        apiGroups.put("Apiregistration", "apiregistration.k8s.io");
+        apiGroups.put("Apps", "apps");
+        apiGroups.put("Authentication", "authentication.k8s.io");
+        apiGroups.put("Authorization", "authorization.k8s.io");
+        apiGroups.put("Autoscaling", "autoscaling");
+        apiGroups.put("Extensions", "extensions");
+        apiGroups.put("Batch", "batch");
+        apiGroups.put("Certificates", "certificates.k8s.io");
+        apiGroups.put("Networking", "networking.k8s.io");
+        apiGroups.put("Policy", "policy");
+        apiGroups.put("RbacAuthorization", "rbac.authorization.k8s.io");
+        apiGroups.put("Scheduling", "scheduling.k8s.io");
+        apiGroups.put("Settings", "settings.k8s.io");
+        apiGroups.put("Storage", "storage.k8s.io");
+    }
+
+    private static void initApiVersionList() {
+        // Order important
+        apiVersions.add("V2beta1");
+        apiVersions.add("V2alpha1");
+        apiVersions.add("V1beta2");
+        apiVersions.add("V1beta1");
+        apiVersions.add("V1alpha1");
+        apiVersions.add("V1");
+    }
+
+    static {
+        try {
+            initModelMap();
+        } catch (Exception ex) {
+            logger.error("Unexpected exception while loading classes: " + ex);
+        }
+    }
+    private static Pair<String, String> getApiGroup(String name) {
+        MutablePair<String, String> parts = new MutablePair<>();
+        for (String prefix : apiGroups.keySet()) {
+            if (name.startsWith(prefix)) {
+                parts.left = apiGroups.get(prefix);
+                parts.right = name.substring(prefix.length());
+                break;
+            }
+        }
+        if (parts.left == null) parts.right = name;
+
+        return parts;
+    }
+
+    private static Pair<String, String> getApiVersion(String name) {
+        MutablePair<String, String> parts = new MutablePair<>();
+        for (String version : apiVersions) {
+            if (name.startsWith(version)) {
+                parts.left = version.toLowerCase();
+                parts.right = name.substring(version.length());
+                break;
+            }
+        }
+        if (parts.left == null) parts.right = name;
+
+        return parts;
+    }
+
+    private static void initModelMap()throws IOException{
+        initApiGroupMap();
+        initApiVersionList();
+        for(Class clazz :new KubernetesModelClasses().getAllClasses()){
+            String apiGroupVersion = "";
+            String kind = "";
+            Pair<String, String> nameParts = getApiGroup(clazz.getSimpleName());
+            apiGroupVersion += nameParts.getLeft() == null ? "" : nameParts.getLeft() + "/";
+
+            nameParts = getApiVersion(nameParts.getRight());
+            apiGroupVersion += nameParts.getLeft() == null ? "" : nameParts.getLeft();
+            kind += nameParts.getRight();
+            Yaml.addModelMap(apiGroupVersion,kind,clazz);
+        }
+    }
+
     @Override
     public void execute(IDeploymentCommand context) {
         JobContext jobContext = context.getJobContext();

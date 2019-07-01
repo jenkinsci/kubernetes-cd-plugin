@@ -17,6 +17,7 @@ import hudson.util.VariableResolver;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.Configuration;
 import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1SecretBuilder;
 import io.kubernetes.client.util.ClientBuilder;
@@ -26,12 +27,14 @@ import io.kubernetes.client.util.credentials.ClientCertificateAuthentication;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.Reader;
 import java.io.StringReader;
 import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
@@ -65,6 +68,14 @@ public class KubernetesClientWrapper {
         StringReader reader = new StringReader(kubeConfig);
         try {
             client = Config.fromConfig(reader);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Configuration.setDefaultApiClient(client);
+    }
+    public KubernetesClientWrapper(Reader kubeConfigReader){
+        try {
+            client = Config.fromConfig(kubeConfigReader);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -155,9 +166,9 @@ public class KubernetesClientWrapper {
                 get(resource.getClass());
         if (updaterClass != null) {
             try {
-                Constructor constructor = updaterClass.getConstructor(resource.getClass());
+                Constructor constructor = updaterClass.getDeclaredConstructor(V1ResourceManager.class,resource.getClass());
                 ResourceManager.ResourceUpdater updater = (ResourceManager.ResourceUpdater) constructor
-                        .newInstance(resource);
+                        .newInstance(new V1ResourceManager(),resource);
                 updater.createOrApply();
             } catch (Exception e) {
                 log(Messages.KubernetesClientWrapper_illegalUpdater(resource, e));

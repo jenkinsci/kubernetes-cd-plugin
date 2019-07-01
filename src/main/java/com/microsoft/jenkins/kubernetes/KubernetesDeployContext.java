@@ -50,6 +50,7 @@ import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -464,7 +465,7 @@ public class KubernetesDeployContext extends BaseCommandContext implements
 
         @Override
         public KubernetesClientWrapper buildClient(FilePath workspace) {
-            return new KubernetesClientWrapper(kubeconfig.getContent());
+            return new KubernetesClientWrapper(new StringReader(kubeconfig.getContent()));
         }
     }
 }

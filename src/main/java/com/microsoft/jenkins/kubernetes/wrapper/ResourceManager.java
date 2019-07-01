@@ -40,7 +40,7 @@ public abstract class ResourceManager {
         private final T resource;
         private final V1ObjectMeta metadata;
 
-        ResourceUpdater(T resource) {
+          ResourceUpdater(T resource) {
             checkNotNull(resource);
             this.resource = resource;
             V1ObjectMeta meta = null;
@@ -57,7 +57,10 @@ public abstract class ResourceManager {
 
         final String getNamespace() {
             if (metadata != null) {
-                return metadata.getNamespace();
+                if (metadata.getNamespace() != null) {
+                    return metadata.getNamespace();
+                }
+                return Constants.DEFAULT_KUBERNETES_NAMESPACE;
             }
             return Constants.DEFAULT_KUBERNETES_NAMESPACE;
         }
