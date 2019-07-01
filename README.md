@@ -185,5 +185,5 @@ You can turn off usage data collection in Manage Jenkins -> Configure System -> 
 
 Build the plugin using docker as follows:
 ````bash
-docker run --rm -it -v "$PWD":/usr/src/kubernetes-cd -v "$PWD/target:/usr/src/kubernetes-cd/target" -v "$HOME/.m2":/root/.m2 -w /usr/src/kubernetes-cd maven:3.5.4-jdk-7 mvn package
+docker run --rm -it -v "$PWD":/usr/src/kubernetes-cd -v "$PWD/target:/usr/src/kubernetes-cd/target" -v "$HOME/.m2":/root/.m2 -w /usr/src/kubernetes-cd maven:3.5.4-jdk-8 mvn package
 ````
