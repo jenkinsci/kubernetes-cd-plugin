@@ -25,6 +25,7 @@ import io.kubernetes.client.util.Yaml;
 import io.kubernetes.client.util.credentials.ClientCertificateAuthentication;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -71,7 +72,8 @@ public class KubernetesClientWrapper {
         }
         Configuration.setDefaultApiClient(client);
     }
-    public KubernetesClientWrapper(Reader kubeConfigReader){
+
+    public KubernetesClientWrapper(Reader kubeConfigReader) {
         try {
             client = Config.fromConfig(kubeConfigReader);
         } catch (IOException e) {
@@ -160,13 +162,14 @@ public class KubernetesClientWrapper {
      * @param resource k8s resource
      */
     private void handleResource(Object resource) {
-        Class<? extends ResourceManager.ResourceUpdater> updaterClass = ResourceUpdaterMap.getUnmodifiableInstance().
+        Pair<Class<? extends ResourceManager>, Class<? extends ResourceManager.ResourceUpdater>> updaterPair = ResourceUpdaterMap.getUnmodifiableInstance().
                 get(resource.getClass());
-        if (updaterClass != null) {
+        if (updaterPair != null) {
             try {
-                Constructor constructor = updaterClass.getDeclaredConstructor(V1ResourceManager.class,resource.getClass());
+                Constructor constructor = updaterPair.getRight().getDeclaredConstructor(updaterPair.getLeft(), resource.getClass());
+                Constructor resourceManagerConstructor = updaterPair.getLeft().getConstructor();
                 ResourceManager.ResourceUpdater updater = (ResourceManager.ResourceUpdater) constructor
-                        .newInstance(new V1ResourceManager(),resource);
+                        .newInstance(resourceManagerConstructor.newInstance(), resource);
                 updater.createOrApply();
             } catch (Exception e) {
                 log(Messages.KubernetesClientWrapper_illegalUpdater(resource, e));
