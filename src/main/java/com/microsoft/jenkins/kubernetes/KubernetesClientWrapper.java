@@ -14,9 +14,11 @@ import com.microsoft.jenkins.kubernetes.util.DockerConfigBuilder;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.util.VariableResolver;
+import io.fabric8.kubernetes.api.model.HorizontalPodAutoscaler;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.Job;
+import io.fabric8.kubernetes.api.model.batch.CronJob;
+import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -25,10 +27,11 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
-import io.fabric8.kubernetes.api.model.extensions.DaemonSet;
-import io.fabric8.kubernetes.api.model.extensions.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DaemonSet;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.Ingress;
-import io.fabric8.kubernetes.api.model.extensions.ReplicaSet;
+import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -173,15 +176,24 @@ public class KubernetesClientWrapper {
                 } else if (resource instanceof Job) {
                     Job job = (Job) resource;
                     new JobUpdater(job).createOrApply();
+                } else if (resource instanceof CronJob) {
+                    CronJob cronJob = (CronJob) resource;
+                    new CronJobUpdater(cronJob).createOrApply();
                 } else if (resource instanceof Pod) {
                     Pod pod = (Pod) resource;
                     new PodUpdater(pod).createOrApply();
                 } else if (resource instanceof Secret) {
                     Secret secret = (Secret) resource;
                     new SecretUpdater(secret).createOrApply();
+                } else if (resource instanceof HorizontalPodAutoscaler) {
+                    HorizontalPodAutoscaler hpa = (HorizontalPodAutoscaler) resource;
+                    new HorizontalPodAutoscalerUpdater(hpa).createOrApply();
                 } else if (resource instanceof ConfigMap) {
                     ConfigMap configMap = (ConfigMap) resource;
                     new ConfigMapUpdater(configMap).createOrApply();
+                } else if (resource instanceof StatefulSet) {
+                    StatefulSet statefulSet = (StatefulSet) resource;
+                    new StatefulSetUpdater(statefulSet).createOrApply();
                 } else {
                     log(Messages.KubernetesClientWrapper_skipped(resource));
                 }
@@ -397,7 +409,7 @@ public class KubernetesClientWrapper {
         @Override
         Deployment getCurrentResource() {
             return client
-                    .extensions()
+                    .apps()
                     .deployments()
                     .inNamespace(getNamespace())
                     .withName(getName())
@@ -407,7 +419,7 @@ public class KubernetesClientWrapper {
         @Override
         Deployment applyResource(Deployment original, Deployment current) {
             return client
-                    .extensions()
+                    .apps()
                     .deployments()
                     .inNamespace(getNamespace())
                     .withName(current.getMetadata().getName())
@@ -420,7 +432,7 @@ public class KubernetesClientWrapper {
         @Override
         Deployment createResource(Deployment current) {
             return client
-                    .extensions()
+                    .apps()
                     .deployments()
                     .inNamespace(getNamespace())
                     .create(current);
@@ -600,7 +612,7 @@ public class KubernetesClientWrapper {
         @Override
         ReplicaSet getCurrentResource() {
             return client
-                    .extensions()
+                    .apps()
                     .replicaSets()
                     .inNamespace(getNamespace())
                     .withName(getName())
@@ -610,7 +622,7 @@ public class KubernetesClientWrapper {
         @Override
         ReplicaSet applyResource(ReplicaSet original, ReplicaSet current) {
             return client
-                    .extensions()
+                    .apps()
                     .replicaSets()
                     .inNamespace(getNamespace())
                     .withName(current.getMetadata().getName())
@@ -623,7 +635,7 @@ public class KubernetesClientWrapper {
         @Override
         ReplicaSet createResource(ReplicaSet current) {
             return client
-                    .extensions()
+                    .apps()
                     .replicaSets()
                     .inNamespace(getNamespace())
                     .create(current);
@@ -643,7 +655,7 @@ public class KubernetesClientWrapper {
         @Override
         DaemonSet getCurrentResource() {
             return client
-                    .extensions()
+                    .apps()
                     .daemonSets()
                     .inNamespace(getNamespace())
                     .withName(getName())
@@ -653,7 +665,7 @@ public class KubernetesClientWrapper {
         @Override
         DaemonSet applyResource(DaemonSet original, DaemonSet current) {
             return client
-                    .extensions()
+                    .apps()
                     .daemonSets()
                     .inNamespace(getNamespace())
                     .withName(current.getMetadata().getName())
@@ -666,7 +678,7 @@ public class KubernetesClientWrapper {
         @Override
         DaemonSet createResource(DaemonSet current) {
             return client
-                    .extensions()
+                    .apps()
                     .daemonSets()
                     .inNamespace(getNamespace())
                     .create(current);
@@ -686,7 +698,7 @@ public class KubernetesClientWrapper {
         @Override
         Job getCurrentResource() {
             return client
-                    .extensions()
+                    .batch()
                     .jobs()
                     .inNamespace(getNamespace())
                     .withName(getName())
@@ -696,7 +708,7 @@ public class KubernetesClientWrapper {
         @Override
         Job applyResource(Job original, Job current) {
             return client
-                    .extensions()
+                    .batch()
                     .jobs()
                     .inNamespace(getNamespace())
                     .withName(current.getMetadata().getName())
@@ -709,7 +721,7 @@ public class KubernetesClientWrapper {
         @Override
         Job createResource(Job current) {
             return client
-                    .extensions()
+                    .batch()
                     .jobs()
                     .inNamespace(getNamespace())
                     .create(current);
@@ -718,6 +730,49 @@ public class KubernetesClientWrapper {
         @Override
         void notifyUpdate(Job original, Job current) {
             resourceUpdateMonitor.onJobUpdate(original, current);
+        }
+    }
+
+    private class CronJobUpdater extends ResourceUpdater<CronJob> {
+        CronJobUpdater(CronJob cronJob) {
+            super(cronJob);
+        }
+
+        @Override
+        CronJob getCurrentResource() {
+            return client
+                    .batch()
+                    .cronjobs()
+                    .inNamespace(getNamespace())
+                    .withName(getName())
+                    .get();
+        }
+
+        @Override
+        CronJob applyResource(CronJob original, CronJob current) {
+            return client
+                    .batch()
+                    .cronjobs()
+                    .inNamespace(getNamespace())
+                    .withName(current.getMetadata().getName())
+                    .edit()
+                    .withMetadata(current.getMetadata())
+                    .withSpec(current.getSpec())
+                    .done();
+        }
+
+        @Override
+        CronJob createResource(CronJob current) {
+            return client
+                    .batch()
+                    .cronjobs()
+                    .inNamespace(getNamespace())
+                    .create(current);
+        }
+
+        @Override
+        void notifyUpdate(CronJob original, CronJob current) {
+            resourceUpdateMonitor.onCronJobUpdate(original, current);
         }
     }
 
@@ -758,6 +813,49 @@ public class KubernetesClientWrapper {
         @Override
         void notifyUpdate(Pod original, Pod current) {
             resourceUpdateMonitor.onPodUpdate(original, current);
+        }
+    }
+
+    private class HorizontalPodAutoscalerUpdater extends ResourceUpdater<HorizontalPodAutoscaler> {
+        HorizontalPodAutoscalerUpdater(HorizontalPodAutoscaler hpa) {
+            super(hpa);
+        }
+
+        @Override
+        HorizontalPodAutoscaler getCurrentResource() {
+            return client
+                    .autoscaling()
+                    .horizontalPodAutoscalers()
+                    .inNamespace(getNamespace())
+                    .withName(getName())
+                    .get();
+        }
+
+        @Override
+        HorizontalPodAutoscaler applyResource(HorizontalPodAutoscaler original, HorizontalPodAutoscaler current) {
+            return client
+                    .autoscaling()
+                    .horizontalPodAutoscalers()
+                    .inNamespace(getNamespace())
+                    .withName(current.getMetadata().getName())
+                    .edit()
+                    .withMetadata(current.getMetadata())
+                    .withSpec(current.getSpec())
+                    .done();
+        }
+
+        @Override
+        HorizontalPodAutoscaler createResource(HorizontalPodAutoscaler current) {
+            return client
+                    .autoscaling()
+                    .horizontalPodAutoscalers()
+                    .inNamespace(getNamespace())
+                    .create(current);
+        }
+
+        @Override
+        void notifyUpdate(HorizontalPodAutoscaler original, HorizontalPodAutoscaler current) {
+            resourceUpdateMonitor.onHoriziontalPodAutoscalerUpdate(original, current);
         }
     }
 
@@ -888,6 +986,49 @@ public class KubernetesClientWrapper {
         @Override
         void notifyUpdate(Namespace original, Namespace current) {
             resourceUpdateMonitor.onNamespaceUpdate(original, current);
+        }
+    }
+
+    private class StatefulSetUpdater extends ResourceUpdater<StatefulSet> {
+        StatefulSetUpdater(StatefulSet statefulSet) {
+            super(statefulSet);
+        }
+
+        @Override
+        StatefulSet getCurrentResource() {
+            return client
+                    .apps()
+                    .statefulSets()
+                    .inNamespace(getNamespace())
+                    .withName(getName())
+                    .get();
+        }
+
+        @Override
+        StatefulSet applyResource(StatefulSet original, StatefulSet current) {
+            return client
+                    .apps()
+                    .statefulSets()
+                    .inNamespace(getNamespace())
+                    .withName(current.getMetadata().getName())
+                    .edit()
+                    .withMetadata(current.getMetadata())
+                    .withSpec(current.getSpec())
+                    .done();
+        }
+
+        @Override
+        StatefulSet createResource(StatefulSet current) {
+            return client
+                    .apps()
+                    .statefulSets()
+                    .inNamespace(getNamespace())
+                    .create(current);
+        }
+
+        @Override
+        void notifyUpdate(StatefulSet original, StatefulSet current) {
+            resourceUpdateMonitor.onStatefulSetUpdate(original, current);
         }
     }
 }
