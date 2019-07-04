@@ -123,7 +123,7 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
     private static void initModelMap()throws IOException{
         initApiGroupMap();
         initApiVersionList();
-        for(Class clazz :new KubernetesModelClasses().getAllClasses()){
+        for(Class clazz :KubernetesModelClasses.getAllClasses()){
             String apiGroupVersion = "";
             String kind = "";
             Pair<String, String> nameParts = getApiGroup(clazz.getSimpleName());

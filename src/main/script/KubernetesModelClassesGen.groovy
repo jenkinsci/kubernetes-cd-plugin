@@ -27,17 +27,18 @@ class KubernetesModelClassesGen {
         out<<'import io.kubernetes.client.models.*'+';\n'
         out<<'import java.util.ArrayList'+';\n'
         out<<'import java.util.List'+';\n'
-        out<<'public class '+className+' {\n \n'
-        out<<'  private List<Class> allClasses = new ArrayList(); \n'
+        out<<'import java.util.Collections;'+';\n'
+        out<<'public class '+className+' extends ArrayList<Class> {\n \n'
+        out<<'  private static final List<Class> allClasses = Collections.unmodifiableList(new '+className+'()); \n'
 
-        out<<'  public KubernetesModelClasses(){ \n'
+        out<<'  private '+className+'(){ \n'
 
 
         for (ClassPath.ClassInfo clazz : allClasses) {
-            out<<'    allClasses.add('+clazz.simpleName+'.class);\n'
+            out<<'    add('+clazz.simpleName+'.class);\n'
         }
         out<<'  }\n \n'
-        out<<'  public List<Class> getAllClasses() { \n'
+        out<<'  public static List<Class> getAllClasses() { \n'
         out<<'    return allClasses; \n'
 
         // Finish the class
