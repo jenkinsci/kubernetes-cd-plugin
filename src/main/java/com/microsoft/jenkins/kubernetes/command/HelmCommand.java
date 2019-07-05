@@ -9,17 +9,11 @@ package com.microsoft.jenkins.kubernetes.command;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
-import com.microsoft.jenkins.kubernetes.CustomerTiller;
 import com.microsoft.jenkins.kubernetes.credentials.KubeconfigCredentials;
 import hudson.model.Item;
 import hudson.security.ACL;
-import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import org.apache.commons.lang3.StringUtils;
-import org.microbean.helm.ReleaseManager;
-import org.microbean.helm.Tiller;
 
-import java.io.IOException;
 import java.util.Collections;
 
 public abstract class HelmCommand {
@@ -40,12 +34,12 @@ public abstract class HelmCommand {
         return null;
     }
 
-    public ReleaseManager getReleaseManager(String kubeConfig, String tillerNamespace) throws IOException {
-        try (
-                final DefaultKubernetesClient client = new DefaultKubernetesClient(Config.fromKubeconfig(kubeConfig));
-                final Tiller tiller = new CustomerTiller(client, tillerNamespace);
-                final ReleaseManager releaseManager = new ReleaseManager(tiller)) {
-            return releaseManager;
-        }
-    }
+//    public ReleaseManager getReleaseManager(String kubeConfig, String tillerNamespace) throws IOException {
+//        try (
+//                final DefaultKubernetesClient client = new DefaultKubernetesClient(Config.fromKubeconfig(kubeConfig));
+//                final Tiller tiller = new CustomerTiller(client, tillerNamespace);
+//                final ReleaseManager releaseManager = new ReleaseManager(tiller)) {
+//            return releaseManager;
+//        }
+//    }
 }

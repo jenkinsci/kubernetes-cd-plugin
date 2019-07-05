@@ -22,7 +22,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.Future;
 
@@ -52,7 +51,7 @@ public class HelmDeploymentCommandTest {
 
 
 
-        doReturn(releaseManager).when(command).getReleaseManager(nullable(String.class), nullable(String.class));
+//        doReturn(releaseManager).when(command).getReleaseManager(nullable(String.class), nullable(String.class));
         doReturn("kubeconfig").when(command).getKubeConfigContent(anyString(), notNull());
         doReturn(Collections.emptyIterator()).when(releaseManager).list(nullable(Tiller.ListReleasesRequest.class));
         when(helmContext.getHelmChartType()).thenReturn(Constants.HELM_CHART_TYPE_URI);

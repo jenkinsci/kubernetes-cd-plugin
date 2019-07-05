@@ -48,7 +48,7 @@ public class HelmRollbackCommandTest {
         when(releaseManager.list(any())).thenReturn(Collections.emptyIterator());
 
         HelmRollbackCommand command = PowerMockito.spy(new HelmRollbackCommand());
-        doReturn(releaseManager).when(command).getReleaseManager(nullable(String.class), nullable(String.class));
+//        doReturn(releaseManager).when(command).getReleaseManager(nullable(String.class), nullable(String.class));
         doReturn("kubeconfig").when(command).getKubeConfigContent(anyString(), notNull());
 
         when(helmContext.getHelmCommandType()).thenReturn(Constants.HELM_COMMAND_TYPE_ROLLBACK);

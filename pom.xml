@@ -14,7 +14,7 @@
 
     <properties>
         <!-- Baseline Jenkins version you use to build the plugin. Users must have this version or newer to run. -->
-        <jenkins.version>2.60.3</jenkins.version>
+        <jenkins.version>2.107.3</jenkins.version>
         <java.level>8</java.level>
 
         <azure-commons-version>1.0.3</azure-commons-version>
@@ -24,8 +24,8 @@
         <workflow-step-api.version>2.10</workflow-step-api.version>
         <jackson.version>2.9.9</jackson.version>
 
-        <kubernetes-client.version>3.2.0</kubernetes-client.version>
-        <grpc.version>1.17.1</grpc.version>
+        <kubernetes-client.version>4.1.1</kubernetes-client.version>
+        <grpc.version>1.18.0</grpc.version>
     </properties>
 
     <name>Kubernetes Continuous Deploy Plugin</name>
@@ -128,26 +128,6 @@
                     <artifactId>netty-tcnative-boringssl-static</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-netty</artifactId>
-            <version>${grpc.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-protobuf</artifactId>
-            <version>${grpc.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-services</artifactId>
-            <version>${grpc.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-stub</artifactId>
-            <version>${grpc.version}</version>
         </dependency>
         <dependency>
             <groupId>io.codearte.props2yaml</groupId>

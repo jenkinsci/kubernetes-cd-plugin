@@ -9,11 +9,15 @@ package com.microsoft.jenkins.kubernetes.command;
 import com.microsoft.jenkins.azurecommons.command.CommandState;
 import com.microsoft.jenkins.azurecommons.command.IBaseCommandData;
 import com.microsoft.jenkins.azurecommons.command.ICommand;
+import com.microsoft.jenkins.kubernetes.CustomerTiller;
 import com.microsoft.jenkins.kubernetes.helm.HelmContext;
 import hapi.services.tiller.Tiller.RollbackReleaseRequest;
 import hapi.services.tiller.Tiller.RollbackReleaseResponse;
+import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import org.apache.commons.lang3.StringUtils;
 import org.microbean.helm.ReleaseManager;
+import org.microbean.helm.Tiller;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -33,7 +37,9 @@ public class HelmRollbackCommand extends HelmCommand
         }
         String kubeConfig = getKubeConfigContent(kubeconfigId, context.getJobContext().getOwner());
 
-        try (final ReleaseManager releaseManager = getReleaseManager(kubeConfig, tillerNamespace)) {
+        try (final DefaultKubernetesClient client = new DefaultKubernetesClient(Config.fromKubeconfig(kubeConfig));
+             final Tiller tiller = new CustomerTiller(client, tillerNamespace);
+             final ReleaseManager releaseManager = new ReleaseManager(tiller)) {
             String rollbackName = helmContext.getRollbackName();
             int revisionNumber = helmContext.getRevisionNumber();
             RollbackReleaseRequest.Builder rollbackBuilder = RollbackReleaseRequest.newBuilder();
