@@ -94,10 +94,10 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
     }
     private static Pair<String, String> getApiGroup(String name) {
         MutablePair<String, String> parts = new MutablePair<>();
-        for (String prefix : apiGroups.keySet()) {
-            if (name.startsWith(prefix)) {
-                parts.left = apiGroups.get(prefix);
-                parts.right = name.substring(prefix.length());
+        for (Map.Entry<String, String> apiGroup : apiGroups.entrySet()) {
+            if (name.startsWith(apiGroup.getKey())) {
+                parts.left = apiGroup.getValue();
+                parts.right = name.substring(apiGroup.getKey().length());
                 break;
             }
         }
