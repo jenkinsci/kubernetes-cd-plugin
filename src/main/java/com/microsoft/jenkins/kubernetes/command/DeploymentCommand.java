@@ -50,7 +50,7 @@ import static com.google.common.base.Preconditions.checkState;
  * Mark it as serializable so that the inner Callable can be serialized correctly.
  */
 public class DeploymentCommand implements ICommand<DeploymentCommand.IDeploymentCommand>, Serializable {
-    private static final Logger logger = LoggerFactory.getLogger(DeploymentCommand.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DeploymentCommand.class);
 
     private static Map<String, String> apiGroups = new HashMap<>();
     private static List<String> apiVersions = new ArrayList<>();
@@ -89,7 +89,7 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
         try {
             initModelMap();
         } catch (Exception ex) {
-            logger.error("Unexpected exception while loading classes: " + ex);
+            LOGGER.error("Unexpected exception while loading classes: " + ex);
         }
     }
     private static Pair<String, String> getApiGroup(String name) {
@@ -101,7 +101,9 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
                 break;
             }
         }
-        if (parts.left == null) parts.right = name;
+        if (parts.left == null) {
+            parts.right = name;
+        }
 
         return parts;
     }
@@ -115,15 +117,17 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
                 break;
             }
         }
-        if (parts.left == null) parts.right = name;
+        if (parts.left == null) {
+            parts.right = name;
+        }
 
         return parts;
     }
 
-    private static void initModelMap()throws IOException{
+    private static void initModelMap()throws IOException {
         initApiGroupMap();
         initApiVersionList();
-        for(Class clazz :KubernetesModelClasses.getAllClasses()){
+        for (Class clazz : KubernetesModelClasses.getAllClasses()) {
             String apiGroupVersion = "";
             String kind = "";
             Pair<String, String> nameParts = getApiGroup(clazz.getSimpleName());
@@ -132,7 +136,7 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
             nameParts = getApiVersion(nameParts.getRight());
             apiGroupVersion += nameParts.getLeft() == null ? "" : nameParts.getLeft();
             kind += nameParts.getRight();
-            Yaml.addModelMap(apiGroupVersion,kind,clazz);
+            Yaml.addModelMap(apiGroupVersion, kind, clazz);
         }
     }
 

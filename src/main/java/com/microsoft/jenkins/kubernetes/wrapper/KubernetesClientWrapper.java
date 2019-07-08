@@ -157,16 +157,19 @@ public class KubernetesClientWrapper {
     }
 
     /**
-     * Get related updater in{@link ResourceUpdaterMap} by resource's class type and handle the resource by updater
+     * Get related updater in{@link ResourceUpdaterMap} by resource's class type and handle the resource by updater.
      *
      * @param resource k8s resource
      */
     private void handleResource(Object resource) {
-        Pair<Class<? extends ResourceManager>, Class<? extends ResourceManager.ResourceUpdater>> updaterPair = ResourceUpdaterMap.getUnmodifiableInstance().
-                get(resource.getClass());
+        Pair<Class<? extends ResourceManager>,
+                Class<? extends ResourceManager.ResourceUpdater>> updaterPair =
+                ResourceUpdaterMap.getUnmodifiableInstance().get(resource.getClass());
         if (updaterPair != null) {
             try {
-                Constructor constructor = updaterPair.getRight().getDeclaredConstructor(updaterPair.getLeft(), resource.getClass());
+                Constructor constructor = updaterPair.
+                        getRight().getDeclaredConstructor(
+                                updaterPair.getLeft(), resource.getClass());
                 Constructor resourceManagerConstructor = updaterPair.getLeft().getConstructor();
                 ResourceManager.ResourceUpdater updater = (ResourceManager.ResourceUpdater) constructor
                         .newInstance(resourceManagerConstructor.newInstance(), resource);
