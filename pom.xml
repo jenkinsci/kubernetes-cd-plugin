@@ -175,6 +175,7 @@
             <plugin>
                 <groupId>org.jenkins-ci.tools</groupId>
                 <artifactId>maven-hpi-plugin</artifactId>
+                <version>3.6</version>
                 <configuration>
                     <maskClasses>
                         okhttp3.
