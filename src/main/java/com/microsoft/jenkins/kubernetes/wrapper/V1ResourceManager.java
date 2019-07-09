@@ -6,6 +6,7 @@
 
 package com.microsoft.jenkins.kubernetes.wrapper;
 
+import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.AppsV1Api;
 import io.kubernetes.client.apis.BatchV1Api;
@@ -21,7 +22,9 @@ import io.kubernetes.client.models.V1ReplicationController;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServicePort;
+import io.kubernetes.client.util.ClientBuilder;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,9 +32,25 @@ import java.util.Map;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class V1ResourceManager extends ResourceManager {
+
+    static {
+        try {
+           STRATEGIC_MERGE_PATCH_CLIENT = ClientBuilder.standard().setOverridePatchFormat(
+                   ApiClient.PATCH_FORMAT_STRATEGIC_MERGE_PATCH).build();
+        } catch (IOException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+
+    }
+
+    private static final ApiClient STRATEGIC_MERGE_PATCH_CLIENT;
     private static final CoreV1Api CORE_V1_API_INSTANCE = new CoreV1Api();
     private static final AppsV1Api APPS_V1_API_INSTANCE = new AppsV1Api();
     private static final BatchV1Api BATCH_V1_API_INSTANCE = new BatchV1Api();
+    private static final CoreV1Api CORE_V1_API_PATCH_INSTANCE = new CoreV1Api(STRATEGIC_MERGE_PATCH_CLIENT);
+    private static final AppsV1Api APPS_V1_API_PATCH_INSTANCE = new AppsV1Api(STRATEGIC_MERGE_PATCH_CLIENT);
+    private static final BatchV1Api BATCH_V1_API_PATCH_INSTANCE = new BatchV1Api(STRATEGIC_MERGE_PATCH_CLIENT);
+
     private V1ResourceUpdateMonitor resourceUpdateMonitor = V1ResourceUpdateMonitor.NOOP;
 
     public V1ResourceManager() {
@@ -73,7 +92,7 @@ public class V1ResourceManager extends ResourceManager {
         V1ReplicaSet applyResource(V1ReplicaSet original, V1ReplicaSet current) {
             V1ReplicaSet replicaSet = null;
             try {
-                replicaSet = APPS_V1_API_INSTANCE.replaceNamespacedReplicaSet(getName(), getNamespace(), current,
+                replicaSet = APPS_V1_API_PATCH_INSTANCE.patchNamespacedReplicaSet(getName(), getNamespace(), current,
                         getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -120,7 +139,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Deployment applyResource(V1Deployment original, V1Deployment current) {
             V1Deployment deployment = null;
             try {
-                deployment = APPS_V1_API_INSTANCE.replaceNamespacedDeployment(getName(), getNamespace(), current,
+                deployment = APPS_V1_API_PATCH_INSTANCE.patchNamespacedDeployment(getName(), getNamespace(), current,
                         getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -169,7 +188,7 @@ public class V1ResourceManager extends ResourceManager {
         V1DaemonSet applyResource(V1DaemonSet original, V1DaemonSet current) {
             V1DaemonSet daemonSet = null;
             try {
-                daemonSet = APPS_V1_API_INSTANCE.replaceNamespacedDaemonSet(getName(), getNamespace(), current,
+                daemonSet = APPS_V1_API_PATCH_INSTANCE.patchNamespacedDaemonSet(getName(), getNamespace(), current,
                         getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -216,7 +235,7 @@ public class V1ResourceManager extends ResourceManager {
         V1ReplicationController applyResource(V1ReplicationController original, V1ReplicationController current) {
             V1ReplicationController replicationController = null;
             try {
-                replicationController = CORE_V1_API_INSTANCE.replaceNamespacedReplicationController(getName(),
+                replicationController = CORE_V1_API_PATCH_INSTANCE.patchNamespacedReplicationController(getName(),
                         getNamespace(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -348,7 +367,8 @@ public class V1ResourceManager extends ResourceManager {
         V1Job applyResource(V1Job original, V1Job current) {
             V1Job job = null;
             try {
-                job = BATCH_V1_API_INSTANCE.replaceNamespacedJob(getName(), getNamespace(), current, getPretty(), null);
+                job = BATCH_V1_API_PATCH_INSTANCE.patchNamespacedJob(
+                        getName(), getNamespace(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -393,7 +413,8 @@ public class V1ResourceManager extends ResourceManager {
         V1Pod applyResource(V1Pod original, V1Pod current) {
             V1Pod pod = null;
             try {
-                pod = CORE_V1_API_INSTANCE.replaceNamespacedPod(getName(), getNamespace(), current, getPretty(), null);
+                pod = CORE_V1_API_PATCH_INSTANCE.patchNamespacedPod(
+                        getName(), getNamespace(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -439,7 +460,7 @@ public class V1ResourceManager extends ResourceManager {
         V1ConfigMap applyResource(V1ConfigMap original, V1ConfigMap current) {
             V1ConfigMap configMap = null;
             try {
-                configMap = CORE_V1_API_INSTANCE.replaceNamespacedConfigMap(getName(), getNamespace(),
+                configMap = CORE_V1_API_PATCH_INSTANCE.patchNamespacedConfigMap(getName(), getNamespace(),
                         current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -486,7 +507,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Secret applyResource(V1Secret original, V1Secret current) {
             V1Secret secret = null;
             try {
-                secret = CORE_V1_API_INSTANCE.replaceNamespacedSecret(
+                secret = CORE_V1_API_PATCH_INSTANCE.patchNamespacedSecret(
                         getName(), getNamespace(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -543,7 +564,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Namespace applyResource(V1Namespace original, V1Namespace current) {
             V1Namespace result = null;
             try {
-                result = CORE_V1_API_INSTANCE.replaceNamespace(getName(), current, getPretty(), null);
+                result = CORE_V1_API_PATCH_INSTANCE.patchNamespace(getName(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
