@@ -13,6 +13,10 @@ import com.microsoft.jenkins.azurecommons.command.CommandState;
 import com.microsoft.jenkins.azurecommons.command.IBaseCommandData;
 import com.microsoft.jenkins.azurecommons.command.ICommand;
 import com.microsoft.jenkins.kubernetes.CustomerTiller;
+import com.microsoft.jenkins.kubernetes.KubernetesClientWrapper;
+import com.microsoft.jenkins.kubernetes.Messages;
+import com.microsoft.jenkins.kubernetes.credentials.ClientWrapperFactory;
+import com.microsoft.jenkins.kubernetes.credentials.ResolvedDockerRegistryEndpoint;
 import com.microsoft.jenkins.kubernetes.helm.HelmContext;
 import com.microsoft.jenkins.kubernetes.helm.HelmRepositoryEndPoint;
 import com.microsoft.jenkins.kubernetes.util.BasicAuthenticator;
@@ -26,6 +30,10 @@ import hapi.services.tiller.Tiller.ListReleasesRequest;
 import hapi.services.tiller.Tiller.ListReleasesResponse;
 import hapi.services.tiller.Tiller.UpdateReleaseRequest;
 import hapi.services.tiller.Tiller.UpdateReleaseResponse;
+import hudson.EnvVars;
+import hudson.FilePath;
+import hudson.model.Item;
+import hudson.model.TaskListener;
 import hudson.security.ACL;
 import io.codearte.props2yaml.Props2YAML;
 import io.fabric8.kubernetes.client.Config;
@@ -134,12 +142,36 @@ public class HelmDeploymentCommand extends HelmCommand
                     throw new IOException(String.format("Do not support chart type %s", chartType));
             }
 
+            String secretNameCfg = context.getSecretName();
+            String secretNamespace = context.getSecretNamespace();
+            List<ResolvedDockerRegistryEndpoint> dockerRegistryEndpoints =
+                    context.resolveEndpoints(context.getJobContext().getRun().getParent());
+            String defaultSecretNameSeed = context.getJobContext().getRun().getDisplayName();
+            EnvVars envVars = context.getEnvVars();
+            ClientWrapperFactory clientFactory = context.clientFactory(context.getJobContext().getRun().getParent());
+            FilePath workspace = context.getJobContext().getWorkspace();
+            TaskListener taskListener = context.getJobContext().getTaskListener();
+            KubernetesClientWrapper wrapper =
+                    clientFactory.buildClient(workspace).withLogger(taskListener.getLogger());
+            if (!dockerRegistryEndpoints.isEmpty()) {
+                String secretName =
+                        KubernetesClientWrapper.prepareSecretName(secretNameCfg, defaultSecretNameSeed, envVars);
+
+                wrapper.createOrReplaceSecrets(secretNamespace, secretName, dockerRegistryEndpoints);
+
+                taskListener.getLogger().println(Messages.DeploymentCommand_injectSecretName(
+                        Constants.KUBERNETES_SECRET_NAME_PROP, secretName));
+                envVars.put(Constants.KUBERNETES_SECRET_NAME_PROP, secretName);
+            }
+
             createOrUpdateHelm(releaseManager, helmContext, chart);
 
             context.setCommandState(CommandState.Success);
         } catch (IOException e) {
             context.logError(e);
             context.setCommandState(CommandState.HasError);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -165,7 +197,7 @@ public class HelmDeploymentCommand extends HelmCommand
             ListReleasesResponse releasesResponse = responses.next();
             ReleaseOuterClass.Release release = releasesResponse.getReleases(0);
             String releaseNamespace = release.getNamespace();
-            if (!helmContext.getReleaseName().equals(releaseNamespace)) {
+            if (!helmContext.getTargetNamespace().equals(releaseNamespace)) {
                 throw new IOException(String.format("Release name has been used in namespace %s", releaseNamespace));
             }
             return true;
@@ -232,5 +264,13 @@ public class HelmDeploymentCommand extends HelmCommand
         HelmContext getHelmContext();
 
         List<HelmRepositoryEndPoint> getHelmRepositoryEndPoints();
+
+        String getSecretNamespace();
+
+        String getSecretName();
+
+        List<ResolvedDockerRegistryEndpoint> resolveEndpoints(Item context) throws IOException;
+
+        ClientWrapperFactory clientFactory(Item owner);
     }
 }

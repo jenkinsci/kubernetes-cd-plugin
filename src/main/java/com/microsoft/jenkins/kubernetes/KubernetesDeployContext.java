@@ -11,12 +11,12 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.microsoft.jenkins.azurecommons.JobContext;
 import com.microsoft.jenkins.azurecommons.command.BaseCommandContext;
 import com.microsoft.jenkins.azurecommons.command.CommandService;
 import com.microsoft.jenkins.azurecommons.command.IBaseCommandData;
 import com.microsoft.jenkins.azurecommons.command.ICommand;
-import com.microsoft.jenkins.azurecommons.command.SimpleBuildStepExecution;
 import com.microsoft.jenkins.azurecommons.remote.SSHClient;
 import com.microsoft.jenkins.kubernetes.command.DeploymentCommand;
 import com.microsoft.jenkins.kubernetes.command.HelmDeploymentCommand;
@@ -31,6 +31,7 @@ import com.microsoft.jenkins.kubernetes.credentials.TextCredentials;
 import com.microsoft.jenkins.kubernetes.helm.HelmContext;
 import com.microsoft.jenkins.kubernetes.helm.HelmRepositoryEndPoint;
 import com.microsoft.jenkins.kubernetes.util.Constants;
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -646,7 +647,7 @@ public class KubernetesDeployContext extends BaseCommandContext implements
 
         @Override
         public Set<? extends Class<?>> getRequiredContext() {
-            return SimpleBuildStepExecution.REQUIRED_CONTEXT;
+            return  ImmutableSet.of(Run.class, FilePath.class, Launcher.class, TaskListener.class, EnvVars.class);
         }
 
         @Override
