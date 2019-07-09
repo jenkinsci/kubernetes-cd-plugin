@@ -6,6 +6,7 @@
 
 package com.microsoft.jenkins.kubernetes.wrapper;
 
+import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1beta1DaemonSet;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.V1beta1ReplicaSet;
@@ -17,6 +18,8 @@ public interface V1beta1ResourceUpdateMonitor {
     void onDaemonSetUpdate(V1beta1DaemonSet original, V1beta1DaemonSet current);
 
     void onReplicaSetUpdate(V1beta1ReplicaSet original, V1beta1ReplicaSet current);
+
+    void onDeploymentUpdate(ExtensionsV1beta1Deployment original, ExtensionsV1beta1Deployment current);
 
     V1beta1ResourceUpdateMonitor NOOP = new Adapter();
 
@@ -31,6 +34,9 @@ public interface V1beta1ResourceUpdateMonitor {
 
         @Override
         public void onReplicaSetUpdate(V1beta1ReplicaSet original, V1beta1ReplicaSet current) {
+        }
+        @Override
+        public void onDeploymentUpdate(ExtensionsV1beta1Deployment original, ExtensionsV1beta1Deployment current) {
         }
     }
 }

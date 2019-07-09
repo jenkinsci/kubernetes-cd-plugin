@@ -52,10 +52,9 @@ public final class ResourceUpdaterMap extends HashMap<Class<?>,
                 Pair.of(V1beta1ResourceManager.class, V1beta1ResourceManager.DaemonSetUpdater.class));
         put(V1beta1ReplicaSet.class,
                 Pair.of(V1beta1ResourceManager.class, V1beta1ResourceManager.ReplicaSetUpdater.class));
-
         put(ExtensionsV1beta1Deployment.class,
-                Pair.of(ExtensionV1beta1ResourceManager.class,
-                        ExtensionV1beta1ResourceManager.DeploymentUpdater.class));
+                Pair.of(V1beta1ResourceManager.class,
+                        V1beta1ResourceManager.DeploymentUpdater.class));
 
     }
 

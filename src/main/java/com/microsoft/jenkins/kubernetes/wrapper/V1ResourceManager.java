@@ -22,9 +22,7 @@ import io.kubernetes.client.models.V1ReplicationController;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServicePort;
-import io.kubernetes.client.util.ClientBuilder;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,32 +31,40 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class V1ResourceManager extends ResourceManager {
 
-    static {
-        try {
-           STRATEGIC_MERGE_PATCH_CLIENT = ClientBuilder.standard().setOverridePatchFormat(
-                   ApiClient.PATCH_FORMAT_STRATEGIC_MERGE_PATCH).build();
-        } catch (IOException e) {
-            throw new RuntimeException(e.getMessage());
-        }
-
-    }
-
-    private static final ApiClient STRATEGIC_MERGE_PATCH_CLIENT;
-    private static final CoreV1Api CORE_V1_API_INSTANCE = new CoreV1Api();
-    private static final AppsV1Api APPS_V1_API_INSTANCE = new AppsV1Api();
-    private static final BatchV1Api BATCH_V1_API_INSTANCE = new BatchV1Api();
-    private static final CoreV1Api CORE_V1_API_PATCH_INSTANCE = new CoreV1Api(STRATEGIC_MERGE_PATCH_CLIENT);
-    private static final AppsV1Api APPS_V1_API_PATCH_INSTANCE = new AppsV1Api(STRATEGIC_MERGE_PATCH_CLIENT);
-    private static final BatchV1Api BATCH_V1_API_PATCH_INSTANCE = new BatchV1Api(STRATEGIC_MERGE_PATCH_CLIENT);
+    private final CoreV1Api coreV1ApiInstance;
+    private final AppsV1Api appsV1ApiInstance;
+    private final BatchV1Api batchV1ApiInstance;
+    private final CoreV1Api coreV1ApiPatchInstance;
+    private final AppsV1Api appsV1ApiPatchInstance;
+    private final BatchV1Api batchV1ApiPatchInstance;
 
     private V1ResourceUpdateMonitor resourceUpdateMonitor = V1ResourceUpdateMonitor.NOOP;
 
-    public V1ResourceManager() {
+    public V1ResourceManager(ApiClient client, ApiClient strategicPatchClient) {
         super(true);
+        checkNotNull(client);
+        checkNotNull(strategicPatchClient);
+
+        coreV1ApiInstance = new CoreV1Api(client);
+        appsV1ApiInstance = new AppsV1Api(client);
+        batchV1ApiInstance = new BatchV1Api(client);
+        coreV1ApiPatchInstance = new CoreV1Api(strategicPatchClient);
+        appsV1ApiPatchInstance = new AppsV1Api(strategicPatchClient);
+        batchV1ApiPatchInstance = new BatchV1Api(strategicPatchClient);
     }
 
-    public V1ResourceManager(boolean pretty) {
+    public V1ResourceManager(ApiClient client, ApiClient strategicPatchClient, boolean pretty) {
         super(pretty);
+        checkNotNull(client);
+        checkNotNull(strategicPatchClient);
+
+        coreV1ApiInstance = new CoreV1Api(client);
+        appsV1ApiInstance = new AppsV1Api(client);
+        batchV1ApiInstance = new BatchV1Api(client);
+        coreV1ApiPatchInstance = new CoreV1Api(strategicPatchClient);
+        appsV1ApiPatchInstance = new AppsV1Api(strategicPatchClient);
+        batchV1ApiPatchInstance = new BatchV1Api(strategicPatchClient);
+
     }
 
     public V1ResourceUpdateMonitor getResourceUpdateMonitor() {
@@ -80,7 +86,7 @@ public class V1ResourceManager extends ResourceManager {
         V1ReplicaSet getCurrentResource() {
             V1ReplicaSet replicaSet = null;
             try {
-                replicaSet = APPS_V1_API_INSTANCE.readNamespacedReplicaSet(getName(), getNamespace(), getPretty(),
+                replicaSet = appsV1ApiInstance.readNamespacedReplicaSet(getName(), getNamespace(), getPretty(),
                         true, true);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -92,7 +98,7 @@ public class V1ResourceManager extends ResourceManager {
         V1ReplicaSet applyResource(V1ReplicaSet original, V1ReplicaSet current) {
             V1ReplicaSet replicaSet = null;
             try {
-                replicaSet = APPS_V1_API_PATCH_INSTANCE.patchNamespacedReplicaSet(getName(), getNamespace(), current,
+                replicaSet = appsV1ApiPatchInstance.patchNamespacedReplicaSet(getName(), getNamespace(), current,
                         getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -104,7 +110,7 @@ public class V1ResourceManager extends ResourceManager {
         V1ReplicaSet createResource(V1ReplicaSet current) {
             V1ReplicaSet replicaSet = null;
             try {
-                replicaSet = APPS_V1_API_INSTANCE.createNamespacedReplicaSet(
+                replicaSet = appsV1ApiInstance.createNamespacedReplicaSet(
                         getNamespace(), current, null, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -127,7 +133,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Deployment getCurrentResource() {
             V1Deployment deployment = null;
             try {
-                deployment = APPS_V1_API_INSTANCE.readNamespacedDeployment(getName(), getNamespace(), getPretty(),
+                deployment = appsV1ApiInstance.readNamespacedDeployment(getName(), getNamespace(), getPretty(),
                         true, true);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -139,7 +145,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Deployment applyResource(V1Deployment original, V1Deployment current) {
             V1Deployment deployment = null;
             try {
-                deployment = APPS_V1_API_PATCH_INSTANCE.patchNamespacedDeployment(getName(), getNamespace(), current,
+                deployment = appsV1ApiPatchInstance.patchNamespacedDeployment(getName(), getNamespace(), current,
                         getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -151,7 +157,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Deployment createResource(V1Deployment current) {
             V1Deployment deployment = null;
             try {
-                deployment = APPS_V1_API_INSTANCE.createNamespacedDeployment(
+                deployment = appsV1ApiInstance.createNamespacedDeployment(
                         getNamespace(), current, null, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -176,7 +182,7 @@ public class V1ResourceManager extends ResourceManager {
         V1DaemonSet getCurrentResource() {
             V1DaemonSet daemonSet = null;
             try {
-                daemonSet = APPS_V1_API_INSTANCE.readNamespacedDaemonSet(getName(), getNamespace(), getPretty(),
+                daemonSet = appsV1ApiInstance.readNamespacedDaemonSet(getName(), getNamespace(), getPretty(),
                         true, true);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -188,7 +194,7 @@ public class V1ResourceManager extends ResourceManager {
         V1DaemonSet applyResource(V1DaemonSet original, V1DaemonSet current) {
             V1DaemonSet daemonSet = null;
             try {
-                daemonSet = APPS_V1_API_PATCH_INSTANCE.patchNamespacedDaemonSet(getName(), getNamespace(), current,
+                daemonSet = appsV1ApiPatchInstance.patchNamespacedDaemonSet(getName(), getNamespace(), current,
                         getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -200,7 +206,7 @@ public class V1ResourceManager extends ResourceManager {
         V1DaemonSet createResource(V1DaemonSet current) {
             V1DaemonSet daemonSet = null;
             try {
-                daemonSet = APPS_V1_API_INSTANCE.createNamespacedDaemonSet(
+                daemonSet = appsV1ApiInstance.createNamespacedDaemonSet(
                         getNamespace(), current, null, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -223,7 +229,7 @@ public class V1ResourceManager extends ResourceManager {
         V1ReplicationController getCurrentResource() {
             V1ReplicationController replicationController = null;
             try {
-                replicationController = CORE_V1_API_INSTANCE.readNamespacedReplicationController(getName(),
+                replicationController = coreV1ApiInstance.readNamespacedReplicationController(getName(),
                         getNamespace(), getPretty(), true, true);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -235,7 +241,7 @@ public class V1ResourceManager extends ResourceManager {
         V1ReplicationController applyResource(V1ReplicationController original, V1ReplicationController current) {
             V1ReplicationController replicationController = null;
             try {
-                replicationController = CORE_V1_API_PATCH_INSTANCE.patchNamespacedReplicationController(getName(),
+                replicationController = coreV1ApiPatchInstance.patchNamespacedReplicationController(getName(),
                         getNamespace(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -247,7 +253,7 @@ public class V1ResourceManager extends ResourceManager {
         V1ReplicationController createResource(V1ReplicationController current) {
             V1ReplicationController replicationController = null;
             try {
-                replicationController = CORE_V1_API_INSTANCE.createNamespacedReplicationController(getNamespace(),
+                replicationController = coreV1ApiInstance.createNamespacedReplicationController(getNamespace(),
                         current, null, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -271,7 +277,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Service getCurrentResource() {
             V1Service service = null;
             try {
-                service = CORE_V1_API_INSTANCE.readNamespacedService(getName(), getNamespace(), getPretty(),
+                service = coreV1ApiInstance.readNamespacedService(getName(), getNamespace(), getPretty(),
                         true, true);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -321,7 +327,7 @@ public class V1ResourceManager extends ResourceManager {
 
             V1Service service = null;
             try {
-                service = CORE_V1_API_INSTANCE.replaceNamespacedService(getName(), getNamespace(),
+                service = coreV1ApiInstance.replaceNamespacedService(getName(), getNamespace(),
                         current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -333,7 +339,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Service createResource(V1Service current) {
             V1Service service = null;
             try {
-                service = CORE_V1_API_INSTANCE.createNamespacedService(
+                service = coreV1ApiInstance.createNamespacedService(
                         getNamespace(), current, null, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -356,7 +362,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Job getCurrentResource() {
             V1Job job = null;
             try {
-                job = BATCH_V1_API_INSTANCE.readNamespacedJob(getName(), getNamespace(), getPretty(), true, true);
+                job = batchV1ApiInstance.readNamespacedJob(getName(), getNamespace(), getPretty(), true, true);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -367,7 +373,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Job applyResource(V1Job original, V1Job current) {
             V1Job job = null;
             try {
-                job = BATCH_V1_API_PATCH_INSTANCE.patchNamespacedJob(
+                job = batchV1ApiPatchInstance.patchNamespacedJob(
                         getName(), getNamespace(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -379,7 +385,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Job createResource(V1Job current) {
             V1Job job = null;
             try {
-                job = BATCH_V1_API_INSTANCE.createNamespacedJob(
+                job = batchV1ApiInstance.createNamespacedJob(
                         getNamespace(), current, null, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -402,7 +408,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Pod getCurrentResource() {
             V1Pod pod = null;
             try {
-                pod = CORE_V1_API_INSTANCE.readNamespacedPod(getName(), getNamespace(), getPretty(), true, true);
+                pod = coreV1ApiInstance.readNamespacedPod(getName(), getNamespace(), getPretty(), true, true);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -413,7 +419,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Pod applyResource(V1Pod original, V1Pod current) {
             V1Pod pod = null;
             try {
-                pod = CORE_V1_API_PATCH_INSTANCE.patchNamespacedPod(
+                pod = coreV1ApiPatchInstance.patchNamespacedPod(
                         getName(), getNamespace(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -425,7 +431,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Pod createResource(V1Pod current) {
             V1Pod pod = null;
             try {
-                pod = CORE_V1_API_INSTANCE.createNamespacedPod(
+                pod = coreV1ApiInstance.createNamespacedPod(
                         getNamespace(), current, null, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -448,7 +454,7 @@ public class V1ResourceManager extends ResourceManager {
         V1ConfigMap getCurrentResource() {
             V1ConfigMap configMap = null;
             try {
-                configMap = CORE_V1_API_INSTANCE.readNamespacedConfigMap(getName(), getNamespace(),
+                configMap = coreV1ApiInstance.readNamespacedConfigMap(getName(), getNamespace(),
                         getPretty(), true, true);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -460,7 +466,7 @@ public class V1ResourceManager extends ResourceManager {
         V1ConfigMap applyResource(V1ConfigMap original, V1ConfigMap current) {
             V1ConfigMap configMap = null;
             try {
-                configMap = CORE_V1_API_PATCH_INSTANCE.patchNamespacedConfigMap(getName(), getNamespace(),
+                configMap = coreV1ApiPatchInstance.patchNamespacedConfigMap(getName(), getNamespace(),
                         current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -472,7 +478,7 @@ public class V1ResourceManager extends ResourceManager {
         V1ConfigMap createResource(V1ConfigMap current) {
             V1ConfigMap configMap = null;
             try {
-                configMap = CORE_V1_API_INSTANCE.createNamespacedConfigMap(
+                configMap = coreV1ApiInstance.createNamespacedConfigMap(
                         getNamespace(), current, null, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -495,7 +501,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Secret getCurrentResource() {
             V1Secret secret = null;
             try {
-                secret = CORE_V1_API_INSTANCE.readNamespacedSecret(
+                secret = coreV1ApiInstance.readNamespacedSecret(
                         getName(), getNamespace(), getPretty(), true, true);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -507,7 +513,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Secret applyResource(V1Secret original, V1Secret current) {
             V1Secret secret = null;
             try {
-                secret = CORE_V1_API_PATCH_INSTANCE.patchNamespacedSecret(
+                secret = coreV1ApiPatchInstance.patchNamespacedSecret(
                         getName(), getNamespace(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -519,7 +525,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Secret createResource(V1Secret current) {
             V1Secret secret = null;
             try {
-                secret = CORE_V1_API_INSTANCE.createNamespacedSecret(
+                secret = coreV1ApiInstance.createNamespacedSecret(
                         getNamespace(), current, null, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -553,7 +559,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Namespace getCurrentResource() {
             V1Namespace result = null;
             try {
-                result = CORE_V1_API_INSTANCE.readNamespace(getName(), getPretty(), true, true);
+                result = coreV1ApiInstance.readNamespace(getName(), getPretty(), true, true);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -564,7 +570,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Namespace applyResource(V1Namespace original, V1Namespace current) {
             V1Namespace result = null;
             try {
-                result = CORE_V1_API_PATCH_INSTANCE.patchNamespace(getName(), current, getPretty(), null);
+                result = coreV1ApiPatchInstance.patchNamespace(getName(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -575,7 +581,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Namespace createResource(V1Namespace current) {
             V1Namespace result = null;
             try {
-                result = CORE_V1_API_INSTANCE.createNamespace(current, null, getPretty(), null);
+                result = coreV1ApiInstance.createNamespace(current, null, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
