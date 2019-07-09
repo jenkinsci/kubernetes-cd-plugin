@@ -175,7 +175,6 @@
             <plugin>
                 <groupId>org.jenkins-ci.tools</groupId>
                 <artifactId>maven-hpi-plugin</artifactId>
-                <version>3.6</version>
                 <configuration>
                     <maskClasses>
                         okhttp3.
@@ -184,13 +183,6 @@
                         com.microsoft.jenkins.azurecommons.core.
                         com.google.
                     </maskClasses>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
                 </configuration>
             </plugin>
             <plugin>
