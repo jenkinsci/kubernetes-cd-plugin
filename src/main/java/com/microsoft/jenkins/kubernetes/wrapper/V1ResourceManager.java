@@ -327,7 +327,7 @@ public class V1ResourceManager extends ResourceManager {
 
             V1Service service = null;
             try {
-                service = coreV1ApiInstance.replaceNamespacedService(getName(), getNamespace(),
+                service = coreV1ApiPatchInstance.patchNamespacedService(getName(), getNamespace(),
                         current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);

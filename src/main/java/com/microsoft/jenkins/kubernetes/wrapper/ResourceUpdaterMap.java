@@ -7,6 +7,7 @@ import io.kubernetes.client.models.V1Deployment;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1ReplicaSet;
 import io.kubernetes.client.models.V1ReplicationController;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
@@ -44,6 +45,8 @@ public final class ResourceUpdaterMap extends HashMap<Class<?>,
                 Pair.of(V1ResourceManager.class, V1ResourceManager.SecretUpdater.class));
         put(V1ConfigMap.class,
                 Pair.of(V1ResourceManager.class, V1ResourceManager.ConfigMapUpdater.class));
+        put(V1ReplicaSet.class,
+                Pair.of(V1ResourceManager.class, V1ResourceManager.ReplicaSetUpdater.class));
 
 
         put(V1beta1Ingress.class,
