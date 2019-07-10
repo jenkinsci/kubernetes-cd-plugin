@@ -89,7 +89,7 @@ public class V1ResourceManager extends ResourceManager {
                 replicaSet = appsV1ApiInstance.readNamespacedReplicaSet(getName(), getNamespace(), getPretty(),
                         true, true);
             } catch (ApiException e) {
-                handleApiException(e);
+                handleApiExceptionExceptNotFound(e);
             }
             return replicaSet;
         }
@@ -136,7 +136,7 @@ public class V1ResourceManager extends ResourceManager {
                 deployment = appsV1ApiInstance.readNamespacedDeployment(getName(), getNamespace(), getPretty(),
                         true, true);
             } catch (ApiException e) {
-                handleApiException(e);
+                handleApiExceptionExceptNotFound(e);
             }
             return deployment;
         }
@@ -185,7 +185,7 @@ public class V1ResourceManager extends ResourceManager {
                 daemonSet = appsV1ApiInstance.readNamespacedDaemonSet(getName(), getNamespace(), getPretty(),
                         true, true);
             } catch (ApiException e) {
-                handleApiException(e);
+                handleApiExceptionExceptNotFound(e);
             }
             return daemonSet;
         }
@@ -232,7 +232,7 @@ public class V1ResourceManager extends ResourceManager {
                 replicationController = coreV1ApiInstance.readNamespacedReplicationController(getName(),
                         getNamespace(), getPretty(), true, true);
             } catch (ApiException e) {
-                handleApiException(e);
+                handleApiExceptionExceptNotFound(e);
             }
             return replicationController;
         }
@@ -280,7 +280,7 @@ public class V1ResourceManager extends ResourceManager {
                 service = coreV1ApiInstance.readNamespacedService(getName(), getNamespace(), getPretty(),
                         true, true);
             } catch (ApiException e) {
-                handleApiException(e);
+                handleApiExceptionExceptNotFound(e);
             }
             return service;
         }
@@ -364,7 +364,7 @@ public class V1ResourceManager extends ResourceManager {
             try {
                 job = batchV1ApiInstance.readNamespacedJob(getName(), getNamespace(), getPretty(), true, true);
             } catch (ApiException e) {
-                handleApiException(e);
+                handleApiExceptionExceptNotFound(e);
             }
             return job;
         }
@@ -410,7 +410,7 @@ public class V1ResourceManager extends ResourceManager {
             try {
                 pod = coreV1ApiInstance.readNamespacedPod(getName(), getNamespace(), getPretty(), true, true);
             } catch (ApiException e) {
-                handleApiException(e);
+                handleApiExceptionExceptNotFound(e);
             }
             return pod;
         }
@@ -457,7 +457,7 @@ public class V1ResourceManager extends ResourceManager {
                 configMap = coreV1ApiInstance.readNamespacedConfigMap(getName(), getNamespace(),
                         getPretty(), true, true);
             } catch (ApiException e) {
-                handleApiException(e);
+                handleApiExceptionExceptNotFound(e);
             }
             return configMap;
         }
@@ -504,7 +504,7 @@ public class V1ResourceManager extends ResourceManager {
                 secret = coreV1ApiInstance.readNamespacedSecret(
                         getName(), getNamespace(), getPretty(), true, true);
             } catch (ApiException e) {
-                handleApiException(e);
+                handleApiExceptionExceptNotFound(e);
             }
             return secret;
         }
@@ -541,12 +541,12 @@ public class V1ResourceManager extends ResourceManager {
         @Override
         void logApplied(V1Secret res) {
             // do not show the secret details
-            getLogger().println(Messages.KubernetesClientWrapper_applied("Secret", "name: " + getName()));
+            getConsoleLogger().println(Messages.KubernetesClientWrapper_applied("Secret", "name: " + getName()));
         }
 
         @Override
         void logCreated(V1Secret res) {
-            getLogger().println(Messages.KubernetesClientWrapper_created(getKind(), "name: " + getName()));
+            getConsoleLogger().println(Messages.KubernetesClientWrapper_created(getKind(), "name: " + getName()));
         }
     }
 
@@ -561,7 +561,7 @@ public class V1ResourceManager extends ResourceManager {
             try {
                 result = coreV1ApiInstance.readNamespace(getName(), getPretty(), true, true);
             } catch (ApiException e) {
-                handleApiException(e);
+                handleApiExceptionExceptNotFound(e);
             }
             return result;
         }

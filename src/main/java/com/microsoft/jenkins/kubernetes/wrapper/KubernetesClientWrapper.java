@@ -14,6 +14,7 @@ import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.util.VariableResolver;
 import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1SecretBuilder;
@@ -131,7 +132,7 @@ public class KubernetesClientWrapper {
      * @throws IOException          exception on IO
      * @throws InterruptedException interruption happened during blocking IO operations
      */
-    public void apply(FilePath[] configFiles) throws IOException, InterruptedException {
+    public void apply(FilePath[] configFiles) throws IOException, InterruptedException, ApiException {
         for (FilePath path : configFiles) {
             log(Messages.KubernetesClientWrapper_loadingConfiguration(path));
             List<Object> resources;
@@ -167,7 +168,7 @@ public class KubernetesClientWrapper {
      *
      * @param resource k8s resource
      */
-    private void handleResource(Object resource) {
+    private void handleResource(Object resource) throws ApiException {
         Pair<Class<? extends ResourceManager>,
                 Class<? extends ResourceManager.ResourceUpdater>> updaterPair =
                 ResourceUpdaterMap.getUnmodifiableInstance().get(resource.getClass());
@@ -181,7 +182,7 @@ public class KubernetesClientWrapper {
                         .getConstructor(ApiClient.class, ApiClient.class);
                 ResourceManager resourceManager = (ResourceManager) resourceManagerConstructor.
                         newInstance(getClient(), getStrategicPatchClient());
-                resourceManager.setLogger(getLogger());
+                resourceManager.setConsoleLogger(getLogger());
                 updater = (ResourceManager.ResourceUpdater) constructor
                         .newInstance(resourceManager, resource);
 
@@ -189,15 +190,12 @@ public class KubernetesClientWrapper {
                 log(Messages.KubernetesClientWrapper_illegalUpdater(resource, e));
             }
 
-            try {
-                if (updater != null) {
-                    updater.createOrApply();
-                } else {
-                    log(Messages.KubernetesClientWrapper_illegalUpdater(resource,null));
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            if (updater != null) {
+                updater.createOrApply();
+            } else {
+                log(Messages.KubernetesClientWrapper_illegalUpdater(resource, null));
             }
+
 
         } else {
             log(Messages.KubernetesClientWrapper_skipped(resource));
@@ -221,7 +219,7 @@ public class KubernetesClientWrapper {
     public void createOrReplaceSecrets(
             String kubernetesNamespace,
             String secretName,
-            List<ResolvedDockerRegistryEndpoint> credentials) throws IOException {
+            List<ResolvedDockerRegistryEndpoint> credentials) throws IOException, ApiException {
         log(Messages.KubernetesClientWrapper_prepareSecretsWithName(secretName));
 
         DockerConfigBuilder dockerConfigBuilder = new DockerConfigBuilder(credentials);

@@ -59,7 +59,7 @@ public class V1beta1ResourceManager extends ResourceManager {
                 replicaSet = extensionsV1beta1Api.readNamespacedReplicaSet(getName(), getNamespace(),
                         getPretty(), true, true);
             } catch (ApiException e) {
-                handleApiException(e);
+                handleApiExceptionExceptNotFound(e);
             }
             return replicaSet;
         }
@@ -106,7 +106,7 @@ public class V1beta1ResourceManager extends ResourceManager {
                 daemonSet = extensionsV1beta1Api.readNamespacedDaemonSet(getName(), getNamespace(),
                         getPretty(), true, true);
             } catch (ApiException e) {
-                handleApiException(e);
+                handleApiExceptionExceptNotFound(e);
             }
             return daemonSet;
         }
@@ -154,7 +154,7 @@ public class V1beta1ResourceManager extends ResourceManager {
                 ingress = extensionsV1beta1Api.readNamespacedIngress(getName(), getNamespace(), getPretty(),
                         true, true);
             } catch (ApiException e) {
-                handleApiException(e);
+                handleApiExceptionExceptNotFound(e);
             }
             return ingress;
         }
@@ -201,7 +201,7 @@ public class V1beta1ResourceManager extends ResourceManager {
                 deployment = extensionsV1beta1Api.readNamespacedDeployment(getName(), getNamespace(), getPretty(),
                         true, true);
             } catch (ApiException e) {
-                handleApiException(e);
+                handleApiExceptionExceptNotFound(e);
             }
             return deployment;
         }
