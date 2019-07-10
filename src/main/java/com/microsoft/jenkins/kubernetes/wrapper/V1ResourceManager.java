@@ -541,12 +541,12 @@ public class V1ResourceManager extends ResourceManager {
         @Override
         void logApplied(V1Secret res) {
             // do not show the secret details
-            getLogger().info(Messages.KubernetesClientWrapper_applied("Secret", "name: " + getName()));
+            getLogger().println(Messages.KubernetesClientWrapper_applied("Secret", "name: " + getName()));
         }
 
         @Override
         void logCreated(V1Secret res) {
-            getLogger().info(Messages.KubernetesClientWrapper_created(getKind(), "name: " + getName()));
+            getLogger().println(Messages.KubernetesClientWrapper_created(getKind(), "name: " + getName()));
         }
     }
 

@@ -11,10 +11,9 @@ import com.microsoft.jenkins.kubernetes.util.Constants;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -22,7 +21,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 public abstract class ResourceManager {
-    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private PrintStream logger = System.out;
     /**
      * If true, then the output of api call is pretty printed.
      */
@@ -48,7 +47,7 @@ public abstract class ResourceManager {
                 Method method = resource.getClass().getMethod("getMetadata");
                 meta = (V1ObjectMeta) method.invoke(resource);
             } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                logger.error(String.format("Fail to fetch meta data for %s", resource));
+                logger.println(String.format("Fail to fetch meta data for %s", resource));
             }
             metadata = meta;
             checkState(StringUtils.isNotBlank(getName()),
@@ -118,21 +117,26 @@ public abstract class ResourceManager {
         abstract void notifyUpdate(T original, T current);
 
         void logApplied(T res) {
-            getLogger().info(Messages.KubernetesClientWrapper_applied(res.getClass().getSimpleName(), res));
+            getLogger().println(Messages.KubernetesClientWrapper_applied(res.getClass().getSimpleName(), res));
         }
 
         void logCreated(T res) {
-            getLogger().info(Messages.KubernetesClientWrapper_created(res.getClass().getSimpleName(), res));
+            getLogger().println(Messages.KubernetesClientWrapper_created(res.getClass().getSimpleName(), res));
         }
     }
 
-    public Logger getLogger() {
+    public PrintStream getLogger() {
         return logger;
+    }
+
+    public ResourceManager setLogger(PrintStream log) {
+        this.logger = log;
+        return this;
     }
 
     protected void handleApiException(ApiException e) {
         int code = e.getCode();
         String responseBody = e.getResponseBody();
-        getLogger().error(Messages.KubernetesClientWrapper_apiException(code, responseBody));
+        getLogger().println(Messages.KubernetesClientWrapper_apiException(code, responseBody));
     }
 }

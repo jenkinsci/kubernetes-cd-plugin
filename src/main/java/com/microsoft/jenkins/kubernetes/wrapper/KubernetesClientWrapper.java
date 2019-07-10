@@ -171,6 +171,7 @@ public class KubernetesClientWrapper {
         Pair<Class<? extends ResourceManager>,
                 Class<? extends ResourceManager.ResourceUpdater>> updaterPair =
                 ResourceUpdaterMap.getUnmodifiableInstance().get(resource.getClass());
+        ResourceManager.ResourceUpdater updater = null;
         if (updaterPair != null) {
             try {
                 Constructor constructor = updaterPair.
@@ -178,13 +179,22 @@ public class KubernetesClientWrapper {
                                 updaterPair.getLeft(), resource.getClass());
                 Constructor resourceManagerConstructor = updaterPair.getLeft()
                         .getConstructor(ApiClient.class, ApiClient.class);
-                ResourceManager.ResourceUpdater updater = (ResourceManager.ResourceUpdater) constructor
-                        .newInstance(resourceManagerConstructor.
-                                newInstance(getClient(), getStrategicPatchClient()), resource);
-                updater.createOrApply();
+                ResourceManager resourceManager = (ResourceManager) resourceManagerConstructor.
+                        newInstance(getClient(), getStrategicPatchClient());
+                resourceManager.setLogger(getLogger());
+                updater = (ResourceManager.ResourceUpdater) constructor
+                        .newInstance(resourceManager, resource);
+
             } catch (Exception e) {
                 log(Messages.KubernetesClientWrapper_illegalUpdater(resource, e));
             }
+            try {
+                updater.createOrApply();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+
         } else {
             log(Messages.KubernetesClientWrapper_skipped(resource));
         }
