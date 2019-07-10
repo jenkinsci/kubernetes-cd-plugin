@@ -188,12 +188,16 @@ public class KubernetesClientWrapper {
             } catch (Exception e) {
                 log(Messages.KubernetesClientWrapper_illegalUpdater(resource, e));
             }
+
             try {
-                updater.createOrApply();
+                if (updater != null) {
+                    updater.createOrApply();
+                } else {
+                    log(Messages.KubernetesClientWrapper_illegalUpdater(resource,null));
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-
 
         } else {
             log(Messages.KubernetesClientWrapper_skipped(resource));
