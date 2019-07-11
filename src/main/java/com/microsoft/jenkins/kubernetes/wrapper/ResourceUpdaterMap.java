@@ -1,5 +1,6 @@
 package com.microsoft.jenkins.kubernetes.wrapper;
 
+import io.kubernetes.client.models.AppsV1beta1Deployment;
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1DaemonSet;
@@ -60,7 +61,10 @@ public final class ResourceUpdaterMap extends HashMap<Class<?>,
                 Pair.of(V1beta1ResourceManager.class, V1beta1ResourceManager.ReplicaSetUpdater.class));
         put(ExtensionsV1beta1Deployment.class,
                 Pair.of(V1beta1ResourceManager.class,
-                        V1beta1ResourceManager.DeploymentUpdater.class));
+                        V1beta1ResourceManager.ExtensionsDeploymentUpdater.class));
+        put(AppsV1beta1Deployment.class,
+                Pair.of(V1beta1ResourceManager.class,
+                        V1beta1ResourceManager.AppsDeploymentUpdater.class));
 
         put(V1beta2Deployment.class,
                 Pair.of(V1beta2ResourceManager.class,

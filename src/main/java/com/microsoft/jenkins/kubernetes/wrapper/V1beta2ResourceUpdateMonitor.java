@@ -16,3 +16,4 @@ public interface V1beta2ResourceUpdateMonitor {
         }
     }
 }
+
