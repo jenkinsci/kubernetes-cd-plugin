@@ -18,6 +18,7 @@ import io.kubernetes.client.models.V1Deployment;
 import io.kubernetes.client.models.V1HorizontalPodAutoscaler;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1ReplicaSet;
@@ -742,6 +743,53 @@ public class V1ResourceManager extends ResourceManager {
         @Override
         void notifyUpdate(V1PersistentVolumeClaim original, V1PersistentVolumeClaim current) {
             resourceUpdateMonitor.onPersistentVolumeClaimUpdate(original, current);
+        }
+    }
+
+    class PersistentVolumeUpdater extends ResourceUpdater<V1PersistentVolume> {
+        PersistentVolumeUpdater(V1PersistentVolume persistentVolume) {
+            super(persistentVolume);
+        }
+
+        @Override
+        V1PersistentVolume getCurrentResource() {
+            V1PersistentVolume result = null;
+            try {
+                result = coreV1ApiInstance.readPersistentVolume(
+                        getName(), getPretty(), true, true);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1PersistentVolume applyResource(V1PersistentVolume original, V1PersistentVolume current) {
+            V1PersistentVolume result = null;
+            try {
+                result = coreV1ApiPatchInstance.patchPersistentVolume(
+                        getName(), current, getPretty(), null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1PersistentVolume createResource(V1PersistentVolume current) {
+            V1PersistentVolume result = null;
+            try {
+                result = coreV1ApiInstance.createPersistentVolume(
+                        current, null, getPretty(), null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        void notifyUpdate(V1PersistentVolume original, V1PersistentVolume current) {
+            resourceUpdateMonitor.onPersistentVolumeUpdate(original, current);
         }
     }
 

@@ -8,6 +8,7 @@ import io.kubernetes.client.models.V1Deployment;
 import io.kubernetes.client.models.V1HorizontalPodAutoscaler;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1ReplicaSet;
@@ -67,6 +68,8 @@ public final class ResourceUpdaterMap extends HashMap<Class<?>,
                 Pair.of(V1ResourceManager.class, V1ResourceManager.StatefulSetUpdater.class));
         put(V1PersistentVolumeClaim.class,
                 Pair.of(V1ResourceManager.class, V1ResourceManager.PersistentVolumeClaimUpdater.class));
+        put(V1PersistentVolume.class,
+                Pair.of(V1ResourceManager.class, V1ResourceManager.PersistentVolumeUpdater.class));
 
 
         put(V1beta1Ingress.class,
