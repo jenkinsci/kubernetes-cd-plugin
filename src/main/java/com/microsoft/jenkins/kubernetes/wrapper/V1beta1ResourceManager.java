@@ -15,6 +15,7 @@ import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1beta1DaemonSet;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.V1beta1ReplicaSet;
+import io.kubernetes.client.models.V1beta1StatefulSet;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -290,6 +291,53 @@ public class V1beta1ResourceManager extends ResourceManager {
         @Override
         void notifyUpdate(AppsV1beta1Deployment original, AppsV1beta1Deployment current) {
             resourceUpdateMonitor.onDeploymentUpdate(original, current);
+        }
+    }
+
+    class StatefulSetUpdater extends ResourceUpdater<V1beta1StatefulSet> {
+        StatefulSetUpdater(V1beta1StatefulSet namespace) {
+            super(namespace);
+        }
+
+        @Override
+        V1beta1StatefulSet getCurrentResource() {
+            V1beta1StatefulSet result = null;
+            try {
+                result = appsV1beta1Api.readNamespacedStatefulSet(
+                        getName(), getNamespace(), getPretty(), true, true);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1beta1StatefulSet applyResource(V1beta1StatefulSet original, V1beta1StatefulSet current) {
+            V1beta1StatefulSet result = null;
+            try {
+                result = appsV1beta1PatchApi.patchNamespacedStatefulSet(
+                        getName(), getNamespace(), current, getPretty(), null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1beta1StatefulSet createResource(V1beta1StatefulSet current) {
+            V1beta1StatefulSet result = null;
+            try {
+                result = appsV1beta1Api.createNamespacedStatefulSet(
+                        getNamespace(), current, null, getPretty(), null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        void notifyUpdate(V1beta1StatefulSet original, V1beta1StatefulSet current) {
+            resourceUpdateMonitor.onStatefulSetUpdate(original, current);
         }
     }
 

@@ -17,6 +17,7 @@ import io.kubernetes.client.models.V1StatefulSet;
 import io.kubernetes.client.models.V1beta1DaemonSet;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.V1beta1ReplicaSet;
+import io.kubernetes.client.models.V1beta1StatefulSet;
 import io.kubernetes.client.models.V1beta2DaemonSet;
 import io.kubernetes.client.models.V1beta2Deployment;
 import io.kubernetes.client.models.V1beta2ReplicaSet;
@@ -68,6 +69,8 @@ public final class ResourceUpdaterMap extends HashMap<Class<?>,
                 Pair.of(V1beta1ResourceManager.class, V1beta1ResourceManager.DaemonSetUpdater.class));
         put(V1beta1ReplicaSet.class,
                 Pair.of(V1beta1ResourceManager.class, V1beta1ResourceManager.ReplicaSetUpdater.class));
+        put(V1beta1StatefulSet.class,
+                Pair.of(V1beta1ResourceManager.class, V1beta1ResourceManager.StatefulSetUpdater.class));
         put(ExtensionsV1beta1Deployment.class,
                 Pair.of(V1beta1ResourceManager.class,
                         V1beta1ResourceManager.ExtensionsDeploymentUpdater.class));

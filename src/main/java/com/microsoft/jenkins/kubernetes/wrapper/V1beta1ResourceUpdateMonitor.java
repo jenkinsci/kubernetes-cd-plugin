@@ -11,8 +11,11 @@ import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1beta1DaemonSet;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.V1beta1ReplicaSet;
+import io.kubernetes.client.models.V1beta1StatefulSet;
 
 public interface V1beta1ResourceUpdateMonitor {
+
+    V1beta1ResourceUpdateMonitor NOOP = new Adapter();
 
     void onIngressUpdate(V1beta1Ingress original, V1beta1Ingress current);
 
@@ -24,7 +27,7 @@ public interface V1beta1ResourceUpdateMonitor {
 
     void onDeploymentUpdate(AppsV1beta1Deployment original, AppsV1beta1Deployment current);
 
-    V1beta1ResourceUpdateMonitor NOOP = new Adapter();
+    void onStatefulSetUpdate(V1beta1StatefulSet original, V1beta1StatefulSet current);
 
     class Adapter implements V1beta1ResourceUpdateMonitor {
         @Override
@@ -45,6 +48,10 @@ public interface V1beta1ResourceUpdateMonitor {
 
         @Override
         public void onDeploymentUpdate(AppsV1beta1Deployment original, AppsV1beta1Deployment current) {
+        }
+
+        @Override
+        public void onStatefulSetUpdate(V1beta1StatefulSet original, V1beta1StatefulSet current) {
         }
     }
 }
