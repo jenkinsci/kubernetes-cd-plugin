@@ -3,6 +3,7 @@ package com.microsoft.jenkins.kubernetes.wrapper;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.AppsV1beta2Api;
+import io.kubernetes.client.models.V1beta2DaemonSet;
 import io.kubernetes.client.models.V1beta2Deployment;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -86,5 +87,52 @@ public class V1beta2ResourceManager extends ResourceManager {
             resourceUpdateMonitor.onDeploymentUpdate(original, current);
         }
     }
+    class DaemonSetUpdater extends ResourceUpdater<V1beta2DaemonSet> {
+        DaemonSetUpdater(V1beta2DaemonSet daemonSet) {
+            super(daemonSet);
+        }
+
+        @Override
+        V1beta2DaemonSet getCurrentResource() {
+            V1beta2DaemonSet daemonSet = null;
+            try {
+                daemonSet = appsV1beta2Api.readNamespacedDaemonSet(getName(), getNamespace(),
+                        getPretty(), true, true);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return daemonSet;
+        }
+
+        @Override
+        V1beta2DaemonSet applyResource(V1beta2DaemonSet original, V1beta2DaemonSet current) {
+            V1beta2DaemonSet daemonSet = null;
+            try {
+                daemonSet = appsV1beta2PatchApi.patchNamespacedDaemonSet(getName(), getNamespace(),
+                        current, getPretty(), null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return daemonSet;
+        }
+
+        @Override
+        V1beta2DaemonSet createResource(V1beta2DaemonSet current) {
+            V1beta2DaemonSet daemonSet = null;
+            try {
+                daemonSet = appsV1beta2Api.createNamespacedDaemonSet(getNamespace(),
+                        current, null, getPretty(), null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return daemonSet;
+        }
+
+        @Override
+        void notifyUpdate(V1beta2DaemonSet original, V1beta2DaemonSet current) {
+            resourceUpdateMonitor.onDaemonSetUpdate(original, current);
+        }
+    }
 }
+
 

@@ -292,4 +292,5 @@ public class V1beta1ResourceManager extends ResourceManager {
             resourceUpdateMonitor.onDeploymentUpdate(original, current);
         }
     }
+
 }
