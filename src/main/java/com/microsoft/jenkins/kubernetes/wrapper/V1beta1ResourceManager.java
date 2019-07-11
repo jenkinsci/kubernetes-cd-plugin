@@ -9,9 +9,11 @@ package com.microsoft.jenkins.kubernetes.wrapper;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.AppsV1beta1Api;
+import io.kubernetes.client.apis.BatchV1beta1Api;
 import io.kubernetes.client.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.models.AppsV1beta1Deployment;
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.models.V1beta1CronJob;
 import io.kubernetes.client.models.V1beta1DaemonSet;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.V1beta1ReplicaSet;
@@ -24,6 +26,8 @@ public class V1beta1ResourceManager extends ResourceManager {
     private final ExtensionsV1beta1Api extensionsV1beta1PatchApi;
     private final AppsV1beta1Api appsV1beta1Api;
     private final AppsV1beta1Api appsV1beta1PatchApi;
+    private final BatchV1beta1Api batchV1beta1Api;
+    private final BatchV1beta1Api batchV1beta1PatchApi;
     private V1beta1ResourceUpdateMonitor resourceUpdateMonitor = V1beta1ResourceUpdateMonitor.NOOP;
 
     public V1beta1ResourceManager(ApiClient client, ApiClient strategicPatchClient) {
@@ -34,6 +38,8 @@ public class V1beta1ResourceManager extends ResourceManager {
         extensionsV1beta1PatchApi = new ExtensionsV1beta1Api(strategicPatchClient);
         appsV1beta1Api = new AppsV1beta1Api(client);
         appsV1beta1PatchApi = new AppsV1beta1Api(strategicPatchClient);
+        batchV1beta1Api = new BatchV1beta1Api(client);
+        batchV1beta1PatchApi = new BatchV1beta1Api(strategicPatchClient);
     }
 
     public V1beta1ResourceManager(ApiClient client, ApiClient strategicPatchClient, boolean pretty) {
@@ -44,6 +50,8 @@ public class V1beta1ResourceManager extends ResourceManager {
         extensionsV1beta1PatchApi = new ExtensionsV1beta1Api(strategicPatchClient);
         appsV1beta1Api = new AppsV1beta1Api(client);
         appsV1beta1PatchApi = new AppsV1beta1Api(strategicPatchClient);
+        batchV1beta1Api = new BatchV1beta1Api(client);
+        batchV1beta1PatchApi = new BatchV1beta1Api(strategicPatchClient);
     }
 
     public V1beta1ResourceUpdateMonitor getResourceUpdateMonitor() {
@@ -338,6 +346,53 @@ public class V1beta1ResourceManager extends ResourceManager {
         @Override
         void notifyUpdate(V1beta1StatefulSet original, V1beta1StatefulSet current) {
             resourceUpdateMonitor.onStatefulSetUpdate(original, current);
+        }
+    }
+
+    class CronJobUpdater extends ResourceUpdater<V1beta1CronJob> {
+        CronJobUpdater(V1beta1CronJob namespace) {
+            super(namespace);
+        }
+
+        @Override
+        V1beta1CronJob getCurrentResource() {
+            V1beta1CronJob result = null;
+            try {
+                result = batchV1beta1Api.readNamespacedCronJob(
+                        getName(), getNamespace(), getPretty(), true, true);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1beta1CronJob applyResource(V1beta1CronJob original, V1beta1CronJob current) {
+            V1beta1CronJob result = null;
+            try {
+                result = batchV1beta1PatchApi.patchNamespacedCronJob(
+                        getName(), getNamespace(), current, getPretty(), null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1beta1CronJob createResource(V1beta1CronJob current) {
+            V1beta1CronJob result = null;
+            try {
+                result = batchV1beta1PatchApi.createNamespacedCronJob(
+                        getNamespace(), current, null, getPretty(), null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        void notifyUpdate(V1beta1CronJob original, V1beta1CronJob current) {
+            resourceUpdateMonitor.onCronJobUpdate(original, current);
         }
     }
 

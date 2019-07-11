@@ -14,6 +14,7 @@ import io.kubernetes.client.models.V1ReplicationController;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1StatefulSet;
+import io.kubernetes.client.models.V1beta1CronJob;
 import io.kubernetes.client.models.V1beta1DaemonSet;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.V1beta1ReplicaSet;
@@ -72,6 +73,8 @@ public final class ResourceUpdaterMap extends HashMap<Class<?>,
                 Pair.of(V1beta1ResourceManager.class, V1beta1ResourceManager.ReplicaSetUpdater.class));
         put(V1beta1StatefulSet.class,
                 Pair.of(V1beta1ResourceManager.class, V1beta1ResourceManager.StatefulSetUpdater.class));
+        put(V1beta1CronJob.class,
+                Pair.of(V1beta1ResourceManager.class, V1beta1ResourceManager.CronJobUpdater.class));
         put(ExtensionsV1beta1Deployment.class,
                 Pair.of(V1beta1ResourceManager.class,
                         V1beta1ResourceManager.ExtensionsDeploymentUpdater.class));

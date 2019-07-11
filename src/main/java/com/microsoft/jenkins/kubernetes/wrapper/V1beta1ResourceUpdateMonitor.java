@@ -8,6 +8,7 @@ package com.microsoft.jenkins.kubernetes.wrapper;
 
 import io.kubernetes.client.models.AppsV1beta1Deployment;
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.models.V1beta1CronJob;
 import io.kubernetes.client.models.V1beta1DaemonSet;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.V1beta1ReplicaSet;
@@ -28,6 +29,8 @@ public interface V1beta1ResourceUpdateMonitor {
     void onDeploymentUpdate(AppsV1beta1Deployment original, AppsV1beta1Deployment current);
 
     void onStatefulSetUpdate(V1beta1StatefulSet original, V1beta1StatefulSet current);
+
+    void onCronJobUpdate(V1beta1CronJob original, V1beta1CronJob current);
 
     class Adapter implements V1beta1ResourceUpdateMonitor {
         @Override
@@ -52,6 +55,10 @@ public interface V1beta1ResourceUpdateMonitor {
 
         @Override
         public void onStatefulSetUpdate(V1beta1StatefulSet original, V1beta1StatefulSet current) {
+        }
+
+        @Override
+        public void onCronJobUpdate(V1beta1CronJob original, V1beta1CronJob current) {
         }
     }
 }
