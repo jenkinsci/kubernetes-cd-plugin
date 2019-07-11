@@ -12,12 +12,14 @@ import io.kubernetes.client.apis.AppsV1Api;
 import io.kubernetes.client.apis.AutoscalingV1Api;
 import io.kubernetes.client.apis.BatchV1Api;
 import io.kubernetes.client.apis.CoreV1Api;
+import io.kubernetes.client.apis.NetworkingV1Api;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1DaemonSet;
 import io.kubernetes.client.models.V1Deployment;
 import io.kubernetes.client.models.V1HorizontalPodAutoscaler;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1NetworkPolicy;
 import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1Pod;
@@ -44,6 +46,8 @@ public class V1ResourceManager extends ResourceManager {
     private final BatchV1Api batchV1ApiPatchInstance;
     private final AutoscalingV1Api autoscalingV1Api;
     private final AutoscalingV1Api autoscalingV1PatchApi;
+    private final NetworkingV1Api networkingV1Api;
+    private final NetworkingV1Api networkingV1PatchApi;
 
     private V1ResourceUpdateMonitor resourceUpdateMonitor = V1ResourceUpdateMonitor.NOOP;
 
@@ -60,6 +64,8 @@ public class V1ResourceManager extends ResourceManager {
         batchV1ApiPatchInstance = new BatchV1Api(strategicPatchClient);
         autoscalingV1Api = new AutoscalingV1Api(client);
         autoscalingV1PatchApi = new AutoscalingV1Api(strategicPatchClient);
+        networkingV1Api = new NetworkingV1Api(client);
+        networkingV1PatchApi = new NetworkingV1Api(strategicPatchClient);
     }
 
     public V1ResourceManager(ApiClient client, ApiClient strategicPatchClient, boolean pretty) {
@@ -75,6 +81,8 @@ public class V1ResourceManager extends ResourceManager {
         batchV1ApiPatchInstance = new BatchV1Api(strategicPatchClient);
         autoscalingV1Api = new AutoscalingV1Api(client);
         autoscalingV1PatchApi = new AutoscalingV1Api(strategicPatchClient);
+        networkingV1Api = new NetworkingV1Api(client);
+        networkingV1PatchApi = new NetworkingV1Api(strategicPatchClient);
 
     }
 
@@ -790,6 +798,53 @@ public class V1ResourceManager extends ResourceManager {
         @Override
         void notifyUpdate(V1PersistentVolume original, V1PersistentVolume current) {
             resourceUpdateMonitor.onPersistentVolumeUpdate(original, current);
+        }
+    }
+
+    class NetworkPolicyUpdater extends ResourceUpdater<V1NetworkPolicy> {
+        NetworkPolicyUpdater(V1NetworkPolicy networkPolicy) {
+            super(networkPolicy);
+        }
+
+        @Override
+        V1NetworkPolicy getCurrentResource() {
+            V1NetworkPolicy result = null;
+            try {
+                result = networkingV1Api.readNamespacedNetworkPolicy(
+                        getName(), getNamespace(), getPretty(), true, true);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1NetworkPolicy applyResource(V1NetworkPolicy original, V1NetworkPolicy current) {
+            V1NetworkPolicy result = null;
+            try {
+                result = networkingV1PatchApi.patchNamespacedNetworkPolicy(
+                        getName(), getNamespace(), current, getPretty(), null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1NetworkPolicy createResource(V1NetworkPolicy current) {
+            V1NetworkPolicy result = null;
+            try {
+                result = networkingV1Api.patchNamespacedNetworkPolicy(getName(),
+                        getNamespace(), current, getPretty(), null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        void notifyUpdate(V1NetworkPolicy original, V1NetworkPolicy current) {
+            resourceUpdateMonitor.onNetworkPolicyUpdate(original, current);
         }
     }
 
