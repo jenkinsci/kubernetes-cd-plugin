@@ -5,6 +5,7 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.AppsV1beta2Api;
 import io.kubernetes.client.models.V1beta2DaemonSet;
 import io.kubernetes.client.models.V1beta2Deployment;
+import io.kubernetes.client.models.V1beta2ReplicaSet;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -87,6 +88,7 @@ public class V1beta2ResourceManager extends ResourceManager {
             resourceUpdateMonitor.onDeploymentUpdate(original, current);
         }
     }
+
     class DaemonSetUpdater extends ResourceUpdater<V1beta2DaemonSet> {
         DaemonSetUpdater(V1beta2DaemonSet daemonSet) {
             super(daemonSet);
@@ -133,6 +135,55 @@ public class V1beta2ResourceManager extends ResourceManager {
             resourceUpdateMonitor.onDaemonSetUpdate(original, current);
         }
     }
+
+    class ReplicaSetUpdater extends ResourceUpdater<V1beta2ReplicaSet> {
+        ReplicaSetUpdater(V1beta2ReplicaSet replicaSet) {
+            super(replicaSet);
+        }
+
+        @Override
+        V1beta2ReplicaSet getCurrentResource() {
+            V1beta2ReplicaSet replicaSet = null;
+            try {
+                replicaSet = appsV1beta2Api.readNamespacedReplicaSet(getName(), getNamespace(),
+                        getPretty(), true, true);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return replicaSet;
+        }
+
+        @Override
+        V1beta2ReplicaSet applyResource(V1beta2ReplicaSet original, V1beta2ReplicaSet current) {
+            V1beta2ReplicaSet replicaSet = null;
+            try {
+                replicaSet = appsV1beta2PatchApi.patchNamespacedReplicaSet(getName(), getNamespace(),
+                        current, getPretty(), null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return replicaSet;
+        }
+
+        @Override
+        V1beta2ReplicaSet createResource(V1beta2ReplicaSet current) {
+            V1beta2ReplicaSet replicaSet = null;
+            try {
+                replicaSet = appsV1beta2Api.createNamespacedReplicaSet(getNamespace(),
+                        current, null, getPretty(), null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return replicaSet;
+        }
+
+        @Override
+        void notifyUpdate(V1beta2ReplicaSet original, V1beta2ReplicaSet current) {
+            resourceUpdateMonitor.onReplicaSetUpdate(original, current);
+        }
+    }
+
 }
+
 
 
