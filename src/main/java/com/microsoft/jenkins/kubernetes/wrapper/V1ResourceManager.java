@@ -18,6 +18,7 @@ import io.kubernetes.client.models.V1Deployment;
 import io.kubernetes.client.models.V1HorizontalPodAutoscaler;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1ReplicaSet;
 import io.kubernetes.client.models.V1ReplicationController;
@@ -694,6 +695,53 @@ public class V1ResourceManager extends ResourceManager {
         @Override
         void notifyUpdate(V1StatefulSet original, V1StatefulSet current) {
             resourceUpdateMonitor.onStatefulSetUpdate(original, current);
+        }
+    }
+
+    class PersistentVolumeClaimUpdater extends ResourceUpdater<V1PersistentVolumeClaim> {
+        PersistentVolumeClaimUpdater(V1PersistentVolumeClaim namespace) {
+            super(namespace);
+        }
+
+        @Override
+        V1PersistentVolumeClaim getCurrentResource() {
+            V1PersistentVolumeClaim result = null;
+            try {
+                result = coreV1ApiInstance.readNamespacedPersistentVolumeClaim(
+                        getName(), getNamespace(), getPretty(), true, true);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1PersistentVolumeClaim applyResource(V1PersistentVolumeClaim original, V1PersistentVolumeClaim current) {
+            V1PersistentVolumeClaim result = null;
+            try {
+                result = coreV1ApiPatchInstance.patchNamespacedPersistentVolumeClaim(
+                        getName(), getNamespace(), current, getPretty(), null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1PersistentVolumeClaim createResource(V1PersistentVolumeClaim current) {
+            V1PersistentVolumeClaim result = null;
+            try {
+                result = coreV1ApiInstance.createNamespacedPersistentVolumeClaim(
+                        getNamespace(), current, null, getPretty(), null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        void notifyUpdate(V1PersistentVolumeClaim original, V1PersistentVolumeClaim current) {
+            resourceUpdateMonitor.onPersistentVolumeClaimUpdate(original, current);
         }
     }
 

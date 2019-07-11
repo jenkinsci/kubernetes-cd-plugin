@@ -12,6 +12,7 @@ import io.kubernetes.client.models.V1Deployment;
 import io.kubernetes.client.models.V1HorizontalPodAutoscaler;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1ReplicaSet;
 import io.kubernetes.client.models.V1ReplicationController;
@@ -43,6 +44,8 @@ public interface V1ResourceUpdateMonitor {
     void onNamespaceUpdate(V1Namespace original, V1Namespace current);
 
     void onHorizontalPodAutoscalerUpdate(V1HorizontalPodAutoscaler original, V1HorizontalPodAutoscaler current);
+
+    void onPersistentVolumeClaimUpdate(V1PersistentVolumeClaim original, V1PersistentVolumeClaim current);
 
     void onStatefulSetUpdate(V1StatefulSet original, V1StatefulSet current);
 
@@ -95,6 +98,12 @@ public interface V1ResourceUpdateMonitor {
 
         @Override
         public void onStatefulSetUpdate(V1StatefulSet original, V1StatefulSet current) {
+        }
+
+        @Override
+        public void onPersistentVolumeClaimUpdate(
+                V1PersistentVolumeClaim original, V1PersistentVolumeClaim current) {
+
         }
     }
 }
