@@ -1,7 +1,5 @@
-import io.kubernetes.client.models.*
 import com.google.common.reflect.ClassPath
 import io.kubernetes.client.util.Yaml
-import org.apache.commons.lang3.tuple.Pair;
 
 class KubernetesModelClassesGen {
 
@@ -13,10 +11,6 @@ class KubernetesModelClassesGen {
         ClassPath cp = ClassPath.from(Yaml.class.getClassLoader());
         Set<ClassPath.ClassInfo> allClasses = cp.getTopLevelClasses("io.kubernetes.client.models");
 
-        for (ClassPath.ClassInfo clazz : allClasses) {
-            print(clazz.simpleName)
-        }
-
         // The directory to write the source to
         File packageDir = new File( targetDirectory, packageName.replace( '.', '/' ) )
 
@@ -24,10 +18,10 @@ class KubernetesModelClassesGen {
         def out = []
         out<<'package '+packageName+';\n \n'
 
-        out<<'import io.kubernetes.client.models.*'+';\n'
-        out<<'import java.util.ArrayList'+';\n'
-        out<<'import java.util.List'+';\n'
-        out<<'import java.util.Collections;'+';\n'
+        out<<'import io.kubernetes.client.models.*;\n'
+        out<<'import java.util.ArrayList;;\n'
+        out<<'import java.util.List;\n'
+        out<<'import java.util.Collections;\n\n'
         out<<'public class '+className+' extends ArrayList<Class> {\n \n'
         out<<'  private static final List<Class> allClasses = Collections.unmodifiableList(new '+className+'()); \n'
 

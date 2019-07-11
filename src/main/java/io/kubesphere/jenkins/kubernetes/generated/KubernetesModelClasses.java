@@ -1,9 +1,10 @@
 package io.kubesphere.jenkins.kubernetes.generated;
  
 import io.kubernetes.client.models.*;
-import java.util.ArrayList;
+import java.util.ArrayList;;
 import java.util.List;
-import java.util.Collections;;
+import java.util.Collections;
+
 public class KubernetesModelClasses extends ArrayList<Class> {
  
   private static final List<Class> allClasses = Collections.unmodifiableList(new KubernetesModelClasses()); 
