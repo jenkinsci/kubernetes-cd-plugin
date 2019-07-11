@@ -14,11 +14,14 @@ import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1beta1DaemonSet;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.V1beta1ReplicaSet;
+import io.kubernetes.client.models.V1beta2Deployment;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+
 
 public final class ResourceUpdaterMap extends HashMap<Class<?>,
         Pair<Class<? extends ResourceManager>, Class<? extends ResourceManager.ResourceUpdater>>> {
@@ -58,6 +61,10 @@ public final class ResourceUpdaterMap extends HashMap<Class<?>,
         put(ExtensionsV1beta1Deployment.class,
                 Pair.of(V1beta1ResourceManager.class,
                         V1beta1ResourceManager.DeploymentUpdater.class));
+
+        put(V1beta2Deployment.class,
+                Pair.of(V1beta2ResourceManager.class,
+                        V1beta2ResourceManager.DeploymentUpdater.class));
 
     }
 
