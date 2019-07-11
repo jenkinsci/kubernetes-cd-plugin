@@ -21,6 +21,7 @@ import io.kubernetes.client.models.V1beta1StatefulSet;
 import io.kubernetes.client.models.V1beta2DaemonSet;
 import io.kubernetes.client.models.V1beta2Deployment;
 import io.kubernetes.client.models.V1beta2ReplicaSet;
+import io.kubernetes.client.models.V1beta2StatefulSet;
 import io.kubernetes.client.models.V2beta1HorizontalPodAutoscaler;
 import io.kubernetes.client.models.V2beta2HorizontalPodAutoscaler;
 import org.apache.commons.lang3.tuple.Pair;
@@ -87,6 +88,9 @@ public final class ResourceUpdaterMap extends HashMap<Class<?>,
         put(V1beta2ReplicaSet.class,
                 Pair.of(V1beta2ResourceManager.class,
                         V1beta2ResourceManager.ReplicaSetUpdater.class));
+        put(V1beta2StatefulSet.class,
+                Pair.of(V1beta2ResourceManager.class,
+                        V1beta2ResourceManager.StatefulSetUpdater.class));
 
         put(V2beta1HorizontalPodAutoscaler.class,
                 Pair.of(V2beta1ResourceManager.class, V2beta1ResourceManager.HorizontalPodAutoscalerUpdater.class));
