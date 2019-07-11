@@ -13,6 +13,7 @@ import io.kubernetes.client.models.V1ReplicaSet;
 import io.kubernetes.client.models.V1ReplicationController;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1StatefulSet;
 import io.kubernetes.client.models.V1beta1DaemonSet;
 import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.V1beta1ReplicaSet;
@@ -26,7 +27,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
 
 
 public final class ResourceUpdaterMap extends HashMap<Class<?>,
@@ -58,6 +58,8 @@ public final class ResourceUpdaterMap extends HashMap<Class<?>,
                 Pair.of(V1ResourceManager.class, V1ResourceManager.ConfigMapUpdater.class));
         put(V1ReplicaSet.class,
                 Pair.of(V1ResourceManager.class, V1ResourceManager.ReplicaSetUpdater.class));
+        put(V1StatefulSet.class,
+                Pair.of(V1ResourceManager.class, V1ResourceManager.StatefulSetUpdater.class));
 
 
         put(V1beta1Ingress.class,
@@ -91,7 +93,7 @@ public final class ResourceUpdaterMap extends HashMap<Class<?>,
     }
 
     public static Map<Class<?>, Pair<Class<? extends ResourceManager>,
-                    Class<? extends ResourceManager.ResourceUpdater>>> getUnmodifiableInstance() {
+            Class<? extends ResourceManager.ResourceUpdater>>> getUnmodifiableInstance() {
         return INSTANCE;
     }
 }

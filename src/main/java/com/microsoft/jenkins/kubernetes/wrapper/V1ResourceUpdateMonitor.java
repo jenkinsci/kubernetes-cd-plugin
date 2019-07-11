@@ -17,6 +17,7 @@ import io.kubernetes.client.models.V1ReplicaSet;
 import io.kubernetes.client.models.V1ReplicationController;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1StatefulSet;
 
 public interface V1ResourceUpdateMonitor {
     V1ResourceUpdateMonitor NOOP = new Adapter();
@@ -42,6 +43,8 @@ public interface V1ResourceUpdateMonitor {
     void onNamespaceUpdate(V1Namespace original, V1Namespace current);
 
     void onHorizontalPodAutoscalerUpdate(V1HorizontalPodAutoscaler original, V1HorizontalPodAutoscaler current);
+
+    void onStatefulSetUpdate(V1StatefulSet original, V1StatefulSet current);
 
     class Adapter implements V1ResourceUpdateMonitor {
 
@@ -88,6 +91,10 @@ public interface V1ResourceUpdateMonitor {
         @Override
         public void onHorizontalPodAutoscalerUpdate(
                 V1HorizontalPodAutoscaler original, V1HorizontalPodAutoscaler current) {
+        }
+
+        @Override
+        public void onStatefulSetUpdate(V1StatefulSet original, V1StatefulSet current) {
         }
     }
 }
