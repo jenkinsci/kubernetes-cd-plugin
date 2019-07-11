@@ -5,6 +5,7 @@ import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1DaemonSet;
 import io.kubernetes.client.models.V1Deployment;
+import io.kubernetes.client.models.V1HorizontalPodAutoscaler;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1Pod;
@@ -46,6 +47,8 @@ public final class ResourceUpdaterMap extends HashMap<Class<?>,
                 Pair.of(V1ResourceManager.class, V1ResourceManager.JobUpdater.class));
         put(V1Pod.class,
                 Pair.of(V1ResourceManager.class, V1ResourceManager.PodUpdater.class));
+        put(V1HorizontalPodAutoscaler.class,
+                Pair.of(V1ResourceManager.class, V1ResourceManager.HorizontalPodAutoscalerUpdater.class));
         put(V1Secret.class,
                 Pair.of(V1ResourceManager.class, V1ResourceManager.SecretUpdater.class));
         put(V1ConfigMap.class,

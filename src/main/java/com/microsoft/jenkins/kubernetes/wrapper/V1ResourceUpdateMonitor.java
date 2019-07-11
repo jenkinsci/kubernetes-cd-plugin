@@ -9,6 +9,7 @@ package com.microsoft.jenkins.kubernetes.wrapper;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1DaemonSet;
 import io.kubernetes.client.models.V1Deployment;
+import io.kubernetes.client.models.V1HorizontalPodAutoscaler;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1Pod;
@@ -37,6 +38,8 @@ public interface V1ResourceUpdateMonitor {
     void onConfigMapUpdate(V1ConfigMap original, V1ConfigMap current);
 
     void onNamespaceUpdate(V1Namespace original, V1Namespace current);
+
+    void onHorizontalPodAutoscalerUpdate(V1HorizontalPodAutoscaler original, V1HorizontalPodAutoscaler current);
 
     V1ResourceUpdateMonitor NOOP = new Adapter();
 
@@ -80,6 +83,12 @@ public interface V1ResourceUpdateMonitor {
 
         @Override
         public void onNamespaceUpdate(V1Namespace original, V1Namespace current) {
+        }
+
+        @Override
+        public void onHorizontalPodAutoscalerUpdate(
+                V1HorizontalPodAutoscaler original, V1HorizontalPodAutoscaler current) {
+
         }
     }
 }

@@ -9,11 +9,13 @@ package com.microsoft.jenkins.kubernetes.wrapper;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.AppsV1Api;
+import io.kubernetes.client.apis.AutoscalingV1Api;
 import io.kubernetes.client.apis.BatchV1Api;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1DaemonSet;
 import io.kubernetes.client.models.V1Deployment;
+import io.kubernetes.client.models.V1HorizontalPodAutoscaler;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1Pod;
@@ -37,6 +39,8 @@ public class V1ResourceManager extends ResourceManager {
     private final CoreV1Api coreV1ApiPatchInstance;
     private final AppsV1Api appsV1ApiPatchInstance;
     private final BatchV1Api batchV1ApiPatchInstance;
+    private final AutoscalingV1Api autoscalingV1Api;
+    private final AutoscalingV1Api autoscalingV1PatchApi;
 
     private V1ResourceUpdateMonitor resourceUpdateMonitor = V1ResourceUpdateMonitor.NOOP;
 
@@ -51,6 +55,8 @@ public class V1ResourceManager extends ResourceManager {
         coreV1ApiPatchInstance = new CoreV1Api(strategicPatchClient);
         appsV1ApiPatchInstance = new AppsV1Api(strategicPatchClient);
         batchV1ApiPatchInstance = new BatchV1Api(strategicPatchClient);
+        autoscalingV1Api = new AutoscalingV1Api(client);
+        autoscalingV1PatchApi = new AutoscalingV1Api(strategicPatchClient);
     }
 
     public V1ResourceManager(ApiClient client, ApiClient strategicPatchClient, boolean pretty) {
@@ -64,6 +70,8 @@ public class V1ResourceManager extends ResourceManager {
         coreV1ApiPatchInstance = new CoreV1Api(strategicPatchClient);
         appsV1ApiPatchInstance = new AppsV1Api(strategicPatchClient);
         batchV1ApiPatchInstance = new BatchV1Api(strategicPatchClient);
+        autoscalingV1Api = new AutoscalingV1Api(client);
+        autoscalingV1PatchApi = new AutoscalingV1Api(strategicPatchClient);
 
     }
 
@@ -591,6 +599,53 @@ public class V1ResourceManager extends ResourceManager {
         @Override
         void notifyUpdate(V1Namespace original, V1Namespace current) {
             resourceUpdateMonitor.onNamespaceUpdate(original, current);
+        }
+    }
+
+    class HorizontalPodAutoscalerUpdater extends ResourceUpdater<V1HorizontalPodAutoscaler> {
+        HorizontalPodAutoscalerUpdater(V1HorizontalPodAutoscaler namespace) {
+            super(namespace);
+        }
+
+        @Override
+        V1HorizontalPodAutoscaler getCurrentResource() {
+            V1HorizontalPodAutoscaler result = null;
+            try {
+                result = autoscalingV1Api.readNamespacedHorizontalPodAutoscaler(
+                        getName(), getNamespace(), getPretty(), true, true);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1HorizontalPodAutoscaler applyResource(V1HorizontalPodAutoscaler original, V1HorizontalPodAutoscaler current) {
+            V1HorizontalPodAutoscaler result = null;
+            try {
+                result = autoscalingV1PatchApi.patchNamespacedHorizontalPodAutoscaler(
+                        getName(), getNamespace(), current, getPretty(), null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1HorizontalPodAutoscaler createResource(V1HorizontalPodAutoscaler current) {
+            V1HorizontalPodAutoscaler result = null;
+            try {
+                result = autoscalingV1Api.createNamespacedHorizontalPodAutoscaler(
+                        getNamespace(), current, null, getPretty(), null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        void notifyUpdate(V1HorizontalPodAutoscaler original, V1HorizontalPodAutoscaler current) {
+            resourceUpdateMonitor.onHorizontalPodAutoscalerUpdate(original, current);
         }
     }
 }
