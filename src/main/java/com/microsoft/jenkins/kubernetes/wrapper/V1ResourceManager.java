@@ -681,7 +681,7 @@ public class V1ResourceManager extends ResourceManager {
         V1StatefulSet applyResource(V1StatefulSet original, V1StatefulSet current) {
             V1StatefulSet result = null;
             try {
-                result = appsV1ApiInstance.patchNamespacedStatefulSet(
+                result = appsV1ApiPatchInstance.patchNamespacedStatefulSet(
                         getName(), getNamespace(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -834,8 +834,8 @@ public class V1ResourceManager extends ResourceManager {
         V1NetworkPolicy createResource(V1NetworkPolicy current) {
             V1NetworkPolicy result = null;
             try {
-                result = networkingV1Api.patchNamespacedNetworkPolicy(getName(),
-                        getNamespace(), current, getPretty(), null);
+                result = networkingV1Api.createNamespacedNetworkPolicy(
+                        getNamespace(), current, null, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
