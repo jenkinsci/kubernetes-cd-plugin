@@ -25,6 +25,7 @@ import io.kubernetes.client.util.Yaml;
 import io.kubernetes.client.util.credentials.ClientCertificateAuthentication;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.Reader;
 import java.io.StringReader;
 import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
@@ -65,6 +67,15 @@ public class KubernetesClientWrapper {
         StringReader reader = new StringReader(kubeConfig);
         try {
             client = Config.fromConfig(reader);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Configuration.setDefaultApiClient(client);
+    }
+
+    public KubernetesClientWrapper(Reader kubeConfigReader) {
+        try {
+            client = Config.fromConfig(kubeConfigReader);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -146,18 +157,22 @@ public class KubernetesClientWrapper {
     }
 
     /**
-     * Get related updater in{@link ResourceUpdaterMap} by resource's class type and handle the resource by updater
+     * Get related updater in{@link ResourceUpdaterMap} by resource's class type and handle the resource by updater.
      *
      * @param resource k8s resource
      */
     private void handleResource(Object resource) {
-        Class<? extends ResourceManager.ResourceUpdater> updaterClass = ResourceUpdaterMap.getUnmodifiableInstance().
-                get(resource.getClass());
-        if (updaterClass != null) {
+        Pair<Class<? extends ResourceManager>,
+                Class<? extends ResourceManager.ResourceUpdater>> updaterPair =
+                ResourceUpdaterMap.getUnmodifiableInstance().get(resource.getClass());
+        if (updaterPair != null) {
             try {
-                Constructor constructor = updaterClass.getConstructor(resource.getClass());
+                Constructor constructor = updaterPair.
+                        getRight().getDeclaredConstructor(
+                                updaterPair.getLeft(), resource.getClass());
+                Constructor resourceManagerConstructor = updaterPair.getLeft().getConstructor();
                 ResourceManager.ResourceUpdater updater = (ResourceManager.ResourceUpdater) constructor
-                        .newInstance(resource);
+                        .newInstance(resourceManagerConstructor.newInstance(), resource);
                 updater.createOrApply();
             } catch (Exception e) {
                 log(Messages.KubernetesClientWrapper_illegalUpdater(resource, e));

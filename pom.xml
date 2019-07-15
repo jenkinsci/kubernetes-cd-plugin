@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>2.11</version>
+        <version>3.47</version>
     </parent>
 
     <artifactId>kubernetes-cd</artifactId>
@@ -14,16 +15,16 @@
 
     <properties>
         <!-- Baseline Jenkins version you use to build the plugin. Users must have this version or newer to run. -->
-        <jenkins.version>1.651.3</jenkins.version>
+        <jenkins.version>2.60.3</jenkins.version>
         <java.level>8</java.level>
 
-        <azure-commons-version>0.2.6</azure-commons-version>
+        <azure-commons-version>1.0.3</azure-commons-version>
         <credentials.version>2.1.14</credentials.version>
         <docker-commons.version>1.10</docker-commons.version>
         <ssh-credentials.version>1.13</ssh-credentials.version>
         <workflow-step-api.version>2.10</workflow-step-api.version>
 
-        <kubernetes-client.version>4.0.0</kubernetes-client.version>
+        <kubernetes-client.version>5.0.0</kubernetes-client.version>
     </properties>
 
     <name>Kubernetes Continuous Deploy Plugin</name>
@@ -100,11 +101,31 @@
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>azure-commons</artifactId>
             <version>${azure-commons-version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.squareup.okhttp3</groupId>
+                    <artifactId>okhttp</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.squareup.okio</groupId>
+                    <artifactId>okio</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.reactivex</groupId>
+                    <artifactId>rxjava</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>azure-commons-core</artifactId>
             <version>${azure-commons-version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15on</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.kubernetes</groupId>
@@ -159,12 +180,52 @@
                     <maskClasses>
                         okhttp3.
                         okio.
-                        com.google.
                         com.fasterxml.jackson.
                         com.microsoft.jenkins.azurecommons.core.
+                        com.google.
                     </maskClasses>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-groovy-sources</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.build.directory}/generated-sources/groovy</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.groovy.maven</groupId>
+                <artifactId>gmaven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <scriptpath>
+                                <element>${basedir}/src/main/script</element>
+                            </scriptpath>
+                            <source>
+                                KubernetesModelClassesGen kubernetesModelGen = new KubernetesModelClassesGen()
+                                kubernetesModelGen.generate(project, 'io.kubesphere.jenkins.kubernetes.generated', 'KubernetesModelClasses')
+                            </source>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
@@ -183,6 +244,7 @@
                     <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <resourceIncludes>src/main/resources/**</resourceIncludes>
+                    <excludes>**/generated/**</excludes>
                 </configuration>
             </plugin>
         </plugins>
