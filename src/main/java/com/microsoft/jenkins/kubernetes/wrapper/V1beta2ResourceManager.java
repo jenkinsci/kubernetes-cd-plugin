@@ -3,6 +3,7 @@ package com.microsoft.jenkins.kubernetes.wrapper;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.AppsV1beta2Api;
+import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1beta2DaemonSet;
 import io.kubernetes.client.models.V1beta2Deployment;
 import io.kubernetes.client.models.V1beta2ReplicaSet;
@@ -83,6 +84,17 @@ public class V1beta2ResourceManager extends ResourceManager {
             return deployment;
         }
 
+        @Override
+        V1Status deleteResource(V1beta2Deployment current) {
+            V1Status result = null;
+            try {
+                result = appsV1beta2Api.deleteNamespacedDeployment(
+                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
 
         @Override
         void notifyUpdate(V1beta2Deployment original, V1beta2Deployment current) {
@@ -132,6 +144,19 @@ public class V1beta2ResourceManager extends ResourceManager {
         }
 
         @Override
+        V1Status deleteResource(V1beta2DaemonSet current) {
+            V1Status result = null;
+            try {
+                result = appsV1beta2Api.deleteNamespacedDaemonSet(
+                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+
+        @Override
         void notifyUpdate(V1beta2DaemonSet original, V1beta2DaemonSet current) {
             resourceUpdateMonitor.onDaemonSetUpdate(original, current);
         }
@@ -179,6 +204,18 @@ public class V1beta2ResourceManager extends ResourceManager {
         }
 
         @Override
+        V1Status deleteResource(V1beta2ReplicaSet current) {
+            V1Status result = null;
+            try {
+                result = appsV1beta2Api.deleteNamespacedReplicaSet(
+                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+        @Override
         void notifyUpdate(V1beta2ReplicaSet original, V1beta2ReplicaSet current) {
             resourceUpdateMonitor.onReplicaSetUpdate(original, current);
         }
@@ -221,6 +258,18 @@ public class V1beta2ResourceManager extends ResourceManager {
                         getNamespace(), current, null, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1Status deleteResource(V1beta2StatefulSet current) {
+            V1Status result = null;
+            try {
+                result = appsV1beta2Api.deleteNamespacedStatefulSet(
+                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
             }
             return result;
         }

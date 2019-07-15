@@ -160,6 +160,7 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
             task.setDefaultSecretNameSeed(jobContext.getRun().getDisplayName());
             task.setEnableSubstitution(context.isEnableConfigSubstitution());
             task.setDockerRegistryEndpoints(context.resolveEndpoints(jobContext.getRun().getParent()));
+            task.setDeleteResource(context.isDeleteResource());
 
             taskResult = workspace.act(task);
 
@@ -210,6 +211,7 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
         private String secretNameCfg;
         private String defaultSecretNameSeed;
         private boolean enableSubstitution;
+        private boolean deleteResource;
 
         private List<ResolvedDockerRegistryEndpoint> dockerRegistryEndpoints;
 
@@ -258,11 +260,15 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
                 result.extraEnvVars.put(Constants.KUBERNETES_SECRET_NAME_PROP, secretName);
             }
 
+
             if (enableSubstitution) {
                 wrapper.withVariableResolver(new VariableResolver.ByMap<>(envVars));
             }
-
-            wrapper.apply(configFiles);
+            if (deleteResource) {
+                wrapper.delete(configFiles);
+            } else {
+                wrapper.apply(configFiles);
+            }
 
             result.commandState = CommandState.Success;
 
@@ -308,6 +314,9 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
         public void setDockerRegistryEndpoints(List<ResolvedDockerRegistryEndpoint> dockerRegistryEndpoints) {
             this.dockerRegistryEndpoints = dockerRegistryEndpoints;
         }
+        public void setDeleteResource(boolean isDeleteResource) {
+            this.deleteResource = isDeleteResource;
+        }
     }
 
     public static class TaskResult implements Serializable {
@@ -330,5 +339,7 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
         String getConfigs();
 
         boolean isEnableConfigSubstitution();
+
+        boolean isDeleteResource();
     }
 }

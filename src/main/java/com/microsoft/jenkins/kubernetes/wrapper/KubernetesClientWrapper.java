@@ -50,7 +50,6 @@ public class KubernetesClientWrapper {
     private VariableResolver<String> variableResolver;
 
 
-
     public KubernetesClientWrapper(String kubeConfig) {
         File file = new File(kubeConfig);
         if (file.exists()) {
@@ -97,6 +96,51 @@ public class KubernetesClientWrapper {
                 .setAuthentication(authentication)
                 .setCertificateAuthority(certificateAuthorityData.getBytes(StandardCharsets.UTF_8))
                 .setOverridePatchFormat(ApiClient.PATCH_FORMAT_STRATEGIC_MERGE_PATCH).build();
+    }
+
+    private static void restoreProperty(String name, String value) {
+        if (value == null) {
+            System.clearProperty(name);
+        } else {
+            System.setProperty(name, value);
+        }
+    }
+
+    public static String prepareSecretName(String nameCfg, String defaultName, EnvVars envVars) {
+        String name = StringUtils.trimToEmpty(envVars.expand(nameCfg));
+        if (name.length() > Constants.KUBERNETES_NAME_LENGTH_LIMIT) {
+            throw new IllegalArgumentException(Messages.KubernetesClientWrapper_secretNameTooLong(name));
+        }
+
+        if (!name.isEmpty()) {
+            if (!Constants.KUBERNETES_NAME_PATTERN.matcher(name).matches()) {
+                throw new IllegalArgumentException(Messages.KubernetesClientWrapper_illegalSecretName(name));
+            }
+
+            return name;
+        }
+        // use default name and ensure it conforms the requirements.
+        name = defaultName;
+        if (StringUtils.isBlank(name)) {
+            name = UUID.randomUUID().toString();
+        }
+        name = Constants.KUBERNETES_SECRET_NAME_PREFIX
+                + name.replaceAll("[^0-9a-zA-Z]", "-").toLowerCase();
+        if (name.length() > Constants.KUBERNETES_NAME_LENGTH_LIMIT) {
+            name = name.substring(0, Constants.KUBERNETES_NAME_LENGTH_LIMIT);
+        }
+        int suffixLength = Constants.KUBERNETES_NAME_LENGTH_LIMIT - name.length();
+        final int randomLength = 8;
+        if (suffixLength > randomLength) {
+            suffixLength = randomLength;
+        }
+        String suffix = CommonUtils.randomString(suffixLength, true);
+        name += suffix;
+
+        if (name.charAt(name.length() - 1) == '-') {
+            name = name.substring(0, name.length() - 1) + 'a';
+        }
+        return name;
     }
 
     public ApiClient getClient() {
@@ -164,11 +208,39 @@ public class KubernetesClientWrapper {
     }
 
     /**
+     * Delete Kubernetes configurations through the given Kubernetes client.
+     *
+     * @param configFiles The configuration files to be deleted
+     * @throws IOException          exception on IO
+     * @throws InterruptedException interruption happened during blocking IO operations
+     */
+    public void delete(FilePath[] configFiles) throws IOException, InterruptedException, ApiException {
+        for (FilePath path : configFiles) {
+            log(Messages.KubernetesClientWrapper_loadingConfiguration(path));
+            List<Object> resources;
+            try {
+                InputStream inputStream = CommonUtils.replaceMacro(path.read(), variableResolver);
+                resources = Yaml.loadAll(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+            } catch (IOException e) {
+                throw new IOException(Messages.KubernetesClientWrapper_invalidYaml(path.getName(), e));
+            }
+            if (resources.isEmpty()) {
+                log(Messages.KubernetesClientWrapper_noResourceLoadedFrom(path));
+                continue;
+            }
+
+            for (Object resource : resources) {
+                deleteResource(resource);
+            }
+        }
+    }
+
+    /**
      * Get related updater in{@link ResourceUpdaterMap} by resource's class type and handle the resource by updater.
      *
      * @param resource k8s resource
      */
-    private void handleResource(Object resource) throws ApiException {
+    private void handleResource(Object resource) {
         Pair<Class<? extends ResourceManager>,
                 Class<? extends ResourceManager.ResourceUpdater>> updaterPair =
                 ResourceUpdaterMap.getUnmodifiableInstance().get(resource.getClass());
@@ -177,7 +249,7 @@ public class KubernetesClientWrapper {
             try {
                 Constructor constructor = updaterPair.
                         getRight().getDeclaredConstructor(
-                                updaterPair.getLeft(), resource.getClass());
+                        updaterPair.getLeft(), resource.getClass());
                 Constructor resourceManagerConstructor = updaterPair.getLeft()
                         .getConstructor(ApiClient.class, ApiClient.class);
                 ResourceManager resourceManager = (ResourceManager) resourceManagerConstructor.
@@ -192,6 +264,44 @@ public class KubernetesClientWrapper {
 
             if (updater != null) {
                 updater.createOrApply();
+            } else {
+                log(Messages.KubernetesClientWrapper_illegalUpdater(resource, null));
+            }
+
+
+        } else {
+            log(Messages.KubernetesClientWrapper_skipped(resource));
+        }
+    }
+
+    /**
+     * Get related updater in{@link ResourceUpdaterMap} by resource's class type and handle the resource by updater.
+     *
+     * @param resource k8s resource
+     */
+    private void deleteResource(Object resource) {
+        Pair<Class<? extends ResourceManager>,
+                Class<? extends ResourceManager.ResourceUpdater>> updaterPair =
+                ResourceUpdaterMap.getUnmodifiableInstance().get(resource.getClass());
+        ResourceManager.ResourceUpdater updater = null;
+        if (updaterPair != null) {
+            try {
+                Constructor constructor = updaterPair.
+                        getRight().getDeclaredConstructor(
+                        updaterPair.getLeft(), resource.getClass());
+                Constructor resourceManagerConstructor = updaterPair.getLeft()
+                        .getConstructor(ApiClient.class, ApiClient.class);
+                ResourceManager resourceManager = (ResourceManager) resourceManagerConstructor.
+                        newInstance(getClient(), getStrategicPatchClient());
+                resourceManager.setConsoleLogger(getLogger());
+                updater = (ResourceManager.ResourceUpdater) constructor
+                        .newInstance(resourceManager, resource);
+            } catch (Exception e) {
+                log(Messages.KubernetesClientWrapper_illegalUpdater(resource, e));
+            }
+
+            if (updater != null) {
+                updater.delete();
             } else {
                 log(Messages.KubernetesClientWrapper_illegalUpdater(resource, null));
             }
@@ -236,51 +346,6 @@ public class KubernetesClientWrapper {
                 .withType("kubernetes.io/dockercfg")
                 .build();
         handleResource(secret);
-    }
-
-    private static void restoreProperty(String name, String value) {
-        if (value == null) {
-            System.clearProperty(name);
-        } else {
-            System.setProperty(name, value);
-        }
-    }
-
-    public static String prepareSecretName(String nameCfg, String defaultName, EnvVars envVars) {
-        String name = StringUtils.trimToEmpty(envVars.expand(nameCfg));
-        if (name.length() > Constants.KUBERNETES_NAME_LENGTH_LIMIT) {
-            throw new IllegalArgumentException(Messages.KubernetesClientWrapper_secretNameTooLong(name));
-        }
-
-        if (!name.isEmpty()) {
-            if (!Constants.KUBERNETES_NAME_PATTERN.matcher(name).matches()) {
-                throw new IllegalArgumentException(Messages.KubernetesClientWrapper_illegalSecretName(name));
-            }
-
-            return name;
-        }
-        // use default name and ensure it conforms the requirements.
-        name = defaultName;
-        if (StringUtils.isBlank(name)) {
-            name = UUID.randomUUID().toString();
-        }
-        name = Constants.KUBERNETES_SECRET_NAME_PREFIX
-                + name.replaceAll("[^0-9a-zA-Z]", "-").toLowerCase();
-        if (name.length() > Constants.KUBERNETES_NAME_LENGTH_LIMIT) {
-            name = name.substring(0, Constants.KUBERNETES_NAME_LENGTH_LIMIT);
-        }
-        int suffixLength = Constants.KUBERNETES_NAME_LENGTH_LIMIT - name.length();
-        final int randomLength = 8;
-        if (suffixLength > randomLength) {
-            suffixLength = randomLength;
-        }
-        String suffix = CommonUtils.randomString(suffixLength, true);
-        name += suffix;
-
-        if (name.charAt(name.length() - 1) == '-') {
-            name = name.substring(0, name.length() - 1) + 'a';
-        }
-        return name;
     }
 
     private void log(String message) {

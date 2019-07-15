@@ -73,6 +73,8 @@ public class KubernetesDeployContext extends BaseCommandContext implements
     private String secretName;
     private List<DockerRegistryEndpoint> dockerCredentials;
 
+    private boolean deleteResource;
+
     @DataBoundConstructor
     public KubernetesDeployContext() {
         enableConfigSubstitution = true;
@@ -110,15 +112,15 @@ public class KubernetesDeployContext extends BaseCommandContext implements
         return credentialsType;
     }
 
-    @Deprecated
-    public KubernetesCredentialsType getCredentialsTypeEnum() {
-        return KubernetesCredentialsType.fromString(getCredentialsType());
-    }
-
     @DataBoundSetter
     @Deprecated
     public void setCredentialsType(String credentialsType) {
         this.credentialsType = StringUtils.trimToEmpty(credentialsType);
+    }
+
+    @Deprecated
+    public KubernetesCredentialsType getCredentialsTypeEnum() {
+        return KubernetesCredentialsType.fromString(getCredentialsType());
     }
 
     @Deprecated
@@ -228,6 +230,16 @@ public class KubernetesDeployContext extends BaseCommandContext implements
             endpoints.add(new DockerRegistryEndpoint(registryUrl, credentialsId));
         }
         this.dockerCredentials = endpoints;
+    }
+
+    @Override
+    public boolean isDeleteResource() {
+        return deleteResource;
+    }
+
+    @DataBoundSetter
+    public void setDeleteResource(boolean isDeleteResource) {
+        this.deleteResource = isDeleteResource;
     }
 
     @Override

@@ -9,6 +9,7 @@ package com.microsoft.jenkins.kubernetes.wrapper;
 import com.microsoft.jenkins.kubernetes.util.Constants;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Status;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpStatus;
 
@@ -20,11 +21,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 public abstract class ResourceManager {
-    private PrintStream consoleLogger = System.out;
     /**
      * If true, then the output of api call is pretty printed.
      */
     private final String pretty;
+    private PrintStream consoleLogger = System.out;
 
     ResourceManager(boolean pretty) {
         this.pretty = String.valueOf(pretty);
@@ -34,11 +35,51 @@ public abstract class ResourceManager {
         return pretty;
     }
 
+    public PrintStream getConsoleLogger() {
+        return consoleLogger;
+    }
+
+    public ResourceManager setConsoleLogger(PrintStream log) {
+        this.consoleLogger = log;
+        return this;
+    }
+
+    /**
+     * Func to handle ApiException , print out the contents of the exception
+     * and throw a RuntimeException to abort the pipeline except NotFound Condition.
+     *
+     * @param e kubernetes ApiException
+     * @throws RuntimeException
+     */
+    protected void handleApiExceptionExceptNotFound(ApiException e) throws RuntimeException {
+        int code = e.getCode();
+        if (code == HttpStatus.SC_NOT_FOUND) {
+            return;
+        }
+        String responseBody = e.getResponseBody();
+        getConsoleLogger().println(Messages.KubernetesClientWrapper_apiException(code, responseBody));
+        throw new RuntimeException(e);
+    }
+
+    /**
+     * Func to handle ApiException, print out the contents of the exception
+     * and throw a RuntimeException to abort the pipeline .
+     *
+     * @param e kubernetes ApiException
+     * @throws RuntimeException
+     */
+    protected void handleApiException(ApiException e) throws RuntimeException {
+        int code = e.getCode();
+        String responseBody = e.getResponseBody();
+        getConsoleLogger().println(Messages.KubernetesClientWrapper_apiException(code, responseBody));
+        throw new RuntimeException(e);
+    }
+
     protected abstract class ResourceUpdater<T> {
         private final T resource;
         private final V1ObjectMeta metadata;
 
-          ResourceUpdater(T resource) {
+        ResourceUpdater(T resource) {
             checkNotNull(resource);
             this.resource = resource;
             V1ObjectMeta meta = null;
@@ -97,11 +138,18 @@ public abstract class ResourceManager {
             notifyUpdate(original, updated);
         }
 
+        final void delete() {
+            V1Status status = deleteResource(get());
+            logDeleted(status);
+        }
+
         abstract T getCurrentResource();
 
         abstract T applyResource(T original, T current);
 
         abstract T createResource(T current);
+
+        abstract V1Status deleteResource(T current);
 
         abstract void notifyUpdate(T original, T current);
 
@@ -112,44 +160,15 @@ public abstract class ResourceManager {
         void logCreated(T res) {
             getConsoleLogger().println(Messages.KubernetesClientWrapper_created(res.getClass().getSimpleName(), res));
         }
-    }
 
-    public PrintStream getConsoleLogger() {
-        return consoleLogger;
-    }
-
-    public ResourceManager setConsoleLogger(PrintStream log) {
-        this.consoleLogger = log;
-        return this;
-    }
-
-
-    /**
-     * Func to handle ApiException , print out the contents of the exception
-     * and throw a RuntimeException to abort the pipeline except NotFound Condition.
-     * @param e kubernetes ApiException
-     * @throws RuntimeException
-     */
-    protected void handleApiExceptionExceptNotFound(ApiException e) throws RuntimeException {
-        int code = e.getCode();
-        if (code == HttpStatus.SC_NOT_FOUND) {
-            return;
+        void logDeleted(V1Status status) {
+            if (status != null) {
+                getConsoleLogger().println(
+                        Messages.KubernetesClientWrapper_deleted(get().getClass().getSimpleName(), status));
+            } else {
+                getConsoleLogger().println(
+                        Messages.KubernetesClientWrapper_resourceNotFound(get().getClass().getSimpleName(), getName()));
+            }
         }
-        String responseBody = e.getResponseBody();
-        getConsoleLogger().println(Messages.KubernetesClientWrapper_apiException(code, responseBody));
-        throw new RuntimeException(e);
-    }
-
-    /**
-     * Func to handle ApiException, print out the contents of the exception
-     * and throw a RuntimeException to abort the pipeline .
-     * @param e kubernetes ApiException
-     * @throws RuntimeException
-     */
-    protected void handleApiException(ApiException e) throws RuntimeException {
-        int code = e.getCode();
-        String responseBody = e.getResponseBody();
-        getConsoleLogger().println(Messages.KubernetesClientWrapper_apiException(code, responseBody));
-        throw new RuntimeException(e);
     }
 }

@@ -13,6 +13,7 @@ import io.kubernetes.client.apis.BatchV1beta1Api;
 import io.kubernetes.client.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.models.AppsV1beta1Deployment;
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1beta1CronJob;
 import io.kubernetes.client.models.V1beta1DaemonSet;
 import io.kubernetes.client.models.V1beta1Ingress;
@@ -106,6 +107,18 @@ public class V1beta1ResourceManager extends ResourceManager {
         }
 
         @Override
+        V1Status deleteResource(V1beta1ReplicaSet current) {
+            V1Status result = null;
+            try {
+                result = extensionsV1beta1Api.deleteNamespacedReplicaSet(
+                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+        @Override
         void notifyUpdate(V1beta1ReplicaSet original, V1beta1ReplicaSet current) {
             resourceUpdateMonitor.onReplicaSetUpdate(original, current);
         }
@@ -150,6 +163,18 @@ public class V1beta1ResourceManager extends ResourceManager {
                 handleApiException(e);
             }
             return daemonSet;
+        }
+
+        @Override
+        V1Status deleteResource(V1beta1DaemonSet current) {
+            V1Status result = null;
+            try {
+                result = extensionsV1beta1Api.deleteNamespacedDaemonSet(
+                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
         }
 
         @Override
@@ -201,6 +226,19 @@ public class V1beta1ResourceManager extends ResourceManager {
         }
 
         @Override
+        V1Status deleteResource(V1beta1Ingress current) {
+            V1Status result = null;
+            try {
+                result = extensionsV1beta1Api.deleteNamespacedIngress(
+                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+
+        @Override
         void notifyUpdate(V1beta1Ingress original, V1beta1Ingress current) {
             resourceUpdateMonitor.onIngressUpdate(original, current);
         }
@@ -247,6 +285,19 @@ public class V1beta1ResourceManager extends ResourceManager {
             }
             return deployment;
         }
+
+        @Override
+        V1Status deleteResource(ExtensionsV1beta1Deployment current) {
+            V1Status result = null;
+            try {
+                result = extensionsV1beta1Api.deleteNamespacedDeployment(
+                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
 
         @Override
         void notifyUpdate(ExtensionsV1beta1Deployment original, ExtensionsV1beta1Deployment current) {
@@ -297,6 +348,18 @@ public class V1beta1ResourceManager extends ResourceManager {
         }
 
         @Override
+        V1Status deleteResource(AppsV1beta1Deployment current) {
+            V1Status result = null;
+            try {
+                result = appsV1beta1Api.deleteNamespacedDeployment(
+                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+        @Override
         void notifyUpdate(AppsV1beta1Deployment original, AppsV1beta1Deployment current) {
             resourceUpdateMonitor.onDeploymentUpdate(original, current);
         }
@@ -344,6 +407,18 @@ public class V1beta1ResourceManager extends ResourceManager {
         }
 
         @Override
+        V1Status deleteResource(V1beta1StatefulSet current) {
+            V1Status result = null;
+            try {
+                result = appsV1beta1Api.deleteNamespacedStatefulSet(
+                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+        @Override
         void notifyUpdate(V1beta1StatefulSet original, V1beta1StatefulSet current) {
             resourceUpdateMonitor.onStatefulSetUpdate(original, current);
         }
@@ -386,6 +461,18 @@ public class V1beta1ResourceManager extends ResourceManager {
                         getNamespace(), current, null, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1Status deleteResource(V1beta1CronJob current) {
+            V1Status result = null;
+            try {
+                result = batchV1beta1Api.deleteNamespacedCronJob(
+                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
             }
             return result;
         }
