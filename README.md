@@ -75,17 +75,23 @@ It provides the following features:
 
 The following resource types are supported by the plugin:
 
-* ConfigMap
-* Daemon Set
-* Deployment
-* Ingress
-* Job
-* Namespace
-* Pod
-* Replica Set
-* Replication Controller - No rolling-update support. If that's required, consider using [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-update-deployment).
-* Secret - The plugin also provides secrets configuration.
-* Service
+* ConfigMap (v1)
+* Daemon Set (apps/v1、extensions/v1beta1、apps/v1beta2)
+* Deployment (apps/v1、apps/v1beta1、extensions/v1beta1、apps/v1beta2)
+* Ingress (extensions/v1beta1)
+* Job (batch/v1)
+* Namespace (v1)
+* Pod (v1)
+* Replica Set (apps/v1、extensions/v1beta1、apps/v1beta2)
+* Replication Controller (v1) - No rolling-update support. If that's required, consider using [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-update-deployment).
+* Secret (v1) - The plugin also provides secrets configuration.
+* Service (v1)
+* Stateful Set (apps/v1、apps/v1beta1、apps/v1beta2)
+* Cron Job (batch/v1beta1、batch/v2alpha1)
+* Horizontal Pod Autoscaler(autoscaling/v1、autoscaling/v2beta1、autoscaling/v2beta2)
+* Network Policy (networking.k8s.io/v1)
+* Persistent Volume (v1)
+* Persistent Volume Claim (v1)
 
 In the context of continuous integration & continuous deployment, only those resources that need to be updated
 regularly should be placed in Jenkins deployment. So most of the time the plugin should mainly deal with resources
