@@ -1,5 +1,11 @@
 # Kubernetes Continuous Deploy Plugin Changelog
 
+## Version 1.0.0, 2019-05-31
+**This version forces updating Kubernetes yaml files' api version**
+* Bump Jenkins version to 2.60.3
+* Upgrade kubernetes-client sdk version to 4.0.4
+* Add support for CronJob and HPA
+
 ## Version 0.2.3, 2018-06-08
 * Documentation and AI fix
 
