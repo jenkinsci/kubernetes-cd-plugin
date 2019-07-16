@@ -121,7 +121,7 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1DaemonSet applyResource(V1beta1DaemonSet original, V1beta1DaemonSet current) {
             V1beta1DaemonSet daemonSet = null;
             try {
-                daemonSet = extensionsV1beta1Api.patchNamespacedDaemonSet(getName(), getNamespace(),
+                daemonSet = extensionsV1beta1Api.replaceNamespacedDaemonSet(getName(), getNamespace(),
                         current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
