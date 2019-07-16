@@ -11,27 +11,22 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class V2alpha1ResourceManager extends ResourceManager {
     private final BatchV2alpha1Api batchV2alpha1Api;
-    private final BatchV2alpha1Api batchV2alpha1PatchApi;
 
     private V2alpha1ResourceUpdateMonitor resourceUpdateMonitor = V2alpha1ResourceUpdateMonitor.NOOP;
 
-    public V2alpha1ResourceManager(ApiClient client, ApiClient strategicPatchClient) {
+    public V2alpha1ResourceManager(ApiClient client) {
         super(true);
         checkNotNull(client);
-        checkNotNull(strategicPatchClient);
 
         batchV2alpha1Api = new BatchV2alpha1Api(client);
-        batchV2alpha1PatchApi = new BatchV2alpha1Api(strategicPatchClient);
 
     }
 
-    public V2alpha1ResourceManager(ApiClient client, ApiClient strategicPatchClient, boolean pretty) {
+    public V2alpha1ResourceManager(ApiClient client, boolean pretty) {
         super(pretty);
         checkNotNull(client);
-        checkNotNull(strategicPatchClient);
 
         batchV2alpha1Api = new BatchV2alpha1Api(client);
-        batchV2alpha1PatchApi = new BatchV2alpha1Api(strategicPatchClient);
     }
 
     public V2alpha1ResourceUpdateMonitor getResourceUpdateMonitor() {
@@ -65,7 +60,7 @@ public class V2alpha1ResourceManager extends ResourceManager {
         V2alpha1CronJob applyResource(V2alpha1CronJob original, V2alpha1CronJob current) {
             V2alpha1CronJob result = null;
             try {
-                result = batchV2alpha1PatchApi.patchNamespacedCronJob(
+                result = batchV2alpha1Api.replaceNamespacedCronJob(
                         getName(), getNamespace(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);

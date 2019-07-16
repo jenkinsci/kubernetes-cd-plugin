@@ -24,7 +24,7 @@ import io.kubernetes.client.util.KubeConfig;
 import io.kubernetes.client.util.Yaml;
 import io.kubernetes.client.util.credentials.ClientCertificateAuthentication;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.File;
@@ -45,9 +45,9 @@ import java.util.UUID;
 
 public class KubernetesClientWrapper {
     private final ApiClient client;
-    private final ApiClient strategicPatchClient;
     private PrintStream logger = System.out;
     private VariableResolver<String> variableResolver;
+
 
 
     public KubernetesClientWrapper(String kubeConfig) {
@@ -62,8 +62,6 @@ public class KubernetesClientWrapper {
         KubeConfig config = KubeConfig.loadKubeConfig(new StringReader(kubeConfig));
         try {
             client = Config.fromConfig(config);
-            strategicPatchClient = ClientBuilder.kubeconfig(config).
-                    setOverridePatchFormat(ApiClient.PATCH_FORMAT_STRATEGIC_MERGE_PATCH).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -73,12 +71,11 @@ public class KubernetesClientWrapper {
         KubeConfig config = KubeConfig.loadKubeConfig(kubeConfigReader);
         try {
             client = Config.fromConfig(config);
-            strategicPatchClient = ClientBuilder.kubeconfig(config).
-                    setOverridePatchFormat(ApiClient.PATCH_FORMAT_STRATEGIC_MERGE_PATCH).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
+
 
     public KubernetesClientWrapper(String server,
                                    String certificateAuthorityData,
@@ -91,21 +88,7 @@ public class KubernetesClientWrapper {
                 .setAuthentication(authentication)
                 .setCertificateAuthority(certificateAuthorityData.getBytes(StandardCharsets.UTF_8))
                 .build();
-        strategicPatchClient = new ClientBuilder()
-                .setBasePath(server)
-                .setAuthentication(authentication)
-                .setCertificateAuthority(certificateAuthorityData.getBytes(StandardCharsets.UTF_8))
-                .setOverridePatchFormat(ApiClient.PATCH_FORMAT_STRATEGIC_MERGE_PATCH).build();
     }
-
-    private static void restoreProperty(String name, String value) {
-        if (value == null) {
-            System.clearProperty(name);
-        } else {
-            System.setProperty(name, value);
-        }
-    }
-
     public static String prepareSecretName(String nameCfg, String defaultName, EnvVars envVars) {
         String name = StringUtils.trimToEmpty(envVars.expand(nameCfg));
         if (name.length() > Constants.KUBERNETES_NAME_LENGTH_LIMIT) {
@@ -143,12 +126,8 @@ public class KubernetesClientWrapper {
         return name;
     }
 
-    public ApiClient getClient() {
+        public ApiClient getClient() {
         return client;
-    }
-
-    public ApiClient getStrategicPatchClient() {
-        return strategicPatchClient;
     }
 
     public PrintStream getLogger() {
@@ -249,11 +228,11 @@ public class KubernetesClientWrapper {
             try {
                 Constructor constructor = updaterPair.
                         getRight().getDeclaredConstructor(
-                        updaterPair.getLeft(), resource.getClass());
+                                updaterPair.getLeft(), resource.getClass());
                 Constructor resourceManagerConstructor = updaterPair.getLeft()
-                        .getConstructor(ApiClient.class, ApiClient.class);
+                        .getConstructor(ApiClient.class);
                 ResourceManager resourceManager = (ResourceManager) resourceManagerConstructor.
-                        newInstance(getClient(), getStrategicPatchClient());
+                        newInstance(getClient());
                 resourceManager.setConsoleLogger(getLogger());
                 updater = (ResourceManager.ResourceUpdater) constructor
                         .newInstance(resourceManager, resource);
@@ -290,12 +269,13 @@ public class KubernetesClientWrapper {
                         getRight().getDeclaredConstructor(
                         updaterPair.getLeft(), resource.getClass());
                 Constructor resourceManagerConstructor = updaterPair.getLeft()
-                        .getConstructor(ApiClient.class, ApiClient.class);
+                        .getConstructor(ApiClient.class);
                 ResourceManager resourceManager = (ResourceManager) resourceManagerConstructor.
-                        newInstance(getClient(), getStrategicPatchClient());
+                        newInstance(getClient());
                 resourceManager.setConsoleLogger(getLogger());
                 updater = (ResourceManager.ResourceUpdater) constructor
                         .newInstance(resourceManager, resource);
+
             } catch (Exception e) {
                 log(Messages.KubernetesClientWrapper_illegalUpdater(resource, e));
             }

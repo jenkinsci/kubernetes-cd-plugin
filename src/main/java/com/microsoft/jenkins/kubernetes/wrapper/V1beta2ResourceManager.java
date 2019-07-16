@@ -13,23 +13,18 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class V1beta2ResourceManager extends ResourceManager {
     private final AppsV1beta2Api appsV1beta2Api;
-    private final AppsV1beta2Api appsV1beta2PatchApi;
     private V1beta2ResourceUpdateMonitor resourceUpdateMonitor = V1beta2ResourceUpdateMonitor.NOOP;
 
-    public V1beta2ResourceManager(ApiClient client, ApiClient strategicPatchClient) {
+    public V1beta2ResourceManager(ApiClient client) {
         super(true);
         checkNotNull(client);
-        checkNotNull(strategicPatchClient);
         appsV1beta2Api = new AppsV1beta2Api(client);
-        appsV1beta2PatchApi = new AppsV1beta2Api(strategicPatchClient);
     }
 
-    public V1beta2ResourceManager(ApiClient client, ApiClient strategicPatchClient, boolean pretty) {
+    public V1beta2ResourceManager(ApiClient client, boolean pretty) {
         super(pretty);
         checkNotNull(client);
-        checkNotNull(strategicPatchClient);
         appsV1beta2Api = new AppsV1beta2Api(client);
-        appsV1beta2PatchApi = new AppsV1beta2Api(strategicPatchClient);
     }
 
     public V1beta2ResourceUpdateMonitor getResourceUpdateMonitor() {
@@ -64,7 +59,7 @@ public class V1beta2ResourceManager extends ResourceManager {
         V1beta2Deployment applyResource(V1beta2Deployment original, V1beta2Deployment current) {
             V1beta2Deployment deployment = null;
             try {
-                deployment = appsV1beta2PatchApi.patchNamespacedDeployment(getName(), getNamespace(), current,
+                deployment = appsV1beta2Api.replaceNamespacedDeployment(getName(), getNamespace(), current,
                         getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -123,7 +118,7 @@ public class V1beta2ResourceManager extends ResourceManager {
         V1beta2DaemonSet applyResource(V1beta2DaemonSet original, V1beta2DaemonSet current) {
             V1beta2DaemonSet daemonSet = null;
             try {
-                daemonSet = appsV1beta2PatchApi.patchNamespacedDaemonSet(getName(), getNamespace(),
+                daemonSet = appsV1beta2Api.replaceNamespacedDaemonSet(getName(), getNamespace(),
                         current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -183,7 +178,7 @@ public class V1beta2ResourceManager extends ResourceManager {
         V1beta2ReplicaSet applyResource(V1beta2ReplicaSet original, V1beta2ReplicaSet current) {
             V1beta2ReplicaSet replicaSet = null;
             try {
-                replicaSet = appsV1beta2PatchApi.patchNamespacedReplicaSet(getName(), getNamespace(),
+                replicaSet = appsV1beta2Api.replaceNamespacedReplicaSet(getName(), getNamespace(),
                         current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -242,7 +237,7 @@ public class V1beta2ResourceManager extends ResourceManager {
         V1beta2StatefulSet applyResource(V1beta2StatefulSet original, V1beta2StatefulSet current) {
             V1beta2StatefulSet result = null;
             try {
-                result = appsV1beta2PatchApi.patchNamespacedStatefulSet(
+                result = appsV1beta2Api.replaceNamespacedStatefulSet(
                         getName(), getNamespace(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);

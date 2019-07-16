@@ -24,35 +24,24 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class V1beta1ResourceManager extends ResourceManager {
     private final ExtensionsV1beta1Api extensionsV1beta1Api;
-    private final ExtensionsV1beta1Api extensionsV1beta1PatchApi;
     private final AppsV1beta1Api appsV1beta1Api;
-    private final AppsV1beta1Api appsV1beta1PatchApi;
     private final BatchV1beta1Api batchV1beta1Api;
-    private final BatchV1beta1Api batchV1beta1PatchApi;
     private V1beta1ResourceUpdateMonitor resourceUpdateMonitor = V1beta1ResourceUpdateMonitor.NOOP;
 
-    public V1beta1ResourceManager(ApiClient client, ApiClient strategicPatchClient) {
+    public V1beta1ResourceManager(ApiClient client) {
         super(true);
         checkNotNull(client);
-        checkNotNull(strategicPatchClient);
         extensionsV1beta1Api = new ExtensionsV1beta1Api(client);
-        extensionsV1beta1PatchApi = new ExtensionsV1beta1Api(strategicPatchClient);
         appsV1beta1Api = new AppsV1beta1Api(client);
-        appsV1beta1PatchApi = new AppsV1beta1Api(strategicPatchClient);
         batchV1beta1Api = new BatchV1beta1Api(client);
-        batchV1beta1PatchApi = new BatchV1beta1Api(strategicPatchClient);
     }
 
-    public V1beta1ResourceManager(ApiClient client, ApiClient strategicPatchClient, boolean pretty) {
+    public V1beta1ResourceManager(ApiClient client, boolean pretty) {
         super(pretty);
         checkNotNull(client);
-        checkNotNull(strategicPatchClient);
         extensionsV1beta1Api = new ExtensionsV1beta1Api(client);
-        extensionsV1beta1PatchApi = new ExtensionsV1beta1Api(strategicPatchClient);
         appsV1beta1Api = new AppsV1beta1Api(client);
-        appsV1beta1PatchApi = new AppsV1beta1Api(strategicPatchClient);
         batchV1beta1Api = new BatchV1beta1Api(client);
-        batchV1beta1PatchApi = new BatchV1beta1Api(strategicPatchClient);
     }
 
     public V1beta1ResourceUpdateMonitor getResourceUpdateMonitor() {
@@ -86,7 +75,7 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1ReplicaSet applyResource(V1beta1ReplicaSet original, V1beta1ReplicaSet current) {
             V1beta1ReplicaSet replicaSet = null;
             try {
-                replicaSet = extensionsV1beta1PatchApi.patchNamespacedReplicaSet(getName(), getNamespace(),
+                replicaSet = extensionsV1beta1Api.replaceNamespacedReplicaSet(getName(), getNamespace(),
                         current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -145,7 +134,8 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1DaemonSet applyResource(V1beta1DaemonSet original, V1beta1DaemonSet current) {
             V1beta1DaemonSet daemonSet = null;
             try {
-                daemonSet = extensionsV1beta1PatchApi.patchNamespacedDaemonSet(getName(), getNamespace(),
+
+                daemonSet = extensionsV1beta1Api.patchNamespacedDaemonSet(getName(), getNamespace(),
                         current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -205,7 +195,7 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1Ingress applyResource(V1beta1Ingress original, V1beta1Ingress current) {
             V1beta1Ingress ingress = null;
             try {
-                ingress = extensionsV1beta1PatchApi.patchNamespacedIngress(getName(), getNamespace(), current,
+                ingress = extensionsV1beta1Api.replaceNamespacedIngress(getName(), getNamespace(), current,
                         getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -266,7 +256,7 @@ public class V1beta1ResourceManager extends ResourceManager {
                                                   ExtensionsV1beta1Deployment current) {
             ExtensionsV1beta1Deployment deployment = null;
             try {
-                deployment = extensionsV1beta1PatchApi.patchNamespacedDeployment(getName(), getNamespace(), current,
+                deployment = extensionsV1beta1Api.replaceNamespacedDeployment(getName(), getNamespace(), current,
                         getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -327,7 +317,7 @@ public class V1beta1ResourceManager extends ResourceManager {
                                             AppsV1beta1Deployment current) {
             AppsV1beta1Deployment deployment = null;
             try {
-                deployment = appsV1beta1PatchApi.patchNamespacedDeployment(getName(), getNamespace(), current,
+                deployment = appsV1beta1Api.replaceNamespacedDeployment(getName(), getNamespace(), current,
                         getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -386,7 +376,8 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1StatefulSet applyResource(V1beta1StatefulSet original, V1beta1StatefulSet current) {
             V1beta1StatefulSet result = null;
             try {
-                result = appsV1beta1PatchApi.patchNamespacedStatefulSet(
+
+                result = appsV1beta1Api.replaceNamespacedStatefulSet(
                         getName(), getNamespace(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -445,7 +436,7 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1CronJob applyResource(V1beta1CronJob original, V1beta1CronJob current) {
             V1beta1CronJob result = null;
             try {
-                result = batchV1beta1PatchApi.patchNamespacedCronJob(
+                result = batchV1beta1Api.replaceNamespacedCronJob(
                         getName(), getNamespace(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -457,7 +448,7 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1CronJob createResource(V1beta1CronJob current) {
             V1beta1CronJob result = null;
             try {
-                result = batchV1beta1PatchApi.createNamespacedCronJob(
+                result = batchV1beta1Api.createNamespacedCronJob(
                         getNamespace(), current, null, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);

@@ -6,6 +6,7 @@
 
 package com.microsoft.jenkins.kubernetes.wrapper;
 
+import com.microsoft.jenkins.kubernetes.util.KubernetesJsonUtils;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.AppsV1Api;
@@ -23,6 +24,7 @@ import io.kubernetes.client.models.V1NetworkPolicy;
 import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1ReplicaSet;
 import io.kubernetes.client.models.V1ReplicationController;
 import io.kubernetes.client.models.V1Secret;
@@ -30,61 +32,91 @@ import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServicePort;
 import io.kubernetes.client.models.V1StatefulSet;
 import io.kubernetes.client.models.V1Status;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.microsoft.jenkins.kubernetes.util.Constants.DRY_RUN_ALL;
+import static com.microsoft.jenkins.kubernetes.util.Constants.KUBERNETES_CONTROLLER_UID_FIELD;
+import static com.microsoft.jenkins.kubernetes.util.Constants.KUBERNETES_JOB_NAME_FIELD;
 
 public class V1ResourceManager extends ResourceManager {
 
     private final CoreV1Api coreV1ApiInstance;
     private final AppsV1Api appsV1ApiInstance;
     private final BatchV1Api batchV1ApiInstance;
-    private final CoreV1Api coreV1ApiPatchInstance;
-    private final AppsV1Api appsV1ApiPatchInstance;
-    private final BatchV1Api batchV1ApiPatchInstance;
     private final AutoscalingV1Api autoscalingV1Api;
-    private final AutoscalingV1Api autoscalingV1PatchApi;
     private final NetworkingV1Api networkingV1Api;
-    private final NetworkingV1Api networkingV1PatchApi;
 
     private V1ResourceUpdateMonitor resourceUpdateMonitor = V1ResourceUpdateMonitor.NOOP;
 
-    public V1ResourceManager(ApiClient client, ApiClient strategicPatchClient) {
+    public V1ResourceManager(ApiClient client) {
         super(true);
         checkNotNull(client);
-        checkNotNull(strategicPatchClient);
 
         coreV1ApiInstance = new CoreV1Api(client);
         appsV1ApiInstance = new AppsV1Api(client);
         batchV1ApiInstance = new BatchV1Api(client);
-        coreV1ApiPatchInstance = new CoreV1Api(strategicPatchClient);
-        appsV1ApiPatchInstance = new AppsV1Api(strategicPatchClient);
-        batchV1ApiPatchInstance = new BatchV1Api(strategicPatchClient);
         autoscalingV1Api = new AutoscalingV1Api(client);
-        autoscalingV1PatchApi = new AutoscalingV1Api(strategicPatchClient);
         networkingV1Api = new NetworkingV1Api(client);
-        networkingV1PatchApi = new NetworkingV1Api(strategicPatchClient);
     }
 
-    public V1ResourceManager(ApiClient client, ApiClient strategicPatchClient, boolean pretty) {
+    public V1ResourceManager(ApiClient client, boolean pretty) {
         super(pretty);
         checkNotNull(client);
-        checkNotNull(strategicPatchClient);
 
         coreV1ApiInstance = new CoreV1Api(client);
         appsV1ApiInstance = new AppsV1Api(client);
         batchV1ApiInstance = new BatchV1Api(client);
-        coreV1ApiPatchInstance = new CoreV1Api(strategicPatchClient);
-        appsV1ApiPatchInstance = new AppsV1Api(strategicPatchClient);
-        batchV1ApiPatchInstance = new BatchV1Api(strategicPatchClient);
         autoscalingV1Api = new AutoscalingV1Api(client);
-        autoscalingV1PatchApi = new AutoscalingV1Api(strategicPatchClient);
         networkingV1Api = new NetworkingV1Api(client);
-        networkingV1PatchApi = new NetworkingV1Api(strategicPatchClient);
 
+    }
+
+    /**
+     * In the case of different image names, the default imagePullPolicy will be different.
+     * E.g. Nginx => Always   Nginx:1.79 => IfNotPresent
+     * This method is used to mask the default value caused by dryRun.
+     *
+     * @param origin object in kubernetes cluster
+     * @param yaml   user applied object
+     * @param target dryRun return object
+     */
+    private static void recoverPodImagePullPolicy(V1PodSpec origin, V1PodSpec yaml, V1PodSpec target) {
+        if (origin.getInitContainers() != null) {
+            checkNotNull(yaml.getInitContainers());
+            checkNotNull(target.getInitContainers());
+            // should not change size
+            if (origin.getInitContainers().size() != yaml.getInitContainers().size()
+                    || origin.getInitContainers().size() != target.getInitContainers().size()) {
+                return;
+            }
+            for (int i = 0; i < origin.getInitContainers().size(); i++) {
+                if (yaml.getInitContainers().get(i) == null) {
+                    target.getInitContainers().get(i).imagePullPolicy(
+                            origin.getInitContainers().get(i).getImagePullPolicy());
+                }
+            }
+        }
+        if (origin.getContainers() != null) {
+            checkNotNull(yaml.getContainers());
+            checkNotNull(target.getContainers());
+            // should not change size
+            if (origin.getContainers().size() != yaml.getContainers().size()
+                    || origin.getContainers().size() != target.getContainers().size()) {
+                return;
+            }
+            for (int i = 0; i < origin.getContainers().size(); i++) {
+                if (yaml.getContainers().get(i) == null) {
+                    target.getContainers().get(i).imagePullPolicy(
+                            origin.getContainers().get(i).getImagePullPolicy());
+                }
+            }
+        }
+        return;
     }
 
     public V1ResourceUpdateMonitor getResourceUpdateMonitor() {
@@ -118,7 +150,7 @@ public class V1ResourceManager extends ResourceManager {
         V1ReplicaSet applyResource(V1ReplicaSet original, V1ReplicaSet current) {
             V1ReplicaSet replicaSet = null;
             try {
-                replicaSet = appsV1ApiPatchInstance.patchNamespacedReplicaSet(getName(), getNamespace(), current,
+                replicaSet = appsV1ApiInstance.replaceNamespacedReplicaSet(getName(), getNamespace(), current,
                         getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -177,7 +209,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Deployment applyResource(V1Deployment original, V1Deployment current) {
             V1Deployment deployment = null;
             try {
-                deployment = appsV1ApiPatchInstance.patchNamespacedDeployment(getName(), getNamespace(), current,
+                deployment = appsV1ApiInstance.replaceNamespacedDeployment(getName(), getNamespace(), current,
                         getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -216,7 +248,6 @@ public class V1ResourceManager extends ResourceManager {
         }
     }
 
-
     class DaemonSetUpdater extends ResourceUpdater<V1DaemonSet> {
         DaemonSetUpdater(V1DaemonSet ds) {
             super(ds);
@@ -238,7 +269,7 @@ public class V1ResourceManager extends ResourceManager {
         V1DaemonSet applyResource(V1DaemonSet original, V1DaemonSet current) {
             V1DaemonSet daemonSet = null;
             try {
-                daemonSet = appsV1ApiPatchInstance.patchNamespacedDaemonSet(getName(), getNamespace(), current,
+                daemonSet = appsV1ApiInstance.replaceNamespacedDaemonSet(getName(), getNamespace(), current,
                         getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -297,7 +328,7 @@ public class V1ResourceManager extends ResourceManager {
         V1ReplicationController applyResource(V1ReplicationController original, V1ReplicationController current) {
             V1ReplicationController replicationController = null;
             try {
-                replicationController = coreV1ApiPatchInstance.patchNamespacedReplicationController(getName(),
+                replicationController = coreV1ApiInstance.replaceNamespacedReplicationController(getName(),
                         getNamespace(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -335,7 +366,6 @@ public class V1ResourceManager extends ResourceManager {
         }
     }
 
-
     class ServiceUpdater extends ResourceUpdater<V1Service> {
         ServiceUpdater(V1Service service) {
             super(service);
@@ -346,7 +376,7 @@ public class V1ResourceManager extends ResourceManager {
             V1Service service = null;
             try {
                 service = coreV1ApiInstance.readNamespacedService(getName(), getNamespace(), getPretty(),
-                        true, true);
+                        true, null);
             } catch (ApiException e) {
                 handleApiExceptionExceptNotFound(e);
             }
@@ -393,9 +423,17 @@ public class V1ResourceManager extends ResourceManager {
             // this should be no-op, keep it in case current.getSpec().getPorts() behavior changes in future
             current.getSpec().setPorts(currentPorts);
 
+            // update svc need to set resourceVersion
+            current.getMetadata().setResourceVersion(original.getMetadata().getResourceVersion());
+
+            // clusterIP is immutable, if the clusterIP is empty, it is set to the original clusterIP
+            if (!StringUtils.isNotBlank(current.getSpec().getClusterIP())) {
+                current.getSpec().setClusterIP(original.getSpec().getClusterIP());
+            }
+
             V1Service service = null;
             try {
-                service = coreV1ApiPatchInstance.patchNamespacedService(getName(), getNamespace(),
+                service = coreV1ApiInstance.replaceNamespacedService(getName(), getNamespace(),
                         current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -452,13 +490,66 @@ public class V1ResourceManager extends ResourceManager {
         @Override
         V1Job applyResource(V1Job original, V1Job current) {
             V1Job job = null;
+            V1Job putJob = getPutObject(original);
             try {
-                job = batchV1ApiPatchInstance.patchNamespacedJob(
-                        getName(), getNamespace(), current, getPretty(), null);
+                job = batchV1ApiInstance.replaceNamespacedJob(
+                        getName(), getNamespace(), putJob, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
             return job;
+        }
+
+        /**
+         * Get PutObject with server-dryRun.
+         * Only some of the fields in the job resource can be modified.
+         * Directly putting the original object of the user will cause some immutable
+         * fields with defaultValue to be modified.
+         * This method is a workaround that populates the default value with the server dryRun implementation.
+         * https://kubernetes.io/blog/2019/01/14/apiserver-dry-run-and-kubectl-diff/
+         *
+         * @param original Current Object in Cluster
+         * @return Job With Default Value
+         */
+        V1Job getPutObject(V1Job original) {
+            // Clone Object to avoid modifications to the original object.
+            V1Job dryRunReq = KubernetesJsonUtils.getKubernetesJson().deserialize(
+                    KubernetesJsonUtils.getKubernetesJson().serialize(get()), V1Job.class);
+            // Build dryRun Request Object
+            V1Job dryRunRes = null;
+            dryRunReq.getMetadata().setName(null);
+            dryRunReq.getMetadata().setGenerateName(getName());
+            dryRunReq.getMetadata().setNamespace(getNamespace());
+            try {
+                dryRunRes = batchV1ApiInstance.createNamespacedJob(dryRunReq.getMetadata().getNamespace(),
+                        dryRunReq, null, getPretty(), DRY_RUN_ALL);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            checkNotNull(dryRunRes);
+            // Recover metadata
+            dryRunRes.getMetadata().
+                    name(getName()).
+                    creationTimestamp(original.getMetadata().getCreationTimestamp()).
+                    selfLink(original.getMetadata().getSelfLink()).
+                    uid(original.getMetadata().getUid()).
+                    resourceVersion(original.getMetadata().getUid()).
+                    ownerReferences(original.getMetadata().getOwnerReferences()).
+                    generateName(null);
+            // Recover label/selector
+            String controllerUid = original.getMetadata().getLabels().get(KUBERNETES_CONTROLLER_UID_FIELD);
+            dryRunRes.getMetadata().getLabels().put(KUBERNETES_CONTROLLER_UID_FIELD, controllerUid);
+            dryRunRes.getMetadata().getLabels().put(KUBERNETES_JOB_NAME_FIELD, getName());
+
+            dryRunRes.getSpec().getSelector().putMatchLabelsItem(KUBERNETES_CONTROLLER_UID_FIELD, controllerUid);
+            dryRunRes.getSpec().getTemplate().getMetadata().getLabels().put(
+                    KUBERNETES_CONTROLLER_UID_FIELD, controllerUid);
+            dryRunRes.getSpec().getTemplate().getMetadata().getLabels().put(KUBERNETES_JOB_NAME_FIELD, getName());
+
+            V1ResourceManager.recoverPodImagePullPolicy(original.getSpec().getTemplate().getSpec(),
+                    get().getSpec().getTemplate().getSpec(),
+                    dryRunRes.getSpec().getTemplate().getSpec());
+            return dryRunRes;
         }
 
         @Override
@@ -510,13 +601,64 @@ public class V1ResourceManager extends ResourceManager {
         @Override
         V1Pod applyResource(V1Pod original, V1Pod current) {
             V1Pod pod = null;
+            V1Pod putPod = getPutObject(original);
             try {
-                pod = coreV1ApiPatchInstance.patchNamespacedPod(
-                        getName(), getNamespace(), current, getPretty(), null);
+                pod = coreV1ApiInstance.replaceNamespacedPod(
+                        getName(), getNamespace(), putPod, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
             return pod;
+        }
+
+        /**
+         * Get PutObject with server-dryRun.
+         * Only some of the fields in the job resource can be modified.
+         * Directly putting the original object of the user will cause some immutable
+         * fields with defaultValue to be modified.
+         * This method is a workaround that populates the default value with the server dryRun implementation.
+         * https://kubernetes.io/blog/2019/01/14/apiserver-dry-run-and-kubectl-diff/
+         *
+         * @param original Current Object in Cluster
+         * @return Pod With Default Value
+         */
+        V1Pod getPutObject(V1Pod original) {
+            // Clone Object to avoid modifications to the original object.
+            V1Pod dryRunReq = KubernetesJsonUtils.getKubernetesJson().deserialize(
+                    KubernetesJsonUtils.getKubernetesJson().serialize(get()), V1Pod.class);
+            // Build dryRun Request Object
+            V1Pod dryRunRes = null;
+            dryRunReq.getMetadata().setName(null);
+            dryRunReq.getMetadata().setGenerateName(getName());
+            dryRunReq.getMetadata().setNamespace(getNamespace());
+            try {
+                dryRunRes = coreV1ApiInstance.createNamespacedPod(dryRunReq.getMetadata().getNamespace(),
+                        dryRunReq, null, getPretty(), DRY_RUN_ALL);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+
+            checkNotNull(dryRunRes);
+            // Recover metadata
+            dryRunRes.getMetadata().
+                    name(getName()).
+                    creationTimestamp(original.getMetadata().getCreationTimestamp()).
+                    selfLink(original.getMetadata().getSelfLink()).
+                    uid(original.getMetadata().getUid()).
+                    resourceVersion(original.getMetadata().getUid()).
+                    ownerReferences(original.getMetadata().getOwnerReferences()).
+                    generateName(null);
+
+            // Recover node
+            dryRunRes.getSpec().
+                    nodeName(original.getSpec().getNodeName());
+
+            V1ResourceManager.recoverPodImagePullPolicy(
+                    original.getSpec(),
+                    get().getSpec(),
+                    dryRunRes.getSpec());
+
+            return dryRunRes;
         }
 
         @Override
@@ -570,7 +712,7 @@ public class V1ResourceManager extends ResourceManager {
         V1ConfigMap applyResource(V1ConfigMap original, V1ConfigMap current) {
             V1ConfigMap configMap = null;
             try {
-                configMap = coreV1ApiPatchInstance.patchNamespacedConfigMap(getName(), getNamespace(),
+                configMap = coreV1ApiInstance.replaceNamespacedConfigMap(getName(), getNamespace(),
                         current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -629,7 +771,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Secret applyResource(V1Secret original, V1Secret current) {
             V1Secret secret = null;
             try {
-                secret = coreV1ApiPatchInstance.patchNamespacedSecret(
+                secret = coreV1ApiInstance.replaceNamespacedSecret(
                         getName(), getNamespace(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -698,7 +840,7 @@ public class V1ResourceManager extends ResourceManager {
         V1Namespace applyResource(V1Namespace original, V1Namespace current) {
             V1Namespace result = null;
             try {
-                result = coreV1ApiPatchInstance.patchNamespace(getName(), current, getPretty(), null);
+                result = coreV1ApiInstance.replaceNamespace(getName(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -755,7 +897,7 @@ public class V1ResourceManager extends ResourceManager {
         V1HorizontalPodAutoscaler applyResource(V1HorizontalPodAutoscaler original, V1HorizontalPodAutoscaler current) {
             V1HorizontalPodAutoscaler result = null;
             try {
-                result = autoscalingV1PatchApi.patchNamespacedHorizontalPodAutoscaler(
+                result = autoscalingV1Api.replaceNamespacedHorizontalPodAutoscaler(
                         getName(), getNamespace(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -814,8 +956,9 @@ public class V1ResourceManager extends ResourceManager {
         V1StatefulSet applyResource(V1StatefulSet original, V1StatefulSet current) {
             V1StatefulSet result = null;
             try {
-                result = appsV1ApiPatchInstance.patchNamespacedStatefulSet(
-                        getName(), getNamespace(), current, getPretty(), null);
+                V1StatefulSet putStatefulSet = getPutObject(original);
+                result = appsV1ApiInstance.replaceNamespacedStatefulSet(
+                        getName(), getNamespace(), putStatefulSet, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -846,6 +989,56 @@ public class V1ResourceManager extends ResourceManager {
             return result;
         }
 
+        /**
+         * Get PutObject with server-dryRun.
+         * Only some of the fields in the job resource can be modified.
+         * Directly putting the original object of the user will cause some immutable
+         * fields with defaultValue to be modified.
+         * This method is a workaround that populates the default value with the server dryRun implementation.
+         * https://kubernetes.io/blog/2019/01/14/apiserver-dry-run-and-kubectl-diff/
+         *
+         * @param original Current Object in Cluster
+         * @return StatefulSet With Default Value
+         */
+        V1StatefulSet getPutObject(V1StatefulSet original) {
+            // Clone Object to avoid modifications to the original object.
+            System.out.println(KubernetesJsonUtils.getKubernetesJson().serialize(original));
+            V1StatefulSet dryRunReq = KubernetesJsonUtils.getKubernetesJson().deserialize(
+                    KubernetesJsonUtils.getKubernetesJson().serialize(get()), V1StatefulSet.class);
+            // Build dryRun Request Object
+            V1StatefulSet dryRunRes = null;
+            dryRunReq.getMetadata().setName(null);
+            dryRunReq.getMetadata().setGenerateName(getName());
+            dryRunReq.getMetadata().setNamespace(getNamespace());
+            try {
+                dryRunRes = appsV1ApiInstance.createNamespacedStatefulSet(dryRunReq.getMetadata().getNamespace(),
+                        dryRunReq, null, getPretty(), DRY_RUN_ALL);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            checkNotNull(dryRunRes);
+            // Recover metadata
+            dryRunRes.getMetadata().
+                    name(getName()).
+                    creationTimestamp(original.getMetadata().getCreationTimestamp()).
+                    selfLink(original.getMetadata().getSelfLink()).
+                    uid(original.getMetadata().getUid()).
+                    resourceVersion(original.getMetadata().getUid()).
+                    ownerReferences(original.getMetadata().getOwnerReferences()).
+                    generateName(null);
+
+
+            V1ResourceManager.recoverPodImagePullPolicy(
+                    original.getSpec().getTemplate().getSpec(),
+                    get().getSpec().getTemplate().getSpec(),
+                    dryRunRes.getSpec().getTemplate().getSpec());
+
+            System.out.println(KubernetesJsonUtils.getKubernetesJson().serialize(dryRunRes));
+
+            return dryRunRes;
+        }
+
+
         @Override
         void notifyUpdate(V1StatefulSet original, V1StatefulSet current) {
             resourceUpdateMonitor.onStatefulSetUpdate(original, current);
@@ -873,7 +1066,7 @@ public class V1ResourceManager extends ResourceManager {
         V1PersistentVolumeClaim applyResource(V1PersistentVolumeClaim original, V1PersistentVolumeClaim current) {
             V1PersistentVolumeClaim result = null;
             try {
-                result = coreV1ApiPatchInstance.patchNamespacedPersistentVolumeClaim(
+                result = coreV1ApiInstance.replaceNamespacedPersistentVolumeClaim(
                         getName(), getNamespace(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -932,7 +1125,7 @@ public class V1ResourceManager extends ResourceManager {
         V1PersistentVolume applyResource(V1PersistentVolume original, V1PersistentVolume current) {
             V1PersistentVolume result = null;
             try {
-                result = coreV1ApiPatchInstance.patchPersistentVolume(
+                result = coreV1ApiInstance.replacePersistentVolume(
                         getName(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -991,7 +1184,7 @@ public class V1ResourceManager extends ResourceManager {
         V1NetworkPolicy applyResource(V1NetworkPolicy original, V1NetworkPolicy current) {
             V1NetworkPolicy result = null;
             try {
-                result = networkingV1PatchApi.patchNamespacedNetworkPolicy(
+                result = networkingV1Api.replaceNamespacedNetworkPolicy(
                         getName(), getNamespace(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
@@ -1028,5 +1221,4 @@ public class V1ResourceManager extends ResourceManager {
             resourceUpdateMonitor.onNetworkPolicyUpdate(original, current);
         }
     }
-
 }

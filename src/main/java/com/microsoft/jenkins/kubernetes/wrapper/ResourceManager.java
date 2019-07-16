@@ -45,23 +45,6 @@ public abstract class ResourceManager {
     }
 
     /**
-     * Func to handle ApiException , print out the contents of the exception
-     * and throw a RuntimeException to abort the pipeline except NotFound Condition.
-     *
-     * @param e kubernetes ApiException
-     * @throws RuntimeException
-     */
-    protected void handleApiExceptionExceptNotFound(ApiException e) throws RuntimeException {
-        int code = e.getCode();
-        if (code == HttpStatus.SC_NOT_FOUND) {
-            return;
-        }
-        String responseBody = e.getResponseBody();
-        getConsoleLogger().println(Messages.KubernetesClientWrapper_apiException(code, responseBody));
-        throw new RuntimeException(e);
-    }
-
-    /**
      * Func to handle ApiException, print out the contents of the exception
      * and throw a RuntimeException to abort the pipeline .
      *
@@ -161,6 +144,7 @@ public abstract class ResourceManager {
             getConsoleLogger().println(Messages.KubernetesClientWrapper_created(res.getClass().getSimpleName(), res));
         }
 
+
         void logDeleted(V1Status status) {
             if (status != null) {
                 getConsoleLogger().println(
@@ -169,6 +153,38 @@ public abstract class ResourceManager {
                 getConsoleLogger().println(
                         Messages.KubernetesClientWrapper_resourceNotFound(get().getClass().getSimpleName(), getName()));
             }
+        }
+
+
+        /**
+         * Func to handle ApiException , print out the contents of the exception
+         * and throw a RuntimeException to abort the pipeline except NotFound Condition.
+         *
+         * @param e kubernetes ApiException
+         * @throws RuntimeException
+         */
+        protected void handleApiExceptionExceptNotFound(ApiException e) throws RuntimeException {
+            int code = e.getCode();
+            if (code == HttpStatus.SC_NOT_FOUND) {
+                return;
+            }
+            String responseBody = e.getResponseBody();
+            getConsoleLogger().println(Messages.KubernetesClientWrapper_apiException(code, responseBody));
+            throw new RuntimeException(e);
+        }
+
+        /**
+         * Func to handle ApiException, print out the contents of the exception
+         * and throw a RuntimeException to abort the pipeline .
+         *
+         * @param e kubernetes ApiException
+         * @throws RuntimeException
+         */
+        protected void handleApiException(ApiException e) throws RuntimeException {
+            int code = e.getCode();
+            String responseBody = e.getResponseBody();
+            getConsoleLogger().println(Messages.KubernetesClientWrapper_apiException(code, responseBody));
+            throw new RuntimeException(e);
         }
     }
 }

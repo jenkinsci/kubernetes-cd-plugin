@@ -10,27 +10,22 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class V2beta1ResourceManager extends ResourceManager {
     private final AutoscalingV2beta1Api autoscalingV2beta1Api;
-    private final AutoscalingV2beta1Api autoscalingV2beta1ApiPatch;
 
     private V2beta1ResourceUpdateMonitor resourceUpdateMonitor = V2beta1ResourceUpdateMonitor.NOOP;
 
-    public V2beta1ResourceManager(ApiClient client, ApiClient strategicPatchClient) {
+    public V2beta1ResourceManager(ApiClient client) {
         super(true);
         checkNotNull(client);
-        checkNotNull(strategicPatchClient);
 
         autoscalingV2beta1Api = new AutoscalingV2beta1Api(client);
-        autoscalingV2beta1ApiPatch = new AutoscalingV2beta1Api(strategicPatchClient);
 
     }
 
-    public V2beta1ResourceManager(ApiClient client, ApiClient strategicPatchClient, boolean pretty) {
+    public V2beta1ResourceManager(ApiClient client, boolean pretty) {
         super(pretty);
         checkNotNull(client);
-        checkNotNull(strategicPatchClient);
 
         autoscalingV2beta1Api = new AutoscalingV2beta1Api(client);
-        autoscalingV2beta1ApiPatch = new AutoscalingV2beta1Api(strategicPatchClient);
     }
 
     public V2beta1ResourceUpdateMonitor getResourceUpdateMonitor() {
@@ -65,7 +60,7 @@ public class V2beta1ResourceManager extends ResourceManager {
                 V2beta1HorizontalPodAutoscaler original, V2beta1HorizontalPodAutoscaler current) {
             V2beta1HorizontalPodAutoscaler result = null;
             try {
-                result = autoscalingV2beta1ApiPatch.patchNamespacedHorizontalPodAutoscaler(
+                result = autoscalingV2beta1Api.replaceNamespacedHorizontalPodAutoscaler(
                         getName(), getNamespace(), current, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
