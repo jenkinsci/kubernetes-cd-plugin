@@ -1002,7 +1002,6 @@ public class V1ResourceManager extends ResourceManager {
          */
         V1StatefulSet getPutObject(V1StatefulSet original) {
             // Clone Object to avoid modifications to the original object.
-            System.out.println(KubernetesJsonUtils.getKubernetesJson().serialize(original));
             V1StatefulSet dryRunReq = KubernetesJsonUtils.getKubernetesJson().deserialize(
                     KubernetesJsonUtils.getKubernetesJson().serialize(get()), V1StatefulSet.class);
             // Build dryRun Request Object
@@ -1032,8 +1031,6 @@ public class V1ResourceManager extends ResourceManager {
                     original.getSpec().getTemplate().getSpec(),
                     get().getSpec().getTemplate().getSpec(),
                     dryRunRes.getSpec().getTemplate().getSpec());
-
-            System.out.println(KubernetesJsonUtils.getKubernetesJson().serialize(dryRunRes));
 
             return dryRunRes;
         }
