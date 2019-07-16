@@ -78,6 +78,7 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
     private static void initApiVersionList() {
         // Order important
         apiVersions.add("V2beta1");
+        apiVersions.add("V2beta2");
         apiVersions.add("V2alpha1");
         apiVersions.add("V1beta2");
         apiVersions.add("V1beta1");
