@@ -6,12 +6,15 @@
 
 package com.microsoft.jenkins.kubernetes.wrapper;
 
+import com.google.gson.JsonSyntaxException;
 import com.microsoft.jenkins.kubernetes.util.Constants;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Status;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
@@ -24,6 +27,7 @@ public abstract class ResourceManager {
     /**
      * If true, then the output of api call is pretty printed.
      */
+    private static final Logger LOGGER = LoggerFactory.getLogger(ResourceManager.class);
     private final String pretty;
     private PrintStream consoleLogger = System.out;
 
@@ -122,8 +126,25 @@ public abstract class ResourceManager {
         }
 
         final void delete() {
-            V1Status status = deleteResource(get());
-            logDeleted(status);
+            try {
+                V1Status status = deleteResource(get());
+                logDeleted(status);
+            } catch (JsonSyntaxException e) {
+                if (e.getCause() instanceof IllegalStateException) {
+                    IllegalStateException ise = (IllegalStateException) e.getCause();
+                    if (ise.getMessage() != null && ise.getMessage().contains(
+                            "Expected a string but was BEGIN_OBJECT")) {
+                        LOGGER.debug("Catching exception because of issue "
+                                + "https://github.com/kubernetes-client/java/issues/86", e);
+                        consoleLogger.println(Messages.KubernetesClientWrapper_deleted(get(), null));
+                    } else {
+                        throw e;
+                    }
+                } else {
+                    throw e;
+                }
+            }
+
         }
 
         abstract T getCurrentResource();
