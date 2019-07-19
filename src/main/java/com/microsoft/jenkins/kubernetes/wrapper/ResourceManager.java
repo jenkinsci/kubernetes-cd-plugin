@@ -6,15 +6,13 @@
 
 package com.microsoft.jenkins.kubernetes.wrapper;
 
-import com.microsoft.jenkins.kubernetes.util.CommonUtils;
 import com.microsoft.jenkins.kubernetes.util.Constants;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.http.HttpStatus;
 
-import java.io.IOException;
+import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -22,7 +20,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 public abstract class ResourceManager {
-    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private PrintStream consoleLogger = System.out;
     /**
      * If true, then the output of api call is pretty printed.
      */
@@ -48,7 +46,7 @@ public abstract class ResourceManager {
                 Method method = resource.getClass().getMethod("getMetadata");
                 meta = (V1ObjectMeta) method.invoke(resource);
             } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                logger.error(String.format("Fail to fetch meta data for %s", resource));
+                consoleLogger.println(String.format("Fail to fetch meta data for %s", resource));
             }
             metadata = meta;
             checkState(StringUtils.isNotBlank(getName()),
@@ -84,23 +82,13 @@ public abstract class ResourceManager {
         /**
          * Explicitly apply the configuration if a resource with the same name exists in the namespace in the cluster,
          * or create one if not.
-         * <p>
-         * If we cannot load resource during application (possibly because the resource gets deleted after we first
-         * checked), or some one created the resource after we checked and before we created, the method fails with
-         * exception.
-         *
-         * @throws IOException if we cannot find the resource in the cluster when we apply the configuration
          */
-        final void createOrApply() throws IOException {
+        final void createOrApply() {
             T original = getCurrentResource();
             T current = get();
             T updated;
             if (original != null) {
                 updated = applyResource(original, current);
-                if (updated == null) {
-                    throw new IOException(Messages.KubernetesClientWrapper_resourceNotFound(
-                            getKind(), CommonUtils.getResourceName(current)));
-                }
                 logApplied(updated);
             } else {
                 updated = createResource(get());
@@ -118,21 +106,50 @@ public abstract class ResourceManager {
         abstract void notifyUpdate(T original, T current);
 
         void logApplied(T res) {
-            getLogger().info(Messages.KubernetesClientWrapper_applied(res.getClass().getSimpleName(), res));
+            getConsoleLogger().println(Messages.KubernetesClientWrapper_applied(res.getClass().getSimpleName(), res));
         }
 
         void logCreated(T res) {
-            getLogger().info(Messages.KubernetesClientWrapper_created(res.getClass().getSimpleName(), res));
+            getConsoleLogger().println(Messages.KubernetesClientWrapper_created(res.getClass().getSimpleName(), res));
         }
     }
 
-    public Logger getLogger() {
-        return logger;
+    public PrintStream getConsoleLogger() {
+        return consoleLogger;
     }
 
-    protected void handleApiException(ApiException e) {
+    public ResourceManager setConsoleLogger(PrintStream log) {
+        this.consoleLogger = log;
+        return this;
+    }
+
+
+    /**
+     * Func to handle ApiException , print out the contents of the exception
+     * and throw a RuntimeException to abort the pipeline except NotFound Condition.
+     * @param e kubernetes ApiException
+     * @throws RuntimeException
+     */
+    protected void handleApiExceptionExceptNotFound(ApiException e) throws RuntimeException {
+        int code = e.getCode();
+        if (code == HttpStatus.SC_NOT_FOUND) {
+            return;
+        }
+        String responseBody = e.getResponseBody();
+        getConsoleLogger().println(Messages.KubernetesClientWrapper_apiException(code, responseBody));
+        throw new RuntimeException(e);
+    }
+
+    /**
+     * Func to handle ApiException, print out the contents of the exception
+     * and throw a RuntimeException to abort the pipeline .
+     * @param e kubernetes ApiException
+     * @throws RuntimeException
+     */
+    protected void handleApiException(ApiException e) throws RuntimeException {
         int code = e.getCode();
         String responseBody = e.getResponseBody();
-        getLogger().error(Messages.KubernetesClientWrapper_apiException(code, responseBody));
+        getConsoleLogger().println(Messages.KubernetesClientWrapper_apiException(code, responseBody));
+        throw new RuntimeException(e);
     }
 }
