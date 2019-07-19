@@ -21,6 +21,10 @@ public final class Constants {
 
     public static final String HTTPS_PREFIX = "https://";
 
+    public static final String KUBERNETES_CONTROLLER_UID_FIELD = "controller-uid";
+
+    public static final String KUBERNETES_JOB_NAME_FIELD = "job-name";
+
     /**
      * Length limit for the Kubernetes names.
      *
@@ -42,6 +46,8 @@ public final class Constants {
 
     public static final String KUBERNETES_SECRET_NAME_PREFIX = "acs-plugin-";
     public static final String KUBERNETES_SECRET_NAME_PROP = "KUBERNETES_SECRET_NAME";
+
+    public static final String DRY_RUN_ALL = "All";
 
     public static final int DEFAULT_SSH_PORT = 22;
 
