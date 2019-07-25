@@ -26,7 +26,7 @@
         <workflow-step-api.version>2.10</workflow-step-api.version>
         <jackson.version>2.9.9</jackson.version>
 
-        <kubernetes-client.version>4.0.4</kubernetes-client.version>
+        <kubernetes-client.version>4.1.1</kubernetes-client.version>
     </properties>
 
     <name>Kubernetes Continuous Deploy Plugin</name>
