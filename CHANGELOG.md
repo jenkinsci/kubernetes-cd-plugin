@@ -1,5 +1,11 @@
 # Kubernetes Continuous Deploy Plugin Changelog
 
+## Version 2.0.0, 2019-08-07
+* Change kubernetes sdk to the official one
+* Make resources compatible with several api versions
+* Support more resource types: StatefulSets, Network policy, Persistent Volume, Persistent Volume Claim
+* Enable incremental builds for PRs
+
 ## Version 1.0.0, 2019-05-31
 **This version forces updating Kubernetes yaml files' api version**
 * Bump Jenkins version to 2.60.3
