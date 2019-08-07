@@ -11,6 +11,7 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.microsoft.jenkins.azurecommons.JobContext;
 import com.microsoft.jenkins.azurecommons.command.BaseCommandContext;
 import com.microsoft.jenkins.azurecommons.command.CommandService;
@@ -27,6 +28,8 @@ import com.microsoft.jenkins.kubernetes.credentials.ResolvedDockerRegistryEndpoi
 import com.microsoft.jenkins.kubernetes.credentials.SSHCredentials;
 import com.microsoft.jenkins.kubernetes.credentials.TextCredentials;
 import com.microsoft.jenkins.kubernetes.util.Constants;
+import com.microsoft.jenkins.kubernetes.wrapper.KubernetesClientWrapper;
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -49,6 +52,7 @@ import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -439,7 +443,7 @@ public class KubernetesDeployContext extends BaseCommandContext implements
 
         @Override
         public Set<? extends Class<?>> getRequiredContext() {
-            return SimpleBuildStepExecution.REQUIRED_CONTEXT;
+            return ImmutableSet.of(Run.class, FilePath.class, Launcher.class, TaskListener.class, EnvVars.class);
         }
 
         @Override
@@ -463,7 +467,7 @@ public class KubernetesDeployContext extends BaseCommandContext implements
 
         @Override
         public KubernetesClientWrapper buildClient(FilePath workspace) {
-            return new KubernetesClientWrapper(kubeconfig.getContent());
+            return new KubernetesClientWrapper(new StringReader(kubeconfig.getContent()));
         }
     }
 }

@@ -7,15 +7,9 @@
 package com.microsoft.jenkins.kubernetes;
 
 import com.microsoft.jenkins.kubernetes.util.Constants;
+import com.microsoft.jenkins.kubernetes.wrapper.KubernetesClientWrapper;
 import hudson.EnvVars;
-import io.fabric8.kubernetes.client.Config;
-import org.apache.commons.io.IOUtils;
 import org.junit.Test;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

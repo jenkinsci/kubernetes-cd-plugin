@@ -9,11 +9,14 @@ package com.microsoft.jenkins.kubernetes.util;
 import com.microsoft.jenkins.kubernetes.Messages;
 import hudson.Util;
 import hudson.util.VariableResolver;
+import io.kubernetes.client.models.V1ObjectMeta;
 import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Random;
 
 public final class CommonUtils {
@@ -101,6 +104,22 @@ public final class CommonUtils {
         return new String(sample);
     }
 
+    /**
+     * get name for kubernetes persisted resources.
+     * @param object
+     * @return
+     */
+    public static String getResourceName(Object object) {
+        String name = null;
+        try {
+            Method method = object.getClass().getMethod("getMetadata");
+            V1ObjectMeta metadata = (V1ObjectMeta) method.invoke(object);
+            name = metadata.getName();
+        } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        return name;
+    }
     private CommonUtils() {
         // hide constructor
     }
