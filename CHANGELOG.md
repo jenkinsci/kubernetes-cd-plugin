@@ -1,5 +1,8 @@
 # Kubernetes Continuous Deploy Plugin Changelog
 
+## Version 2.0.1, 2019-08-14
+* Init supported models when loading clientWrapper
+
 ## Version 2.0.0, 2019-08-07
 * Change kubernetes sdk to the official one
 * Make resources compatible with several api versions
