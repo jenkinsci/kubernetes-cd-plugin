@@ -3,6 +3,7 @@ package com.microsoft.jenkins.kubernetes.wrapper;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.BatchV2alpha1Api;
+import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V2alpha1CronJob;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -75,6 +76,18 @@ public class V2alpha1ResourceManager extends ResourceManager {
                         getNamespace(), current, null, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1Status deleteResource(V2alpha1CronJob current) {
+            V1Status result = null;
+            try {
+                result = batchV2alpha1Api.deleteNamespacedCronJob(
+                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
             }
             return result;
         }

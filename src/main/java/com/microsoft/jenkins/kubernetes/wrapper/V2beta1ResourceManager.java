@@ -3,6 +3,7 @@ package com.microsoft.jenkins.kubernetes.wrapper;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.AutoscalingV2beta1Api;
+import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V2beta1HorizontalPodAutoscaler;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -75,6 +76,18 @@ public class V2beta1ResourceManager extends ResourceManager {
                         getNamespace(), current, null, getPretty(), null);
             } catch (ApiException e) {
                 handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1Status deleteResource(V2beta1HorizontalPodAutoscaler current) {
+            V1Status result = null;
+            try {
+                result = autoscalingV2beta1Api.deleteNamespacedHorizontalPodAutoscaler(
+                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
             }
             return result;
         }

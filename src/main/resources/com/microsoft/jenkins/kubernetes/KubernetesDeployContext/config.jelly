@@ -49,6 +49,10 @@
         <f:checkbox default="${descriptor.defaultEnableConfigSubstitution}"/>
     </f:entry>
 
+    <f:entry title="${%deleteResource_title}" field="deleteResource">
+        <f:checkbox default="${descriptor.defaultDeleteResource}"/>
+    </f:entry>
+
     <f:advanced title="${%dockerCredentialsSection_title}">
         <f:section title="${%dockerCredentialsSection_title}">
             <f:entry title="${%secretNamespace_title}" field="secretNamespace">
