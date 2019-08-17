@@ -54,6 +54,8 @@ public class KubernetesClientWrapper {
     private PrintStream logger = System.out;
     private VariableResolver<String> variableResolver;
 
+    private boolean deleteResource;
+
 
     private static Map<String, String> apiGroups = new HashMap<>();
     private static List<String> apiVersions = new ArrayList<>();
@@ -195,6 +197,15 @@ public class KubernetesClientWrapper {
         return logger;
     }
 
+    public boolean isDeleteResource() {
+        return deleteResource;
+    }
+
+    public KubernetesClientWrapper withDeleteResource(boolean isDeleteResource) {
+        this.deleteResource = isDeleteResource;
+        return this;
+    }
+
     public KubernetesClientWrapper withLogger(PrintStream log) {
         this.logger = log;
         return this;
@@ -248,34 +259,6 @@ public class KubernetesClientWrapper {
     }
 
     /**
-     * Delete Kubernetes configurations through the given Kubernetes client.
-     *
-     * @param configFiles The configuration files to be deleted
-     * @throws IOException          exception on IO
-     * @throws InterruptedException interruption happened during blocking IO operations
-     */
-    public void delete(FilePath[] configFiles) throws IOException, InterruptedException, ApiException {
-        for (FilePath path : configFiles) {
-            log(Messages.KubernetesClientWrapper_loadingConfiguration(path));
-            List<Object> resources;
-            try {
-                InputStream inputStream = CommonUtils.replaceMacro(path.read(), variableResolver);
-                resources = Yaml.loadAll(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-            } catch (IOException e) {
-                throw new IOException(Messages.KubernetesClientWrapper_invalidYaml(path.getName(), e));
-            }
-            if (resources.isEmpty()) {
-                log(Messages.KubernetesClientWrapper_noResourceLoadedFrom(path));
-                continue;
-            }
-
-            for (Object resource : resources) {
-                deleteResource(resource);
-            }
-        }
-    }
-
-    /**
      * Get related updater in{@link ResourceUpdaterMap} by resource's class type and handle the resource by updater.
      *
      * @param resource k8s resource
@@ -302,46 +285,9 @@ public class KubernetesClientWrapper {
                 log(Messages.KubernetesClientWrapper_illegalUpdater(resource, e));
             }
 
-            if (updater != null) {
+            if (updater != null && !deleteResource) {
                 updater.createOrApply();
-            } else {
-                log(Messages.KubernetesClientWrapper_illegalUpdater(resource, null));
-            }
-
-
-        } else {
-            log(Messages.KubernetesClientWrapper_skipped(resource));
-        }
-    }
-
-    /**
-     * Get related updater in{@link ResourceUpdaterMap} by resource's class type and handle the resource by updater.
-     *
-     * @param resource k8s resource
-     */
-    private void deleteResource(Object resource) {
-        Pair<Class<? extends ResourceManager>,
-                Class<? extends ResourceManager.ResourceUpdater>> updaterPair =
-                ResourceUpdaterMap.getUnmodifiableInstance().get(resource.getClass());
-        ResourceManager.ResourceUpdater updater = null;
-        if (updaterPair != null) {
-            try {
-                Constructor constructor = updaterPair.
-                        getRight().getDeclaredConstructor(
-                        updaterPair.getLeft(), resource.getClass());
-                Constructor resourceManagerConstructor = updaterPair.getLeft()
-                        .getConstructor(ApiClient.class);
-                ResourceManager resourceManager = (ResourceManager) resourceManagerConstructor.
-                        newInstance(getClient());
-                resourceManager.setConsoleLogger(getLogger());
-                updater = (ResourceManager.ResourceUpdater) constructor
-                        .newInstance(resourceManager, resource);
-
-            } catch (Exception e) {
-                log(Messages.KubernetesClientWrapper_illegalUpdater(resource, e));
-            }
-
-            if (updater != null) {
+            } else if (updater != null && deleteResource) {
                 updater.delete();
             } else {
                 log(Messages.KubernetesClientWrapper_illegalUpdater(resource, null));
@@ -352,6 +298,7 @@ public class KubernetesClientWrapper {
             log(Messages.KubernetesClientWrapper_skipped(resource));
         }
     }
+
 
     /**
      * Construct the dockercfg with all the provided credentials, and create a new Secret resource for the Kubernetes

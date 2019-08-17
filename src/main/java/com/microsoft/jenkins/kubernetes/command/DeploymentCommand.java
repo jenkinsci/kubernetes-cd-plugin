@@ -140,7 +140,8 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
             checkState(StringUtils.isNotBlank(configPaths), Messages.DeploymentCommand_blankConfigFiles());
 
             KubernetesClientWrapper wrapper =
-                    clientFactory.buildClient(workspace).withLogger(taskListener.getLogger());
+                    clientFactory.buildClient(workspace).withLogger(taskListener.getLogger()).
+                            withDeleteResource(deleteResource);
             result.masterHost = getMasterHost(wrapper);
 
             FilePath[] configFiles = workspace.list(configPaths);
@@ -167,11 +168,9 @@ public class DeploymentCommand implements ICommand<DeploymentCommand.IDeployment
             if (enableSubstitution) {
                 wrapper.withVariableResolver(new VariableResolver.ByMap<>(envVars));
             }
-            if (deleteResource) {
-                wrapper.delete(configFiles);
-            } else {
-                wrapper.apply(configFiles);
-            }
+
+            wrapper.apply(configFiles);
+
 
             result.commandState = CommandState.Success;
 
