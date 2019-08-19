@@ -1,5 +1,8 @@
 # Kubernetes Continuous Deploy Plugin Changelog
 
+## Version 2.1.0, 2019-08-19
+* Support deleting resources
+
 ## Version 2.0.1, 2019-08-14
 * Init supported models when loading clientWrapper
 
