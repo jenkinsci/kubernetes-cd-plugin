@@ -54,6 +54,8 @@ public class KubernetesClientWrapper {
     private PrintStream logger = System.out;
     private VariableResolver<String> variableResolver;
 
+    private boolean deleteResource;
+
 
     private static Map<String, String> apiGroups = new HashMap<>();
     private static List<String> apiVersions = new ArrayList<>();
@@ -195,6 +197,15 @@ public class KubernetesClientWrapper {
         return logger;
     }
 
+    public boolean isDeleteResource() {
+        return deleteResource;
+    }
+
+    public KubernetesClientWrapper withDeleteResource(boolean isDeleteResource) {
+        this.deleteResource = isDeleteResource;
+        return this;
+    }
+
     public KubernetesClientWrapper withLogger(PrintStream log) {
         this.logger = log;
         return this;
@@ -274,8 +285,10 @@ public class KubernetesClientWrapper {
                 log(Messages.KubernetesClientWrapper_illegalUpdater(resource, e));
             }
 
-            if (updater != null) {
+            if (updater != null && !deleteResource) {
                 updater.createOrApply();
+            } else if (updater != null && deleteResource) {
+                updater.delete();
             } else {
                 log(Messages.KubernetesClientWrapper_illegalUpdater(resource, null));
             }
@@ -285,6 +298,7 @@ public class KubernetesClientWrapper {
             log(Messages.KubernetesClientWrapper_skipped(resource));
         }
     }
+
 
     /**
      * Construct the dockercfg with all the provided credentials, and create a new Secret resource for the Kubernetes
