@@ -1,5 +1,8 @@
 # Kubernetes Continuous Deploy Plugin Changelog
 
+## Version 2.1.1, 2019-08-27
+* Enable cascading deletion by default to delete dependents
+
 ## Version 2.1.0, 2019-08-19
 * Support deleting resources
 
