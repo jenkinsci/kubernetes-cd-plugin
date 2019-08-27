@@ -1,5 +1,6 @@
 package com.microsoft.jenkins.kubernetes.wrapper;
 
+import com.microsoft.jenkins.kubernetes.util.Constants;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.AutoscalingV2beta1Api;
@@ -85,7 +86,8 @@ public class V2beta1ResourceManager extends ResourceManager {
             V1Status result = null;
             try {
                 result = autoscalingV2beta1Api.deleteNamespacedHorizontalPodAutoscaler(
-                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+                        getName(), getNamespace(), getPretty(),
+                        null, null, null, null, Constants.BACKGROUND_DELETEION);
             } catch (ApiException e) {
                 handleApiExceptionExceptNotFound(e);
             }

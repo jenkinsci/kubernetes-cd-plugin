@@ -6,6 +6,7 @@
 
 package com.microsoft.jenkins.kubernetes.wrapper;
 
+import com.microsoft.jenkins.kubernetes.util.Constants;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.AppsV1beta1Api;
@@ -100,7 +101,8 @@ public class V1beta1ResourceManager extends ResourceManager {
             V1Status result = null;
             try {
                 result = extensionsV1beta1Api.deleteNamespacedReplicaSet(
-                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+                        getName(), getNamespace(), getPretty(),
+                        null, null, null, null, Constants.BACKGROUND_DELETEION);
             } catch (ApiException e) {
                 handleApiExceptionExceptNotFound(e);
             }
@@ -159,7 +161,8 @@ public class V1beta1ResourceManager extends ResourceManager {
             V1Status result = null;
             try {
                 result = extensionsV1beta1Api.deleteNamespacedDaemonSet(
-                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+                        getName(), getNamespace(), getPretty(),
+                        null, null, null, null, Constants.BACKGROUND_DELETEION);
             } catch (ApiException e) {
                 handleApiExceptionExceptNotFound(e);
             }
@@ -219,7 +222,8 @@ public class V1beta1ResourceManager extends ResourceManager {
             V1Status result = null;
             try {
                 result = extensionsV1beta1Api.deleteNamespacedIngress(
-                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+                        getName(), getNamespace(),
+                        getPretty(), null, null, null, null, Constants.BACKGROUND_DELETEION);
             } catch (ApiException e) {
                 handleApiExceptionExceptNotFound(e);
             }
@@ -280,7 +284,8 @@ public class V1beta1ResourceManager extends ResourceManager {
             V1Status result = null;
             try {
                 result = extensionsV1beta1Api.deleteNamespacedDeployment(
-                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+                        getName(), getNamespace(),
+                        getPretty(), null, null, null, null, Constants.BACKGROUND_DELETEION);
             } catch (ApiException e) {
                 handleApiExceptionExceptNotFound(e);
             }
@@ -341,7 +346,8 @@ public class V1beta1ResourceManager extends ResourceManager {
             V1Status result = null;
             try {
                 result = appsV1beta1Api.deleteNamespacedDeployment(
-                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+                        getName(), getNamespace(),
+                        getPretty(), null, null, null, null, Constants.BACKGROUND_DELETEION);
             } catch (ApiException e) {
                 handleApiExceptionExceptNotFound(e);
             }
@@ -400,7 +406,8 @@ public class V1beta1ResourceManager extends ResourceManager {
             V1Status result = null;
             try {
                 result = appsV1beta1Api.deleteNamespacedStatefulSet(
-                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+                        getName(), getNamespace(),
+                        getPretty(), null, null, null, null, Constants.BACKGROUND_DELETEION);
             } catch (ApiException e) {
                 handleApiExceptionExceptNotFound(e);
             }
@@ -459,7 +466,8 @@ public class V1beta1ResourceManager extends ResourceManager {
             V1Status result = null;
             try {
                 result = batchV1beta1Api.deleteNamespacedCronJob(
-                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+                        getName(), getNamespace(),
+                        getPretty(), null, null, null, null, Constants.BACKGROUND_DELETEION);
             } catch (ApiException e) {
                 handleApiExceptionExceptNotFound(e);
             }

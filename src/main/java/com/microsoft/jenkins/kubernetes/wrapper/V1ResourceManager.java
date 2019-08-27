@@ -6,6 +6,7 @@
 
 package com.microsoft.jenkins.kubernetes.wrapper;
 
+import com.microsoft.jenkins.kubernetes.util.Constants;
 import com.microsoft.jenkins.kubernetes.util.KubernetesJsonUtils;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
@@ -932,7 +933,8 @@ public class V1ResourceManager extends ResourceManager {
             V1Status result = null;
             try {
                 result = autoscalingV1Api.deleteNamespacedHorizontalPodAutoscaler(
-                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+                        getName(), getNamespace(), getPretty(),
+                        null, null, null, null, Constants.BACKGROUND_DELETEION);
             } catch (ApiException e) {
                 handleApiExceptionExceptNotFound(e);
             }
@@ -992,7 +994,8 @@ public class V1ResourceManager extends ResourceManager {
             V1Status result = null;
             try {
                 result = appsV1ApiInstance.deleteNamespacedStatefulSet(
-                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+                        getName(), getNamespace(), getPretty(),
+                        null, null, null, null, Constants.BACKGROUND_DELETEION);
             } catch (ApiException e) {
                 handleApiExceptionExceptNotFound(e);
             }
@@ -1099,7 +1102,8 @@ public class V1ResourceManager extends ResourceManager {
             V1Status result = null;
             try {
                 result = coreV1ApiInstance.deleteNamespacedPersistentVolumeClaim(
-                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+                        getName(), getNamespace(), getPretty(),
+                        null, null, null, null, Constants.BACKGROUND_DELETEION);
             } catch (ApiException e) {
                 handleApiExceptionExceptNotFound(e);
             }
@@ -1158,7 +1162,8 @@ public class V1ResourceManager extends ResourceManager {
             V1Status result = null;
             try {
                 result = coreV1ApiInstance.deletePersistentVolume(
-                        getName(), getPretty(), null, null, null, null, null);
+                        getName(), getPretty(),
+                        null, null, null, null, Constants.BACKGROUND_DELETEION);
             } catch (ApiException e) {
                 handleApiExceptionExceptNotFound(e);
             }
@@ -1217,7 +1222,8 @@ public class V1ResourceManager extends ResourceManager {
             V1Status result = null;
             try {
                 result = networkingV1Api.deleteNamespacedNetworkPolicy(
-                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+                        getName(), getNamespace(), getPretty(),
+                        null, null, null, null, Constants.BACKGROUND_DELETEION);
             } catch (ApiException e) {
                 handleApiExceptionExceptNotFound(e);
             }
