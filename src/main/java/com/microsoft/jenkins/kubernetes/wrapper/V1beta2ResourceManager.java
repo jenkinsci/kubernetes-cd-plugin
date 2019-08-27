@@ -1,5 +1,6 @@
 package com.microsoft.jenkins.kubernetes.wrapper;
 
+import com.microsoft.jenkins.kubernetes.util.Constants;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.AppsV1beta2Api;
@@ -84,7 +85,8 @@ public class V1beta2ResourceManager extends ResourceManager {
             V1Status result = null;
             try {
                 result = appsV1beta2Api.deleteNamespacedDeployment(
-                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+                        getName(), getNamespace(), getPretty(), null,
+                        null, null, null, Constants.BACKGROUND_DELETEION);
             } catch (ApiException e) {
                 handleApiExceptionExceptNotFound(e);
             }
@@ -143,7 +145,8 @@ public class V1beta2ResourceManager extends ResourceManager {
             V1Status result = null;
             try {
                 result = appsV1beta2Api.deleteNamespacedDaemonSet(
-                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+                        getName(), getNamespace(), getPretty(), null,
+                        null, null, null, Constants.BACKGROUND_DELETEION);
             } catch (ApiException e) {
                 handleApiExceptionExceptNotFound(e);
             }
@@ -203,7 +206,8 @@ public class V1beta2ResourceManager extends ResourceManager {
             V1Status result = null;
             try {
                 result = appsV1beta2Api.deleteNamespacedReplicaSet(
-                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+                        getName(), getNamespace(), getPretty(), null,
+                        null, null, null, Constants.BACKGROUND_DELETEION);
             } catch (ApiException e) {
                 handleApiExceptionExceptNotFound(e);
             }
@@ -262,7 +266,8 @@ public class V1beta2ResourceManager extends ResourceManager {
             V1Status result = null;
             try {
                 result = appsV1beta2Api.deleteNamespacedStatefulSet(
-                        getName(), getNamespace(), getPretty(), null, null, null, null, null);
+                        getName(), getNamespace(), getPretty(),
+                        null, null, null, null, Constants.BACKGROUND_DELETEION);
             } catch (ApiException e) {
                 handleApiExceptionExceptNotFound(e);
             }

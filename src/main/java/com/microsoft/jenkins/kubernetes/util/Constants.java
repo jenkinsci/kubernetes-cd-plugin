@@ -55,6 +55,9 @@ public final class Constants {
     public static final String AI_KUBERNETES = "Kubernetes";
     public static final String AI_K8S_MASTER = "K8sMaster";
 
+    // https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/#background-cascading-deletion
+    public static final String BACKGROUND_DELETEION = "Background";
+
     /**
      * URI scheme prefix (scheme://) pattern.
      * <p>
