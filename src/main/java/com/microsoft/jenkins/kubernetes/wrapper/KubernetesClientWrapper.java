@@ -321,16 +321,16 @@ public class KubernetesClientWrapper {
         log(Messages.KubernetesClientWrapper_prepareSecretsWithName(secretName));
 
         DockerConfigBuilder dockerConfigBuilder = new DockerConfigBuilder(credentials);
-        String dockercfg = dockerConfigBuilder.buildDockercfgBase64();
+        String dockercfg = dockerConfigBuilder.buildDockercfgString();
 
-        Map<String, byte[]> data = new HashMap<>();
-        data.put(".dockercfg", dockercfg.getBytes(StandardCharsets.UTF_8));
+        Map<String, String> data = new HashMap<>();
+        data.put(".dockercfg", dockercfg);
         V1Secret secret = new V1SecretBuilder()
                 .withNewMetadata()
                 .withName(secretName)
                 .withNamespace(kubernetesNamespace)
                 .endMetadata()
-                .withData(data)
+                .withStringData(data)
                 .withType("kubernetes.io/dockercfg")
                 .build();
         handleResource(secret);

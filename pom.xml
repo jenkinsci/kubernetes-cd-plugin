@@ -228,7 +228,6 @@
                     <maskClasses>
                         okhttp3.
                         okio.
-                        com.fasterxml.jackson.
                         com.microsoft.jenkins.azurecommons.core.
                         com.google.
                     </maskClasses>
