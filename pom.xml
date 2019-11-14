@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -19,12 +20,12 @@
         <jenkins.version>2.60.3</jenkins.version>
         <java.level>8</java.level>
 
-        <azure-commons-version>1.0.3</azure-commons-version>
+        <azure-commons-version>1.0.4</azure-commons-version>
         <credentials.version>2.1.14</credentials.version>
         <docker-commons.version>1.10</docker-commons.version>
         <ssh-credentials.version>1.13</ssh-credentials.version>
         <workflow-step-api.version>2.10</workflow-step-api.version>
-        <jackson.version>2.9.9</jackson.version>
+        <jackson.version>2.10.1</jackson.version>
 
         <kubernetes-client.version>5.0.0</kubernetes-client.version>
     </properties>
@@ -155,6 +156,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.squareup.retrofit2</groupId>
+                <artifactId>retrofit</artifactId>
+                <version>2.6.2</version>
+            </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
