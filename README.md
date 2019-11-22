@@ -178,7 +178,12 @@ withCredentials([kubeconfigContent(credentialsId: 'acs-ssh-folder', variable: 'K
     sh '''echo "$KUBECONFIG_CONTENT" > kubeconfig && cat kubeconfig && rm kubeconfig'''
 }
 ```
-
+or
+```groovy
+withCredentials([kubeconfigFile(credentialsId: 'acs-ssh-folder', variable: 'KUBECONFIG')]) {
+    sh '''cat $KUBECONFIG'''
+}
+```
 ## Data/Telemetry
 
 Kubernetes Continuous Deploy Plugin collects usage data and sends it to Microsoft to help improve our products and services. Read our [privacy statement](http://go.microsoft.com/fwlink/?LinkId=521839) to learn more.
