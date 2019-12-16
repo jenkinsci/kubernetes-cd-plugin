@@ -7,19 +7,19 @@
 package com.microsoft.jenkins.kubernetes.wrapper;
 
 import com.microsoft.jenkins.kubernetes.util.Constants;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.AppsV1beta1Api;
-import io.kubernetes.client.apis.BatchV1beta1Api;
-import io.kubernetes.client.apis.ExtensionsV1beta1Api;
-import io.kubernetes.client.models.AppsV1beta1Deployment;
-import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
-import io.kubernetes.client.models.V1Status;
-import io.kubernetes.client.models.V1beta1CronJob;
-import io.kubernetes.client.models.V1beta1DaemonSet;
-import io.kubernetes.client.models.V1beta1Ingress;
-import io.kubernetes.client.models.V1beta1ReplicaSet;
-import io.kubernetes.client.models.V1beta1StatefulSet;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.AppsV1beta1Api;
+import io.kubernetes.client.openapi.apis.BatchV1beta1Api;
+import io.kubernetes.client.openapi.apis.ExtensionsV1beta1Api;
+import io.kubernetes.client.openapi.models.AppsV1beta1Deployment;
+import io.kubernetes.client.openapi.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.openapi.models.V1Status;
+import io.kubernetes.client.openapi.models.V1beta1CronJob;
+import io.kubernetes.client.openapi.models.V1beta1DaemonSet;
+import io.kubernetes.client.openapi.models.ExtensionsV1beta1Ingress;
+import io.kubernetes.client.openapi.models.V1beta1ReplicaSet;
+import io.kubernetes.client.openapi.models.V1beta1StatefulSet;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -77,7 +77,7 @@ public class V1beta1ResourceManager extends ResourceManager {
             V1beta1ReplicaSet replicaSet = null;
             try {
                 replicaSet = extensionsV1beta1Api.replaceNamespacedReplicaSet(getName(), getNamespace(),
-                        current, getPretty(), null);
+                        current, getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -88,8 +88,8 @@ public class V1beta1ResourceManager extends ResourceManager {
         V1beta1ReplicaSet createResource(V1beta1ReplicaSet current) {
             V1beta1ReplicaSet replicaSet = null;
             try {
-                replicaSet = extensionsV1beta1Api.createNamespacedReplicaSet(getNamespace(),
-                        current, null, getPretty(), null);
+                replicaSet = extensionsV1beta1Api.createNamespacedReplicaSet(
+                        getNamespace(), current, getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -137,7 +137,7 @@ public class V1beta1ResourceManager extends ResourceManager {
             V1beta1DaemonSet daemonSet = null;
             try {
                 daemonSet = extensionsV1beta1Api.replaceNamespacedDaemonSet(getName(), getNamespace(),
-                        current, getPretty(), null);
+                        current, getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -149,7 +149,7 @@ public class V1beta1ResourceManager extends ResourceManager {
             V1beta1DaemonSet daemonSet = null;
             try {
                 daemonSet = extensionsV1beta1Api.createNamespacedDaemonSet(getNamespace(),
-                        current, null, getPretty(), null);
+                        current, getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -176,14 +176,14 @@ public class V1beta1ResourceManager extends ResourceManager {
     }
 
 
-    class IngressUpdater extends ResourceUpdater<V1beta1Ingress> {
-        IngressUpdater(V1beta1Ingress ingress) {
+    class IngressUpdater extends ResourceUpdater<ExtensionsV1beta1Ingress> {
+        IngressUpdater(ExtensionsV1beta1Ingress ingress) {
             super(ingress);
         }
 
         @Override
-        V1beta1Ingress getCurrentResource() {
-            V1beta1Ingress ingress = null;
+        ExtensionsV1beta1Ingress getCurrentResource() {
+            ExtensionsV1beta1Ingress ingress = null;
             try {
                 ingress = extensionsV1beta1Api.readNamespacedIngress(getName(), getNamespace(), getPretty(),
                         true, true);
@@ -194,11 +194,11 @@ public class V1beta1ResourceManager extends ResourceManager {
         }
 
         @Override
-        V1beta1Ingress applyResource(V1beta1Ingress original, V1beta1Ingress current) {
-            V1beta1Ingress ingress = null;
+        ExtensionsV1beta1Ingress applyResource(ExtensionsV1beta1Ingress original, ExtensionsV1beta1Ingress current) {
+            ExtensionsV1beta1Ingress ingress = null;
             try {
                 ingress = extensionsV1beta1Api.replaceNamespacedIngress(getName(), getNamespace(), current,
-                        getPretty(), null);
+                        getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -206,11 +206,11 @@ public class V1beta1ResourceManager extends ResourceManager {
         }
 
         @Override
-        V1beta1Ingress createResource(V1beta1Ingress current) {
-            V1beta1Ingress ingress = null;
+        ExtensionsV1beta1Ingress createResource(ExtensionsV1beta1Ingress current) {
+            ExtensionsV1beta1Ingress ingress = null;
             try {
                 ingress = extensionsV1beta1Api.createNamespacedIngress(getNamespace(),
-                        current, null, getPretty(), null);
+                        current, getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -218,7 +218,7 @@ public class V1beta1ResourceManager extends ResourceManager {
         }
 
         @Override
-        V1Status deleteResource(V1beta1Ingress current) {
+        V1Status deleteResource(ExtensionsV1beta1Ingress current) {
             V1Status result = null;
             try {
                 result = extensionsV1beta1Api.deleteNamespacedIngress(
@@ -232,7 +232,7 @@ public class V1beta1ResourceManager extends ResourceManager {
 
 
         @Override
-        void notifyUpdate(V1beta1Ingress original, V1beta1Ingress current) {
+        void notifyUpdate(ExtensionsV1beta1Ingress original, ExtensionsV1beta1Ingress current) {
             resourceUpdateMonitor.onIngressUpdate(original, current);
         }
     }
@@ -260,7 +260,7 @@ public class V1beta1ResourceManager extends ResourceManager {
             ExtensionsV1beta1Deployment deployment = null;
             try {
                 deployment = extensionsV1beta1Api.replaceNamespacedDeployment(getName(), getNamespace(), current,
-                        getPretty(), null);
+                        getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -272,7 +272,7 @@ public class V1beta1ResourceManager extends ResourceManager {
             ExtensionsV1beta1Deployment deployment = null;
             try {
                 deployment = extensionsV1beta1Api.createNamespacedDeployment(getNamespace(),
-                        current, null, getPretty(), null);
+                        current, getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -322,7 +322,7 @@ public class V1beta1ResourceManager extends ResourceManager {
             AppsV1beta1Deployment deployment = null;
             try {
                 deployment = appsV1beta1Api.replaceNamespacedDeployment(getName(), getNamespace(), current,
-                        getPretty(), null);
+                        getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -334,7 +334,7 @@ public class V1beta1ResourceManager extends ResourceManager {
             AppsV1beta1Deployment deployment = null;
             try {
                 deployment = appsV1beta1Api.createNamespacedDeployment(getNamespace(),
-                        current, null, getPretty(), null);
+                        current, getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -382,7 +382,7 @@ public class V1beta1ResourceManager extends ResourceManager {
             V1beta1StatefulSet result = null;
             try {
                 result = appsV1beta1Api.replaceNamespacedStatefulSet(
-                        getName(), getNamespace(), current, getPretty(), null);
+                        getName(), getNamespace(), current, getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -394,7 +394,7 @@ public class V1beta1ResourceManager extends ResourceManager {
             V1beta1StatefulSet result = null;
             try {
                 result = appsV1beta1Api.createNamespacedStatefulSet(
-                        getNamespace(), current, null, getPretty(), null);
+                        getNamespace(), current, getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -442,7 +442,7 @@ public class V1beta1ResourceManager extends ResourceManager {
             V1beta1CronJob result = null;
             try {
                 result = batchV1beta1Api.replaceNamespacedCronJob(
-                        getName(), getNamespace(), current, getPretty(), null);
+                        getName(), getNamespace(), current, getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -454,7 +454,7 @@ public class V1beta1ResourceManager extends ResourceManager {
             V1beta1CronJob result = null;
             try {
                 result = batchV1beta1Api.createNamespacedCronJob(
-                        getNamespace(), current, null, getPretty(), null);
+                        getNamespace(), current, getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }

@@ -8,9 +8,9 @@ package com.microsoft.jenkins.kubernetes.wrapper;
 
 import com.google.gson.JsonSyntaxException;
 import com.microsoft.jenkins.kubernetes.util.Constants;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Status;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Status;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;

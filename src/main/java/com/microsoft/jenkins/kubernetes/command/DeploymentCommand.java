@@ -25,7 +25,7 @@ import hudson.model.Item;
 import hudson.model.TaskListener;
 import hudson.remoting.ProxyException;
 import hudson.util.VariableResolver;
-import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.openapi.ApiClient;
 import jenkins.security.MasterToSlaveCallable;
 import org.apache.commons.lang3.StringUtils;
 

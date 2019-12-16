@@ -6,19 +6,19 @@
 
 package com.microsoft.jenkins.kubernetes.wrapper;
 
-import io.kubernetes.client.models.AppsV1beta1Deployment;
-import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
-import io.kubernetes.client.models.V1beta1CronJob;
-import io.kubernetes.client.models.V1beta1DaemonSet;
-import io.kubernetes.client.models.V1beta1Ingress;
-import io.kubernetes.client.models.V1beta1ReplicaSet;
-import io.kubernetes.client.models.V1beta1StatefulSet;
+import io.kubernetes.client.openapi.models.AppsV1beta1Deployment;
+import io.kubernetes.client.openapi.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.openapi.models.V1beta1CronJob;
+import io.kubernetes.client.openapi.models.V1beta1DaemonSet;
+import io.kubernetes.client.openapi.models.ExtensionsV1beta1Ingress;
+import io.kubernetes.client.openapi.models.V1beta1ReplicaSet;
+import io.kubernetes.client.openapi.models.V1beta1StatefulSet;
 
 public interface V1beta1ResourceUpdateMonitor {
 
     V1beta1ResourceUpdateMonitor NOOP = new Adapter();
 
-    void onIngressUpdate(V1beta1Ingress original, V1beta1Ingress current);
+    void onIngressUpdate(ExtensionsV1beta1Ingress original, ExtensionsV1beta1Ingress current);
 
     void onDaemonSetUpdate(V1beta1DaemonSet original, V1beta1DaemonSet current);
 
@@ -34,7 +34,7 @@ public interface V1beta1ResourceUpdateMonitor {
 
     class Adapter implements V1beta1ResourceUpdateMonitor {
         @Override
-        public void onIngressUpdate(V1beta1Ingress original, V1beta1Ingress current) {
+        public void onIngressUpdate(ExtensionsV1beta1Ingress original, ExtensionsV1beta1Ingress current) {
         }
 
         @Override
