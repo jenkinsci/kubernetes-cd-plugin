@@ -9,7 +9,7 @@ package com.microsoft.jenkins.kubernetes.util;
 import com.microsoft.jenkins.kubernetes.Messages;
 import hudson.Util;
 import hudson.util.VariableResolver;
-import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayInputStream;

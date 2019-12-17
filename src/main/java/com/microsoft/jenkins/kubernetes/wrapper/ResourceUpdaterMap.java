@@ -1,34 +1,34 @@
 package com.microsoft.jenkins.kubernetes.wrapper;
 
-import io.kubernetes.client.models.AppsV1beta1Deployment;
-import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1DaemonSet;
-import io.kubernetes.client.models.V1Deployment;
-import io.kubernetes.client.models.V1HorizontalPodAutoscaler;
-import io.kubernetes.client.models.V1Job;
-import io.kubernetes.client.models.V1Namespace;
-import io.kubernetes.client.models.V1NetworkPolicy;
-import io.kubernetes.client.models.V1PersistentVolume;
-import io.kubernetes.client.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1ReplicaSet;
-import io.kubernetes.client.models.V1ReplicationController;
-import io.kubernetes.client.models.V1Secret;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1StatefulSet;
-import io.kubernetes.client.models.V1beta1CronJob;
-import io.kubernetes.client.models.V1beta1DaemonSet;
-import io.kubernetes.client.models.V1beta1Ingress;
-import io.kubernetes.client.models.V1beta1ReplicaSet;
-import io.kubernetes.client.models.V1beta1StatefulSet;
-import io.kubernetes.client.models.V1beta2DaemonSet;
-import io.kubernetes.client.models.V1beta2Deployment;
-import io.kubernetes.client.models.V1beta2ReplicaSet;
-import io.kubernetes.client.models.V1beta2StatefulSet;
-import io.kubernetes.client.models.V2alpha1CronJob;
-import io.kubernetes.client.models.V2beta1HorizontalPodAutoscaler;
-import io.kubernetes.client.models.V2beta2HorizontalPodAutoscaler;
+import io.kubernetes.client.openapi.models.AppsV1beta1Deployment;
+import io.kubernetes.client.openapi.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1DaemonSet;
+import io.kubernetes.client.openapi.models.V1Deployment;
+import io.kubernetes.client.openapi.models.V1HorizontalPodAutoscaler;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1NetworkPolicy;
+import io.kubernetes.client.openapi.models.V1PersistentVolume;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1ReplicaSet;
+import io.kubernetes.client.openapi.models.V1ReplicationController;
+import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1StatefulSet;
+import io.kubernetes.client.openapi.models.V1beta1CronJob;
+import io.kubernetes.client.openapi.models.V1beta1DaemonSet;
+import io.kubernetes.client.openapi.models.ExtensionsV1beta1Ingress;
+import io.kubernetes.client.openapi.models.V1beta1ReplicaSet;
+import io.kubernetes.client.openapi.models.V1beta1StatefulSet;
+import io.kubernetes.client.openapi.models.V1beta2DaemonSet;
+import io.kubernetes.client.openapi.models.V1beta2Deployment;
+import io.kubernetes.client.openapi.models.V1beta2ReplicaSet;
+import io.kubernetes.client.openapi.models.V1beta2StatefulSet;
+import io.kubernetes.client.openapi.models.V2alpha1CronJob;
+import io.kubernetes.client.openapi.models.V2beta1HorizontalPodAutoscaler;
+import io.kubernetes.client.openapi.models.V2beta2HorizontalPodAutoscaler;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.Collections;
@@ -76,7 +76,7 @@ public final class ResourceUpdaterMap extends HashMap<Class<?>,
 
 
 
-        put(V1beta1Ingress.class,
+        put(ExtensionsV1beta1Ingress.class,
                 Pair.of(V1beta1ResourceManager.class, V1beta1ResourceManager.IngressUpdater.class));
         put(V1beta1DaemonSet.class,
                 Pair.of(V1beta1ResourceManager.class, V1beta1ResourceManager.DaemonSetUpdater.class));

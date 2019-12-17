@@ -6,21 +6,21 @@
 
 package com.microsoft.jenkins.kubernetes.wrapper;
 
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1DaemonSet;
-import io.kubernetes.client.models.V1Deployment;
-import io.kubernetes.client.models.V1HorizontalPodAutoscaler;
-import io.kubernetes.client.models.V1Job;
-import io.kubernetes.client.models.V1Namespace;
-import io.kubernetes.client.models.V1NetworkPolicy;
-import io.kubernetes.client.models.V1PersistentVolume;
-import io.kubernetes.client.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1ReplicaSet;
-import io.kubernetes.client.models.V1ReplicationController;
-import io.kubernetes.client.models.V1Secret;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1StatefulSet;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1DaemonSet;
+import io.kubernetes.client.openapi.models.V1Deployment;
+import io.kubernetes.client.openapi.models.V1HorizontalPodAutoscaler;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1NetworkPolicy;
+import io.kubernetes.client.openapi.models.V1PersistentVolume;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1ReplicaSet;
+import io.kubernetes.client.openapi.models.V1ReplicationController;
+import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1StatefulSet;
 
 public interface V1ResourceUpdateMonitor {
     V1ResourceUpdateMonitor NOOP = new Adapter();

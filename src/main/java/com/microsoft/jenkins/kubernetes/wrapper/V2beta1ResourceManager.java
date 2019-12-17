@@ -1,11 +1,11 @@
 package com.microsoft.jenkins.kubernetes.wrapper;
 
 import com.microsoft.jenkins.kubernetes.util.Constants;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.AutoscalingV2beta1Api;
-import io.kubernetes.client.models.V1Status;
-import io.kubernetes.client.models.V2beta1HorizontalPodAutoscaler;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.AutoscalingV2beta1Api;
+import io.kubernetes.client.openapi.models.V1Status;
+import io.kubernetes.client.openapi.models.V2beta1HorizontalPodAutoscaler;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -62,7 +62,7 @@ public class V2beta1ResourceManager extends ResourceManager {
             V2beta1HorizontalPodAutoscaler result = null;
             try {
                 result = autoscalingV2beta1Api.replaceNamespacedHorizontalPodAutoscaler(
-                        getName(), getNamespace(), current, getPretty(), null);
+                        getName(), getNamespace(), current, getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -74,7 +74,7 @@ public class V2beta1ResourceManager extends ResourceManager {
             V2beta1HorizontalPodAutoscaler result = null;
             try {
                 result = autoscalingV2beta1Api.createNamespacedHorizontalPodAutoscaler(
-                        getNamespace(), current, null, getPretty(), null);
+                        getNamespace(), current, getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }

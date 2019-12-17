@@ -1,6 +1,6 @@
 package com.microsoft.jenkins.kubernetes.util;
 
-import io.kubernetes.client.JSON;
+import io.kubernetes.client.openapi.JSON;
 
 public final class KubernetesJsonUtils {
     private static final JSON KUBERNETES_JSON = new JSON();

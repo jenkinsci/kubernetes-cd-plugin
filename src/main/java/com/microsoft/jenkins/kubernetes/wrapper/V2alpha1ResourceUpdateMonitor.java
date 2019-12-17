@@ -1,6 +1,6 @@
 package com.microsoft.jenkins.kubernetes.wrapper;
 
-import io.kubernetes.client.models.V2alpha1CronJob;
+import io.kubernetes.client.openapi.models.V2alpha1CronJob;
 
 public interface V2alpha1ResourceUpdateMonitor {
 

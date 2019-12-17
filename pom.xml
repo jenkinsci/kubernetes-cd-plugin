@@ -26,7 +26,7 @@
         <workflow-step-api.version>2.10</workflow-step-api.version>
         <jackson.version>2.10.1</jackson.version>
 
-        <kubernetes-client.version>5.0.0</kubernetes-client.version>
+        <kubernetes-client.version>7.0.0</kubernetes-client.version>
     </properties>
 
     <name>Kubernetes Continuous Deploy Plugin</name>
@@ -168,12 +168,12 @@
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
-                <version>3.12.3</version>
+                <version>3.14.3</version>
             </dependency>
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>logging-interceptor</artifactId>
-                <version>3.12.3</version>
+                <version>3.14.3</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>

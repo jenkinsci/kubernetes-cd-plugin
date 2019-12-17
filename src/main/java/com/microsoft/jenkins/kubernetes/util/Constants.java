@@ -6,6 +6,8 @@
 
 package com.microsoft.jenkins.kubernetes.util;
 
+import io.kubernetes.client.openapi.models.V1DeleteOptions;
+
 import java.util.regex.Pattern;
 
 public final class Constants {
@@ -56,7 +58,9 @@ public final class Constants {
     public static final String AI_K8S_MASTER = "K8sMaster";
 
     // https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/#background-cascading-deletion
-    public static final String BACKGROUND_DELETEION = "Background";
+
+    public static final V1DeleteOptions BACKGROUND_DELETEION = new V1DeleteOptions().propagationPolicy("Background");
+
 
     /**
      * URI scheme prefix (scheme://) pattern.

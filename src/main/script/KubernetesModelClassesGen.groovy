@@ -9,7 +9,7 @@ class KubernetesModelClassesGen {
         File targetDirectory = new File( project.basedir.toString() + '/src/main/java' )
 
         ClassPath cp = ClassPath.from(Yaml.class.getClassLoader());
-        Set<ClassPath.ClassInfo> allClasses = cp.getTopLevelClasses("io.kubernetes.client.models");
+        Set<ClassPath.ClassInfo> allClasses = cp.getTopLevelClasses("io.kubernetes.client.openapi.models");
 
         // The directory to write the source to
         File packageDir = new File( targetDirectory, packageName.replace( '.', '/' ) )
@@ -18,7 +18,7 @@ class KubernetesModelClassesGen {
         def out = []
         out<<'package '+packageName+';\n \n'
 
-        out<<'import io.kubernetes.client.models.*;\n'
+        out<<'import io.kubernetes.client.openapi.models.*;\n'
         out<<'import java.util.ArrayList;;\n'
         out<<'import java.util.List;\n'
         out<<'import java.util.Collections;\n\n'

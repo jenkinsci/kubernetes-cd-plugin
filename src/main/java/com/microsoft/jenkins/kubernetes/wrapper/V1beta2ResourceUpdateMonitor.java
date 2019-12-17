@@ -1,9 +1,9 @@
 package com.microsoft.jenkins.kubernetes.wrapper;
 
-import io.kubernetes.client.models.V1beta2DaemonSet;
-import io.kubernetes.client.models.V1beta2Deployment;
-import io.kubernetes.client.models.V1beta2ReplicaSet;
-import io.kubernetes.client.models.V1beta2StatefulSet;
+import io.kubernetes.client.openapi.models.V1beta2DaemonSet;
+import io.kubernetes.client.openapi.models.V1beta2Deployment;
+import io.kubernetes.client.openapi.models.V1beta2ReplicaSet;
+import io.kubernetes.client.openapi.models.V1beta2StatefulSet;
 
 public interface V1beta2ResourceUpdateMonitor {
 

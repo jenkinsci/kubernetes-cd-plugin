@@ -1,14 +1,14 @@
 package com.microsoft.jenkins.kubernetes.wrapper;
 
 import com.microsoft.jenkins.kubernetes.util.Constants;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.apis.AppsV1beta2Api;
-import io.kubernetes.client.models.V1Status;
-import io.kubernetes.client.models.V1beta2DaemonSet;
-import io.kubernetes.client.models.V1beta2Deployment;
-import io.kubernetes.client.models.V1beta2ReplicaSet;
-import io.kubernetes.client.models.V1beta2StatefulSet;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.AppsV1beta2Api;
+import io.kubernetes.client.openapi.models.V1Status;
+import io.kubernetes.client.openapi.models.V1beta2DaemonSet;
+import io.kubernetes.client.openapi.models.V1beta2Deployment;
+import io.kubernetes.client.openapi.models.V1beta2ReplicaSet;
+import io.kubernetes.client.openapi.models.V1beta2StatefulSet;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -61,7 +61,7 @@ public class V1beta2ResourceManager extends ResourceManager {
             V1beta2Deployment deployment = null;
             try {
                 deployment = appsV1beta2Api.replaceNamespacedDeployment(getName(), getNamespace(), current,
-                        getPretty(), null);
+                        getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -73,7 +73,7 @@ public class V1beta2ResourceManager extends ResourceManager {
             V1beta2Deployment deployment = null;
             try {
                 deployment = appsV1beta2Api.createNamespacedDeployment(
-                        getNamespace(), current, null, getPretty(), null);
+                        getNamespace(), current, getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -121,7 +121,7 @@ public class V1beta2ResourceManager extends ResourceManager {
             V1beta2DaemonSet daemonSet = null;
             try {
                 daemonSet = appsV1beta2Api.replaceNamespacedDaemonSet(getName(), getNamespace(),
-                        current, getPretty(), null);
+                        current, getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -133,7 +133,7 @@ public class V1beta2ResourceManager extends ResourceManager {
             V1beta2DaemonSet daemonSet = null;
             try {
                 daemonSet = appsV1beta2Api.createNamespacedDaemonSet(getNamespace(),
-                        current, null, getPretty(), null);
+                        current, getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -182,7 +182,7 @@ public class V1beta2ResourceManager extends ResourceManager {
             V1beta2ReplicaSet replicaSet = null;
             try {
                 replicaSet = appsV1beta2Api.replaceNamespacedReplicaSet(getName(), getNamespace(),
-                        current, getPretty(), null);
+                        current, getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -194,7 +194,7 @@ public class V1beta2ResourceManager extends ResourceManager {
             V1beta2ReplicaSet replicaSet = null;
             try {
                 replicaSet = appsV1beta2Api.createNamespacedReplicaSet(getNamespace(),
-                        current, null, getPretty(), null);
+                        current, getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -242,7 +242,7 @@ public class V1beta2ResourceManager extends ResourceManager {
             V1beta2StatefulSet result = null;
             try {
                 result = appsV1beta2Api.replaceNamespacedStatefulSet(
-                        getName(), getNamespace(), current, getPretty(), null);
+                        getName(), getNamespace(), current, getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -254,7 +254,7 @@ public class V1beta2ResourceManager extends ResourceManager {
             V1beta2StatefulSet result = null;
             try {
                 result = appsV1beta2Api.createNamespacedStatefulSet(
-                        getNamespace(), current, null, getPretty(), null);
+                        getNamespace(), current, getPretty(), null, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }

@@ -1,6 +1,6 @@
 package com.microsoft.jenkins.kubernetes.wrapper;
 
-import io.kubernetes.client.models.V2beta1HorizontalPodAutoscaler;
+import io.kubernetes.client.openapi.models.V2beta1HorizontalPodAutoscaler;
 
 public interface V2beta1ResourceUpdateMonitor {
 
