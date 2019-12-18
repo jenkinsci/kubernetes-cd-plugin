@@ -86,7 +86,7 @@ The following resource types are supported by the plugin:
 * ConfigMap (v1)
 * Daemon Set (apps/v1、extensions/v1beta1、apps/v1beta2)
 * Deployment (apps/v1、apps/v1beta1、extensions/v1beta1、apps/v1beta2)
-* Ingress (extensions/v1beta1)
+* Ingress (extensions/v1beta1、 networking.k8s.io/v1beta1)
 * Job (batch/v1) update requires apiserver support [server dryRun](https://kubernetes.io/docs/reference/using-api/api-concepts/#dry-run)
 * Namespace (v1)
 * Pod (v1) update requires apiserver support [server dryRun](https://kubernetes.io/docs/reference/using-api/api-concepts/#dry-run)
@@ -100,6 +100,11 @@ The following resource types are supported by the plugin:
 * Network Policy (networking.k8s.io/v1)
 * Persistent Volume (v1)
 * Persistent Volume Claim (v1)
+* ClusterRole (rbac.authorization.k8s.io/v1)
+* ClusterRoleBinding (rbac.authorization.k8s.io/v1)
+* Role (rbac.authorization.k8s.io/v1)
+* RoleBinding (rbac.authorization.k8s.io/v1)
+* ServiceAccount (v1)
 
 
 In the context of continuous integration & continuous deployment, only those resources that need to be updated

@@ -2,6 +2,9 @@ package com.microsoft.jenkins.kubernetes.wrapper;
 
 import io.kubernetes.client.openapi.models.AppsV1beta1Deployment;
 import io.kubernetes.client.openapi.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1Ingress;
+import io.kubernetes.client.openapi.models.V1ClusterRole;
+import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1DaemonSet;
 import io.kubernetes.client.openapi.models.V1Deployment;
@@ -14,8 +17,11 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1ReplicaSet;
 import io.kubernetes.client.openapi.models.V1ReplicationController;
+import io.kubernetes.client.openapi.models.V1Role;
+import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
 import io.kubernetes.client.openapi.models.V1beta1CronJob;
 import io.kubernetes.client.openapi.models.V1beta1DaemonSet;
@@ -73,11 +79,23 @@ public final class ResourceUpdaterMap extends HashMap<Class<?>,
                 Pair.of(V1ResourceManager.class, V1ResourceManager.PersistentVolumeUpdater.class));
         put(V1NetworkPolicy.class,
                 Pair.of(V1ResourceManager.class, V1ResourceManager.NetworkPolicyUpdater.class));
+        put(V1Role.class,
+                Pair.of(V1ResourceManager.class, V1ResourceManager.RoleUpdater.class));
+        put(V1RoleBinding.class,
+                Pair.of(V1ResourceManager.class, V1ResourceManager.RoleBindingUpdater.class));
+        put(V1ServiceAccount.class,
+                Pair.of(V1ResourceManager.class, V1ResourceManager.ServiceAccountUpdater.class));
+        put(V1ClusterRole.class,
+                Pair.of(V1ResourceManager.class, V1ResourceManager.ClusterRoleUpdater.class));
+        put(V1ClusterRoleBinding.class,
+                Pair.of(V1ResourceManager.class, V1ResourceManager.ClusterRoleBindingUpdater.class));
 
 
 
         put(ExtensionsV1beta1Ingress.class,
-                Pair.of(V1beta1ResourceManager.class, V1beta1ResourceManager.IngressUpdater.class));
+                Pair.of(V1beta1ResourceManager.class, V1beta1ResourceManager.ExtensionsIngressUpdater.class));
+        put(NetworkingV1beta1Ingress.class,
+                Pair.of(V1beta1ResourceManager.class, V1beta1ResourceManager.NetworkingIngressUpdater.class));
         put(V1beta1DaemonSet.class,
                 Pair.of(V1beta1ResourceManager.class, V1beta1ResourceManager.DaemonSetUpdater.class));
         put(V1beta1ReplicaSet.class,

@@ -6,6 +6,8 @@
 
 package com.microsoft.jenkins.kubernetes.wrapper;
 
+import io.kubernetes.client.openapi.models.V1ClusterRole;
+import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1DaemonSet;
 import io.kubernetes.client.openapi.models.V1Deployment;
@@ -18,8 +20,11 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1ReplicaSet;
 import io.kubernetes.client.openapi.models.V1ReplicationController;
+import io.kubernetes.client.openapi.models.V1Role;
+import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
 
 public interface V1ResourceUpdateMonitor {
@@ -54,6 +59,16 @@ public interface V1ResourceUpdateMonitor {
     void onStatefulSetUpdate(V1StatefulSet original, V1StatefulSet current);
 
     void onNetworkPolicyUpdate(V1NetworkPolicy original, V1NetworkPolicy current);
+
+    void onRoleUpdate(V1Role original, V1Role current);
+
+    void onRoleBindingUpdate(V1RoleBinding original, V1RoleBinding current);
+
+    void onServiceAccountUpdate(V1ServiceAccount original, V1ServiceAccount current);
+
+    void onClusterRoleUpdate(V1ClusterRole original, V1ClusterRole current);
+
+    void onClusterRoleBindingUpdate(V1ClusterRoleBinding original, V1ClusterRoleBinding current);
 
 
     class Adapter implements V1ResourceUpdateMonitor {
@@ -119,5 +134,24 @@ public interface V1ResourceUpdateMonitor {
         @Override
         public void onNetworkPolicyUpdate(V1NetworkPolicy original, V1NetworkPolicy current) {
         }
+        @Override
+        public void onRoleUpdate(V1Role original, V1Role current) {
+        }
+        @Override
+        public void onRoleBindingUpdate(V1RoleBinding original, V1RoleBinding current) {
+        }
+
+        @Override
+        public void onServiceAccountUpdate(V1ServiceAccount original, V1ServiceAccount current) {
+        }
+
+        @Override
+        public void onClusterRoleUpdate(V1ClusterRole original, V1ClusterRole current) {
+        }
+
+        @Override
+        public void onClusterRoleBindingUpdate(V1ClusterRoleBinding original, V1ClusterRoleBinding current) {
+        }
+
     }
 }

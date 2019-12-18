@@ -8,6 +8,7 @@ package com.microsoft.jenkins.kubernetes.wrapper;
 
 import io.kubernetes.client.openapi.models.AppsV1beta1Deployment;
 import io.kubernetes.client.openapi.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1Ingress;
 import io.kubernetes.client.openapi.models.V1beta1CronJob;
 import io.kubernetes.client.openapi.models.V1beta1DaemonSet;
 import io.kubernetes.client.openapi.models.ExtensionsV1beta1Ingress;
@@ -18,7 +19,9 @@ public interface V1beta1ResourceUpdateMonitor {
 
     V1beta1ResourceUpdateMonitor NOOP = new Adapter();
 
-    void onIngressUpdate(ExtensionsV1beta1Ingress original, ExtensionsV1beta1Ingress current);
+    void onExtensionsIngressUpdate(ExtensionsV1beta1Ingress original, ExtensionsV1beta1Ingress current);
+
+    void onNetworkingIngressUpdate(NetworkingV1beta1Ingress original, NetworkingV1beta1Ingress current);
 
     void onDaemonSetUpdate(V1beta1DaemonSet original, V1beta1DaemonSet current);
 
@@ -34,7 +37,11 @@ public interface V1beta1ResourceUpdateMonitor {
 
     class Adapter implements V1beta1ResourceUpdateMonitor {
         @Override
-        public void onIngressUpdate(ExtensionsV1beta1Ingress original, ExtensionsV1beta1Ingress current) {
+        public void onExtensionsIngressUpdate(ExtensionsV1beta1Ingress original, ExtensionsV1beta1Ingress current) {
+        }
+
+        @Override
+        public void onNetworkingIngressUpdate(NetworkingV1beta1Ingress original, NetworkingV1beta1Ingress current) {
         }
 
         @Override

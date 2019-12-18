@@ -15,6 +15,9 @@ import io.kubernetes.client.openapi.apis.AutoscalingV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.NetworkingV1Api;
+import io.kubernetes.client.openapi.apis.RbacAuthorizationV1Api;
+import io.kubernetes.client.openapi.models.V1ClusterRole;
+import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1DaemonSet;
 import io.kubernetes.client.openapi.models.V1Deployment;
@@ -28,8 +31,11 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ReplicaSet;
 import io.kubernetes.client.openapi.models.V1ReplicationController;
+import io.kubernetes.client.openapi.models.V1Role;
+import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
 import io.kubernetes.client.openapi.models.V1Status;
@@ -52,6 +58,7 @@ public class V1ResourceManager extends ResourceManager {
     private final BatchV1Api batchV1ApiInstance;
     private final AutoscalingV1Api autoscalingV1Api;
     private final NetworkingV1Api networkingV1Api;
+    private final RbacAuthorizationV1Api rbacV1Api;
 
     private V1ResourceUpdateMonitor resourceUpdateMonitor = V1ResourceUpdateMonitor.NOOP;
 
@@ -64,6 +71,7 @@ public class V1ResourceManager extends ResourceManager {
         batchV1ApiInstance = new BatchV1Api(client);
         autoscalingV1Api = new AutoscalingV1Api(client);
         networkingV1Api = new NetworkingV1Api(client);
+        rbacV1Api = new RbacAuthorizationV1Api(client);
     }
 
     public V1ResourceManager(ApiClient client, boolean pretty) {
@@ -75,7 +83,7 @@ public class V1ResourceManager extends ResourceManager {
         batchV1ApiInstance = new BatchV1Api(client);
         autoscalingV1Api = new AutoscalingV1Api(client);
         networkingV1Api = new NetworkingV1Api(client);
-
+        rbacV1Api = new RbacAuthorizationV1Api(client);
     }
 
     /**
@@ -1233,6 +1241,306 @@ public class V1ResourceManager extends ResourceManager {
         @Override
         void notifyUpdate(V1NetworkPolicy original, V1NetworkPolicy current) {
             resourceUpdateMonitor.onNetworkPolicyUpdate(original, current);
+        }
+    }
+
+    class RoleUpdater extends ResourceUpdater<V1Role> {
+        RoleUpdater(V1Role role) {
+            super(role);
+        }
+
+        @Override
+        V1Role getCurrentResource() {
+            V1Role result = null;
+            try {
+                result = rbacV1Api.readNamespacedRole(
+                        getName(), getNamespace(), getPretty());
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1Role applyResource(V1Role original, V1Role current) {
+            V1Role result = null;
+            try {
+                result = rbacV1Api.replaceNamespacedRole(
+                        getName(), getNamespace(), current, getPretty(), null, null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1Role createResource(V1Role current) {
+            V1Role result = null;
+            try {
+                result = rbacV1Api.createNamespacedRole(
+                        getNamespace(), current, getPretty(), null, null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1Status deleteResource(V1Role current) {
+            V1Status result = null;
+            try {
+                result = rbacV1Api.deleteNamespacedRole(
+                        getName(), getNamespace(), getPretty(),
+                        null, null, null, null, Constants.BACKGROUND_DELETEION);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+        @Override
+        void notifyUpdate(V1Role original, V1Role current) {
+            resourceUpdateMonitor.onRoleUpdate(original, current);
+        }
+    }
+
+    class RoleBindingUpdater extends ResourceUpdater<V1RoleBinding> {
+        RoleBindingUpdater(V1RoleBinding roleBinding) {
+            super(roleBinding);
+        }
+
+        @Override
+        V1RoleBinding getCurrentResource() {
+            V1RoleBinding result = null;
+            try {
+                result = rbacV1Api.readNamespacedRoleBinding(
+                        getName(), getNamespace(), getPretty());
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1RoleBinding applyResource(V1RoleBinding original, V1RoleBinding current) {
+            V1RoleBinding result = null;
+            try {
+                result = rbacV1Api.replaceNamespacedRoleBinding(
+                        getName(), getNamespace(), current, getPretty(), null, null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1RoleBinding createResource(V1RoleBinding current) {
+            V1RoleBinding result = null;
+            try {
+                result = rbacV1Api.createNamespacedRoleBinding(
+                        getNamespace(), current, getPretty(), null, null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1Status deleteResource(V1RoleBinding current) {
+            V1Status result = null;
+            try {
+                result = rbacV1Api.deleteNamespacedRoleBinding(
+                        getName(), getNamespace(), getPretty(),
+                        null, null, null, null, Constants.BACKGROUND_DELETEION);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+        @Override
+        void notifyUpdate(V1RoleBinding original, V1RoleBinding current) {
+            resourceUpdateMonitor.onRoleBindingUpdate(original, current);
+        }
+    }
+
+    class ServiceAccountUpdater extends ResourceUpdater<V1ServiceAccount> {
+        ServiceAccountUpdater(V1ServiceAccount serviceAccount) {
+            super(serviceAccount);
+        }
+
+        @Override
+        V1ServiceAccount getCurrentResource() {
+            V1ServiceAccount result = null;
+            try {
+                result = coreV1ApiInstance.readNamespacedServiceAccount(
+                        getName(), getNamespace(), getPretty(), true, true);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1ServiceAccount applyResource(V1ServiceAccount original, V1ServiceAccount current) {
+            V1ServiceAccount result = null;
+            try {
+                result = coreV1ApiInstance.replaceNamespacedServiceAccount(
+                        getName(), getNamespace(), current, getPretty(), null, null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1ServiceAccount createResource(V1ServiceAccount current) {
+            V1ServiceAccount result = null;
+            try {
+                result = coreV1ApiInstance.createNamespacedServiceAccount(
+                        getNamespace(), current, getPretty(), null, null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1Status deleteResource(V1ServiceAccount current) {
+            V1Status result = null;
+            try {
+                result = coreV1ApiInstance.deleteNamespacedServiceAccount(
+                        getName(), getNamespace(), getPretty(),
+                        null, null, null, null, Constants.BACKGROUND_DELETEION);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+        @Override
+        void notifyUpdate(V1ServiceAccount original, V1ServiceAccount current) {
+            resourceUpdateMonitor.onServiceAccountUpdate(original, current);
+        }
+    }
+
+    class ClusterRoleUpdater extends ResourceUpdater<V1ClusterRole> {
+        ClusterRoleUpdater(V1ClusterRole clusterRole) {
+            super(clusterRole);
+        }
+
+        @Override
+        V1ClusterRole getCurrentResource() {
+            V1ClusterRole result = null;
+            try {
+                result = rbacV1Api.readClusterRole(
+                        getName(), getPretty());
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1ClusterRole applyResource(V1ClusterRole original, V1ClusterRole current) {
+            V1ClusterRole result = null;
+            try {
+                result = rbacV1Api.replaceClusterRole(
+                        getName(), current, getPretty(), null, null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1ClusterRole createResource(V1ClusterRole current) {
+            V1ClusterRole result = null;
+            try {
+                result = rbacV1Api.createClusterRole(
+                         current, getPretty(), null, null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1Status deleteResource(V1ClusterRole current) {
+            V1Status result = null;
+            try {
+                result = rbacV1Api.deleteClusterRole(
+                        getName(), getPretty(),
+                        null, null, null, null, Constants.BACKGROUND_DELETEION);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+        @Override
+        void notifyUpdate(V1ClusterRole original, V1ClusterRole current) {
+            resourceUpdateMonitor.onClusterRoleUpdate(original, current);
+        }
+    }
+
+    class ClusterRoleBindingUpdater extends ResourceUpdater<V1ClusterRoleBinding> {
+        ClusterRoleBindingUpdater(V1ClusterRoleBinding clusterRoleBinding) {
+            super(clusterRoleBinding);
+        }
+
+        @Override
+        V1ClusterRoleBinding getCurrentResource() {
+            V1ClusterRoleBinding result = null;
+            try {
+                result = rbacV1Api.readClusterRoleBinding(
+                        getName(), getPretty());
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1ClusterRoleBinding applyResource(V1ClusterRoleBinding original, V1ClusterRoleBinding current) {
+            V1ClusterRoleBinding result = null;
+            try {
+                result = rbacV1Api.replaceClusterRoleBinding(
+                        getName(), current, getPretty(), null, null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1ClusterRoleBinding createResource(V1ClusterRoleBinding current) {
+            V1ClusterRoleBinding result = null;
+            try {
+                result = rbacV1Api.createClusterRoleBinding(
+                         current, getPretty(), null, null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return result;
+        }
+
+        @Override
+        V1Status deleteResource(V1ClusterRoleBinding current) {
+            V1Status result = null;
+            try {
+                result = rbacV1Api.deleteClusterRoleBinding(
+                        getName(), getPretty(),
+                        null, null, null, null, Constants.BACKGROUND_DELETEION);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+        @Override
+        void notifyUpdate(V1ClusterRoleBinding original, V1ClusterRoleBinding current) {
+            resourceUpdateMonitor.onClusterRoleBindingUpdate(original, current);
         }
     }
 }
