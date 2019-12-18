@@ -12,8 +12,10 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.AppsV1beta1Api;
 import io.kubernetes.client.openapi.apis.BatchV1beta1Api;
 import io.kubernetes.client.openapi.apis.ExtensionsV1beta1Api;
+import io.kubernetes.client.openapi.apis.NetworkingV1beta1Api;
 import io.kubernetes.client.openapi.models.AppsV1beta1Deployment;
 import io.kubernetes.client.openapi.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1Ingress;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1beta1CronJob;
 import io.kubernetes.client.openapi.models.V1beta1DaemonSet;
@@ -27,6 +29,7 @@ public class V1beta1ResourceManager extends ResourceManager {
     private final ExtensionsV1beta1Api extensionsV1beta1Api;
     private final AppsV1beta1Api appsV1beta1Api;
     private final BatchV1beta1Api batchV1beta1Api;
+    private final NetworkingV1beta1Api networkingV1beta1Api;
     private V1beta1ResourceUpdateMonitor resourceUpdateMonitor = V1beta1ResourceUpdateMonitor.NOOP;
 
     public V1beta1ResourceManager(ApiClient client) {
@@ -35,6 +38,7 @@ public class V1beta1ResourceManager extends ResourceManager {
         extensionsV1beta1Api = new ExtensionsV1beta1Api(client);
         appsV1beta1Api = new AppsV1beta1Api(client);
         batchV1beta1Api = new BatchV1beta1Api(client);
+        networkingV1beta1Api = new NetworkingV1beta1Api(client);
     }
 
     public V1beta1ResourceManager(ApiClient client, boolean pretty) {
@@ -43,6 +47,7 @@ public class V1beta1ResourceManager extends ResourceManager {
         extensionsV1beta1Api = new ExtensionsV1beta1Api(client);
         appsV1beta1Api = new AppsV1beta1Api(client);
         batchV1beta1Api = new BatchV1beta1Api(client);
+        networkingV1beta1Api = new NetworkingV1beta1Api(client);
     }
 
     public V1beta1ResourceUpdateMonitor getResourceUpdateMonitor() {
@@ -176,8 +181,8 @@ public class V1beta1ResourceManager extends ResourceManager {
     }
 
 
-    class IngressUpdater extends ResourceUpdater<ExtensionsV1beta1Ingress> {
-        IngressUpdater(ExtensionsV1beta1Ingress ingress) {
+    class ExtensionsIngressUpdater extends ResourceUpdater<ExtensionsV1beta1Ingress> {
+        ExtensionsIngressUpdater(ExtensionsV1beta1Ingress ingress) {
             super(ingress);
         }
 
@@ -233,9 +238,71 @@ public class V1beta1ResourceManager extends ResourceManager {
 
         @Override
         void notifyUpdate(ExtensionsV1beta1Ingress original, ExtensionsV1beta1Ingress current) {
-            resourceUpdateMonitor.onIngressUpdate(original, current);
+            resourceUpdateMonitor.onExtensionsIngressUpdate(original, current);
         }
     }
+
+    class NetworkingIngressUpdater extends ResourceUpdater<NetworkingV1beta1Ingress> {
+        NetworkingIngressUpdater(NetworkingV1beta1Ingress ingress) {
+            super(ingress);
+        }
+
+        @Override
+        NetworkingV1beta1Ingress getCurrentResource() {
+            NetworkingV1beta1Ingress ingress = null;
+            try {
+                ingress = networkingV1beta1Api.readNamespacedIngress(getName(), getNamespace(), getPretty(),
+                        true, true);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return ingress;
+        }
+
+        @Override
+        NetworkingV1beta1Ingress applyResource(NetworkingV1beta1Ingress original, NetworkingV1beta1Ingress current) {
+            NetworkingV1beta1Ingress ingress = null;
+            try {
+                ingress = networkingV1beta1Api.replaceNamespacedIngress(getName(), getNamespace(), current,
+                        getPretty(), null, null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return ingress;
+        }
+
+        @Override
+        NetworkingV1beta1Ingress createResource(NetworkingV1beta1Ingress current) {
+            NetworkingV1beta1Ingress ingress = null;
+            try {
+                ingress = networkingV1beta1Api.createNamespacedIngress(getNamespace(),
+                        current, getPretty(), null, null);
+            } catch (ApiException e) {
+                handleApiException(e);
+            }
+            return ingress;
+        }
+
+        @Override
+        V1Status deleteResource(NetworkingV1beta1Ingress current) {
+            V1Status result = null;
+            try {
+                result = networkingV1beta1Api.deleteNamespacedIngress(
+                        getName(), getNamespace(),
+                        getPretty(), null, null, null, null, Constants.BACKGROUND_DELETEION);
+            } catch (ApiException e) {
+                handleApiExceptionExceptNotFound(e);
+            }
+            return result;
+        }
+
+
+        @Override
+        void notifyUpdate(NetworkingV1beta1Ingress original, NetworkingV1beta1Ingress current) {
+            resourceUpdateMonitor.onNetworkingIngressUpdate(original, current);
+        }
+    }
+
 
     class ExtensionsDeploymentUpdater extends ResourceUpdater<ExtensionsV1beta1Deployment> {
         ExtensionsDeploymentUpdater(ExtensionsV1beta1Deployment deployment) {
