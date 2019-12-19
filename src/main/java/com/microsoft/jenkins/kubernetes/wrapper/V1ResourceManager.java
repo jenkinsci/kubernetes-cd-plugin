@@ -1083,6 +1083,28 @@ public class V1ResourceManager extends ResourceManager {
 
         @Override
         V1PersistentVolumeClaim applyResource(V1PersistentVolumeClaim original, V1PersistentVolumeClaim current) {
+
+
+            // The kubernetes-client library will compare the server config and the current applied config,
+            // and compute the difference, which will be sent to the PATCH API of Kubernetes. The missing field
+            // will be considered as deletion, which will cause the Kubernetes misunderstanding the update request.
+            //
+            // "kubectl apply" handles the pvc update in the same way.
+            if (current.getSpec() != null && original.getSpec() != null) {
+                if (current.getSpec().getStorageClassName() == null) {
+                    current.getSpec().setStorageClassName(original.getSpec().getStorageClassName());
+                }
+                if (current.getSpec().getVolumeName() == null) {
+                    current.getSpec().setVolumeName(original.getSpec().getVolumeName());
+                }
+                if (current.getSpec().getVolumeMode() == null) {
+                    current.getSpec().setVolumeMode(original.getSpec().getVolumeMode());
+                }
+                if (current.getSpec().getResources() == null) {
+                    current.getSpec().setResources(original.getSpec().getResources());
+                }
+            }
+
             V1PersistentVolumeClaim result = null;
             try {
                 result = coreV1ApiInstance.replaceNamespacedPersistentVolumeClaim(
