@@ -533,7 +533,7 @@ public class V1ResourceManager extends ResourceManager {
             dryRunReq.getMetadata().setNamespace(getNamespace());
             try {
                 dryRunRes = batchV1ApiInstance.createNamespacedJob(dryRunReq.getMetadata().getNamespace(),
-                        dryRunReq, null, getPretty(), DRY_RUN_ALL);
+                        dryRunReq,  getPretty(), DRY_RUN_ALL, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -651,7 +651,7 @@ public class V1ResourceManager extends ResourceManager {
             dryRunReq.getMetadata().setNamespace(getNamespace());
             try {
                 dryRunRes = coreV1ApiInstance.createNamespacedPod(dryRunReq.getMetadata().getNamespace(),
-                        dryRunReq, null, getPretty(), DRY_RUN_ALL);
+                        dryRunReq, getPretty(), DRY_RUN_ALL, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
@@ -1033,7 +1033,7 @@ public class V1ResourceManager extends ResourceManager {
             dryRunReq.getMetadata().setNamespace(getNamespace());
             try {
                 dryRunRes = appsV1ApiInstance.createNamespacedStatefulSet(dryRunReq.getMetadata().getNamespace(),
-                        dryRunReq, null, getPretty(), DRY_RUN_ALL);
+                        dryRunReq, getPretty(), DRY_RUN_ALL, null);
             } catch (ApiException e) {
                 handleApiException(e);
             }
