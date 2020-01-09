@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>kubernetes-cd</artifactId>
-    <version>${revision}${changelist}</version>
+    <version>2.3.0</version>
     <packaging>hpi</packaging>
 
     <properties>
@@ -52,7 +52,7 @@
         <connection>scm:git:git://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
         <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
-        <tag>${scmTag}</tag>
+        <tag>kubernetes-cd-2.3.0</tag>
     </scm>
 
     <repositories>
