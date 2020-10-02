@@ -31,7 +31,7 @@
 
     <name>Kubernetes Continuous Deploy Plugin</name>
     <description>A Jenkins plugin to deploy configurations to Kubernetes cluster.</description>
-    <url>https://wiki.jenkins-ci.org/display/JENKINS/Kubernetes+Continuous+Deploy+Plugin</url>
+    <url>https://github.com/jenkinsci/kubernetes-cd-plugin</url>
 
     <licenses>
         <license>
