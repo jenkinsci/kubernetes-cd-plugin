@@ -1,5 +1,9 @@
 # Kubernetes Continuous Deploy Plugin Changelog
 
+## Version 2.3.1, 2020-10-27
+* Bump guava from 20.0 to 24.1.1-jre
+* Update maintainer
+
 ## Version 2.3.0, 2020-01-09
 * Add rbac resource、networking ingress support
 * Fix PVC cannot be applyed after PVC is bound
