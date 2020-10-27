@@ -9,11 +9,11 @@
     </parent>
 
     <artifactId>kubernetes-cd</artifactId>
-    <version>2.3.1</version>
+    <version>${revision}${changelist}</version>
     <packaging>hpi</packaging>
 
     <properties>
-        <revision>2.3.1</revision>
+        <revision>2.3.2</revision>
         <changelist>-SNAPSHOT</changelist>
         <!-- Baseline Jenkins version you use to build the plugin. Users must have this version or newer to run. -->
         <jenkins.version>2.60.3</jenkins.version>
@@ -52,7 +52,7 @@
         <connection>scm:git:git://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
         <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
-        <tag>kubernetes-cd-2.3.1</tag>
+        <tag>${scmTag}</tag>
     </scm>
 
     <repositories>
