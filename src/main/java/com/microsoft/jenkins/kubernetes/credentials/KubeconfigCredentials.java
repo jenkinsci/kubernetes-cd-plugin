@@ -205,9 +205,10 @@ public class KubeconfigCredentials extends BaseStandardCredentials implements An
         private transient Item owner;
 
         @DataBoundConstructor
-        public FileOnKubernetesMasterKubeconfigSource(String server, String sshCredentialId) {
+        public FileOnKubernetesMasterKubeconfigSource(String server, String sshCredentialId, String file) {
             this.server = server;
             this.sshCredentialId = sshCredentialId;
+            this.file = file;
         }
 
         @Override
@@ -287,7 +288,7 @@ public class KubeconfigCredentials extends BaseStandardCredentials implements An
                 SSHClient sshClient = new SSHClient(getHost(), getPort(), creds);
                 try (SSHClient connected = sshClient.connect()) {
                     try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-                        connected.copyFrom(Constants.KUBECONFIG_FILE, out);
+                        connected.copyFrom(getFile(), out);
                         return out.toString(Constants.DEFAULT_CHARSET);
                     }
                 }
