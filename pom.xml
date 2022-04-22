@@ -20,7 +20,7 @@
         <java.level>8</java.level>
 
         <azure-commons-version>1.0.4</azure-commons-version>
-        <credentials.version>2.1.14</credentials.version>
+        <credentials.version>2.6.1.1</credentials.version>
         <docker-commons.version>1.10</docker-commons.version>
         <ssh-credentials.version>1.13</ssh-credentials.version>
         <workflow-step-api.version>2.10</workflow-step-api.version>
