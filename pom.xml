@@ -24,7 +24,7 @@
         <docker-commons.version>1.10</docker-commons.version>
         <ssh-credentials.version>1.13</ssh-credentials.version>
         <workflow-step-api.version>2.10</workflow-step-api.version>
-        <jackson.version>2.12.1</jackson.version>
+        <jackson.version>2.12.7.1</jackson.version>
 
         <kubernetes-client.version>7.0.0</kubernetes-client.version>
     </properties>
