@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>3.47</version>
+        <version>4.47</version>
     </parent>
 
     <artifactId>kubernetes-cd</artifactId>
@@ -16,9 +16,7 @@
         <revision>2.3.2</revision>
         <changelist>-SNAPSHOT</changelist>
         <!-- Baseline Jenkins version you use to build the plugin. Users must have this version or newer to run. -->
-        <jenkins.version>2.60.3</jenkins.version>
-        <java.level>8</java.level>
-
+        <jenkins.version>2.361.4</jenkins.version>
         <azure-commons-version>1.0.4</azure-commons-version>
         <credentials.version>2.1.14</credentials.version>
         <docker-commons.version>1.10</docker-commons.version>
@@ -26,7 +24,7 @@
         <workflow-step-api.version>2.10</workflow-step-api.version>
         <jackson.version>2.12.1</jackson.version>
 
-        <kubernetes-client.version>7.0.0</kubernetes-client.version>
+        <kubernetes-client.version>11.0.0</kubernetes-client.version>
     </properties>
 
     <name>Kubernetes Continuous Deploy Plugin</name>
@@ -49,7 +47,7 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
+        <connection>scm:git:https://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
         <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
         <tag>${scmTag}</tag>
@@ -155,6 +153,13 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.jenkins.tools.bom</groupId>
+                <artifactId>bom-2.361.x</artifactId>
+                <version>1723.vcb_9fee52c9fc</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
             <dependency>
                 <groupId>com.squareup.retrofit2</groupId>
                 <artifactId>retrofit</artifactId>
