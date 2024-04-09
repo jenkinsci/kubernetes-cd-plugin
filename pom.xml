@@ -22,14 +22,14 @@
         <docker-commons.version>1.10</docker-commons.version>
         <ssh-credentials.version>1.13</ssh-credentials.version>
         <workflow-step-api.version>2.10</workflow-step-api.version>
-        <jackson.version>2.10.1</jackson.version>
+        <jackson.version>2.12.1</jackson.version>
 
         <kubernetes-client.version>11.0.0</kubernetes-client.version>
     </properties>
 
     <name>Kubernetes Continuous Deploy Plugin</name>
     <description>A Jenkins plugin to deploy configurations to Kubernetes cluster.</description>
-    <url>https://wiki.jenkins-ci.org/display/JENKINS/Kubernetes+Continuous+Deploy+Plugin</url>
+    <url>https://github.com/jenkinsci/kubernetes-cd-plugin</url>
 
     <licenses>
         <license>
