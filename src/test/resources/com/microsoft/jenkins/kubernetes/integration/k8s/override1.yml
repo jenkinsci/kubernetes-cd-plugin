@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: override-test
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: override-test
+    spec:
+      containers:
+      - name: override-test-container
+        image: nginx
+        ports:
+        - containerPort: 80

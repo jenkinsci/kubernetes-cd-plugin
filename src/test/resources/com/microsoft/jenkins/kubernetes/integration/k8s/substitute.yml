@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: $DEPLOYMENT_NAME
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ssh-credentials-test
+    spec:
+      containers:
+      - name: ssh-credentials-test-container
+        image: $IMAGE_NAME
+        ports:
+        - containerPort: 80

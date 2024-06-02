@@ -1,0 +1,33 @@
+---
+apiVersion: v1
+kind: List
+items:
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: ssh-credentials-test-service
+    labels:
+      app: ssh-credentials-test
+  spec:
+    type: LoadBalancer
+    selector:
+      app: ssh-credentials-test
+    ports:
+      - port: 80
+        targetPort: 80
+- apiVersion: extensions/v1beta1
+  kind: Deployment
+  metadata:
+    name: ssh-credentials-test-deployment
+  spec:
+    replicas: 1
+    template:
+      metadata:
+        labels:
+          app: ssh-credentials-test
+      spec:
+        containers:
+        - name: ssh-credentials-test-container
+          image: nginx
+          ports:
+          - containerPort: 80
